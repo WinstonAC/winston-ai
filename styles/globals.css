@@ -1,26 +1,69 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@layer base {
+  html {
+    -webkit-font-smoothing: none;
+    -moz-osx-font-smoothing: unset;
+  }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  body {
+    @apply bg-brutalist-gray font-mono;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  /* Typography */
+  .text-brutalist-heading {
+    @apply font-mono text-4xl font-bold tracking-tight text-brutalist-black;
+  }
+
+  .text-brutalist-subheading {
+    @apply font-mono text-2xl text-brutalist-black;
+  }
+
+  .text-brutalist-body {
+    @apply font-mono text-base text-brutalist-black;
+  }
+
+  /* Containers */
+  .brutalist-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Cards & Boxes */
+  .brutalist-box {
+    @apply border-thicc border-brutalist-black bg-white p-box rounded-none;
+  }
+
+  .brutalist-card {
+    @apply brutalist-box p-6;
+  }
+
+  /* Buttons */
+  .brutalist-button {
+    @apply inline-block font-mono px-8 py-4 
+           bg-brutalist-black text-white 
+           border-2 border-brutalist-black 
+           hover:bg-white hover:text-brutalist-black 
+           transition-colors cursor-pointer;
+  }
+
+  /* Sections */
+  .brutalist-section {
+    @apply py-16 sm:py-24;
+  }
+
+  .brutalist-heading {
+    @apply font-mono text-heading text-brutalist-black;
+  }
+  
+  .brutalist-mega {
+    @apply font-mono text-mega text-brutalist-black;
+  }
+  
+  .brutalist-shouty {
+    @apply font-mono text-shouty text-brutalist-black;
+  }
 }
