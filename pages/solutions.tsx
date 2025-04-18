@@ -1,6 +1,7 @@
 import React from 'react';
 import Head from 'next/head';
 import Navigation from '@/components/Navigation';
+import ExpandableDocs from '../components/ExpandableDocs';
 
 export default function SolutionsPage() {
   return (
@@ -53,6 +54,8 @@ export default function SolutionsPage() {
               <div className="text-[#32CD32]">ACTIVE_</div>
             </div>
           </div>
+
+          <ExpandableDocs />
         </div>
       </main>
 

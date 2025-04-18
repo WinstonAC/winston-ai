@@ -2,6 +2,9 @@
 
 Winston AI is an AI-powered sales assistant that helps manage leads, campaigns, and automate sales processes.
 
+![Winston AI Chatbot](public/chatbot-screenshot.png)
+*The chatbot in action on the dashboard page*
+
 ## Features
 
 ### Chatbot Assistant
@@ -35,14 +38,19 @@ Winston AI is an AI-powered sales assistant that helps manage leads, campaigns, 
    ```
 4. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-## Chatbot Usage
+## Documentation
 
-The chatbot is accessible from any page in the application:
+For detailed information about the chatbot and its features, visit our [Chatbot Documentation](/docs/chatbot).
+
+### Quick Start with the Chatbot
 
 1. Click the "OPEN_CHAT_" button in the bottom-right corner
 2. Select from available topics or type your query
 3. Click on navigation options to move between pages
 4. Use the "CLEAR_" button to reset the conversation
+
+![Chatbot Navigation](public/chatbot-navigation.png)
+*Navigating between pages using the chatbot*
 
 ### Available Commands
 
@@ -63,6 +71,26 @@ The chatbot is accessible from any page in the application:
 - MONITOR_CAMPAIGN_PERFORMANCE_
 - ADJUST_CAMPAIGN_SETTINGS_
 - GO_TO_DASHBOARD_
+
+## Example Interactions
+
+### Viewing Lead Stats
+```
+USER: VIEW_YOUR_LEAD_STATS_
+BOT: CURRENT_METRICS_
+     LEADS_123_
+     ACTIVE_CAMPAIGNS_5_
+     CONVERSION_RATE_12%_
+```
+
+### Creating a Campaign
+```
+USER: CREATE_NEW_CAMPAIGN_
+BOT: NEW_CAMPAIGN_SETUP_
+     1_SELECT_CAMPAIGN_TYPE_
+     2_DEFINE_TARGET_AUDIENCE_
+     3_SET_OBJECTIVES_
+```
 
 ## Technologies Used
 

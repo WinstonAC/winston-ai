@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import Link from 'next/link';
 
 export default function LandingPage() {
   const router = useRouter();
@@ -19,25 +18,6 @@ export default function LandingPage() {
           <title>Winston AI - Automated Lead Management</title>
           <meta name="description" content="Winston AI automates your cold emails, replies, and demo booking" />
         </Head>
-
-        {/* Simple Navigation */}
-        <div className="fixed top-0 right-0 z-50 p-8">
-          <div className="flex items-center space-x-6">
-            <Link 
-              href="/login"
-              className="text-gray-300 hover:text-white transition-colors opacity-0 animate-fade-in-delay-1"
-            >
-              Sign in
-            </Link>
-            <Link
-              href="/demo"
-              className="px-4 py-2 rounded-lg bg-white/10 backdrop-blur-sm text-white border border-white/20 
-                       hover:bg-white/20 transition-all transform hover:scale-105 opacity-0 animate-fade-in-delay-1"
-            >
-              Request Demo
-            </Link>
-          </div>
-        </div>
 
         {/* Background gradient */}
         <div className="absolute inset-0 bg-gradient-radial from-gray-900 to-black"></div>
