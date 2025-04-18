@@ -1,113 +1,126 @@
 import React, { useEffect, useState } from 'react';
 import Head from 'next/head';
-import { supabase } from '@/lib/supabase';
+import { useRouter } from 'next/router';
+import dynamic from 'next/dynamic';
+import Navigation from '@/components/Navigation';
 import LeadTable from '@/components/LeadTable';
 
+// Dynamically import the Dashboard component to avoid SSR issues
+const DashboardComponent = dynamic(() => import('@/components/Dashboard'), {
+  ssr: false,
+  loading: () => (
+    <div className="animate-pulse space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="bg-gray-900 rounded-lg p-6 border border-gray-800">
+            <div className="h-20 bg-gray-800 rounded-lg"></div>
+          </div>
+        ))}
+      </div>
+    </div>
+  ),
+});
+
 // Mock data interface
-interface MockLead {
+interface Lead {
   id: string;
   name: string;
   email: string;
-  status: 'Sent' | 'Opened' | 'Clicked' | 'Booked';
-  lastActivity: string;
+  status: 'Sent' | 'Opened' | 'Clicked' | 'Booked' | 'Bounced';
+  classification: 'Interested' | 'Not Interested' | 'Needs Info' | null;
+  sent_at: string;
+  created_at: string;
 }
 
 // Mock data
-const mockLeads: MockLead[] = [
+const mockLeads: Lead[] = [
   {
     id: '1',
-    name: 'John Smith',
-    email: 'john@techcorp.com',
-    status: 'Booked',
+    name: 'John Doe',
+    email: 'john@example.com',
+    status: 'Sent',
     classification: 'Interested',
-    sentAt: '2024-03-10 09:15 AM'
+    sent_at: '2024-04-18T10:00:00Z',
+    created_at: '2024-04-18T09:00:00Z'
   },
   {
     id: '2',
-    name: 'Sarah Wilson',
-    email: 'sarah@startup.io',
-    status: 'Clicked',
+    name: 'Jane Smith',
+    email: 'jane@example.com',
+    status: 'Opened',
     classification: 'Needs Info',
-    sentAt: '2024-03-10 09:16 AM'
+    sent_at: '2024-04-18T11:00:00Z',
+    created_at: '2024-04-18T10:00:00Z'
   },
   {
     id: '3',
     name: 'Mike Johnson',
-    email: 'mike@agency.co',
-    status: 'Opened',
-    lastActivity: '2024-03-08'
-  },
-  {
-    id: '4',
-    name: 'Lisa Brown',
-    email: 'lisa@agency.com',
-    status: 'Sent',
-    lastActivity: '2024-03-07'
+    email: 'mike@example.com',
+    status: 'Clicked',
+    classification: 'Interested',
+    sent_at: '2024-04-18T12:00:00Z',
+    created_at: '2024-04-18T11:00:00Z'
   }
 ];
 
-// Status badge component
-const StatusBadge: React.FC<{ status: MockLead['status'] }> = ({ status }) => {
-  const getStatusColor = (status: MockLead['status']) => {
-    switch (status) {
-      case 'Booked':
-        return 'bg-green-100 border-green-800 text-green-800';
-      case 'Clicked':
-        return 'bg-blue-100 border-blue-800 text-blue-800';
-      case 'Opened':
-        return 'bg-yellow-100 border-yellow-800 text-yellow-800';
-      default:
-        return 'bg-gray-100 border-gray-800 text-gray-800';
-    }
-  };
-
-  return (
-    <span className={`
-      inline-block px-2 py-1
-      border-2
-      font-mono text-sm
-      ${getStatusColor(status)}
-    `}>
-      {status}
-    </span>
-  );
+// Mock stats data
+const mockStats = {
+  totalLeads: 156,
+  openRate: 68,
+  responseRate: 42,
+  meetings: 24
 };
 
-export default function Dashboard() {
+export default function DashboardPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
-    async function fetchLeads() {
-      try {
-        const { data, error } = await supabase
-          .from('leads')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-        setLeads(data || []);
-      } catch (error) {
-        console.error('Error fetching leads:', error);
-      } finally {
-        setLoading(false);
-      }
+    // TODO: Add proper authentication check
+    const isAuthenticated = true; // Replace with actual auth check
+    
+    if (!isAuthenticated) {
+      router.push('/');
+      return;
     }
 
-    fetchLeads();
-  }, []);
+    // Simulate loading data
+    setTimeout(() => {
+      setLeads(mockLeads);
+      setLoading(false);
+    }, 1000);
+  }, [router]);
 
   return (
-    <>
+    <div className="min-h-screen bg-black">
       <Head>
-        <title>Dashboard | Winston AI</title>
-        <meta name="description" content="Track and manage your outreach campaigns" />
+        <title>Dashboard - Winston AI</title>
+        <meta name="description" content="Manage your leads and outreach campaigns" />
       </Head>
 
-      <h1 className="text-4xl font-bold mb-8">
-        📊 Delivery Dashboard
-      </h1>
-      <LeadTable />
-    </>
+      <Navigation />
+
+      <main className="pt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Dashboard Stats and Activity */}
+          <DashboardComponent stats={mockStats} />
+          
+          {/* Leads Table Section */}
+          <div className="mt-8">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-light text-white">Recent Leads</h2>
+              <button className="px-4 py-2 bg-white text-black rounded-lg hover:bg-gray-100 transition-colors">
+                Upload Leads
+              </button>
+            </div>
+            
+            <div className="bg-gray-900 rounded-lg shadow border border-gray-800">
+              <LeadTable leads={leads} loading={loading} />
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
   );
 } 

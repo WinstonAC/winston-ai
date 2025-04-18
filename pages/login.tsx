@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
 import Navigation from '@/components/Navigation';
 
-export default function DemoPage() {
-  const [name, setName] = useState('');
+export default function Login() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
-  const [company, setCompany] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -14,12 +15,11 @@ export default function DemoPage() {
     setLoading(true);
 
     try {
-      // TODO: Implement actual demo request submission
+      // TODO: Implement actual authentication here
       await new Promise(resolve => setTimeout(resolve, 1500));
-      alert('Demo request submitted successfully!');
-      setLoading(false);
+      router.push('/dashboard');
     } catch (error) {
-      console.error('Demo request error:', error);
+      console.error('Login error:', error);
       setLoading(false);
     }
   };
@@ -28,8 +28,8 @@ export default function DemoPage() {
     <div className="relative min-h-screen">
       <div className="min-h-screen bg-black text-white font-mono">
         <Head>
-          <title>Request Demo - Winston AI</title>
-          <meta name="description" content="Schedule a demo of Winston AI's automated lead management system" />
+          <title>Login - Winston AI</title>
+          <meta name="description" content="Login to Winston AI" />
         </Head>
 
         <Navigation />
@@ -46,32 +46,16 @@ export default function DemoPage() {
                 <span className="tracking-wider">SYSTEM_STATUS</span>
                 <span className="flex items-center">
                   <span className="w-2 h-2 bg-[#32CD32] rounded-full mr-2 animate-pulse"></span>
-                  READY_FOR_DEMO
+                  ONLINE
                 </span>
               </div>
             </div>
 
-            {/* Demo Form Card */}
+            {/* Login Form Card */}
             <div className="bg-white/10 p-8 backdrop-blur-lg">
-              <div className="text-2xl tracking-wider mb-8">REQUEST_DEMO_</div>
+              <div className="text-2xl tracking-wider mb-8">INITIALIZE_SESSION_</div>
 
               <form onSubmit={handleSubmit} className="space-y-6">
-                <div>
-                  <label htmlFor="name" className="block text-sm tracking-wider mb-2">
-                    FULL_NAME
-                  </label>
-                  <input
-                    id="name"
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                    className="w-full px-4 py-3 bg-white text-black font-mono
-                             focus:outline-none placeholder-gray-500 tracking-wider"
-                    placeholder="ENTER_NAME"
-                  />
-                </div>
-
                 <div>
                   <label htmlFor="email" className="block text-sm tracking-wider mb-2">
                     EMAIL_ADDRESS
@@ -89,18 +73,18 @@ export default function DemoPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="company" className="block text-sm tracking-wider mb-2">
-                    COMPANY_NAME
+                  <label htmlFor="password" className="block text-sm tracking-wider mb-2">
+                    PASSWORD
                   </label>
                   <input
-                    id="company"
-                    type="text"
-                    value={company}
-                    onChange={(e) => setCompany(e.target.value)}
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     required
                     className="w-full px-4 py-3 bg-white text-black font-mono
                              focus:outline-none placeholder-gray-500 tracking-wider"
-                    placeholder="ENTER_COMPANY"
+                    placeholder="ENTER_PASSWORD"
                   />
                 </div>
 
@@ -113,11 +97,11 @@ export default function DemoPage() {
                 >
                   {loading ? (
                     <span className="flex items-center justify-center space-x-2">
-                      <span>PROCESSING</span>
+                      <span>AUTHENTICATING</span>
                       <span className="animate-pulse">...</span>
                     </span>
                   ) : (
-                    'SCHEDULE_DEMO'
+                    'LOGIN_TO_SYSTEM'
                   )}
                 </button>
               </form>
@@ -157,4 +141,4 @@ export default function DemoPage() {
       </div>
     </div>
   );
-} 
+}

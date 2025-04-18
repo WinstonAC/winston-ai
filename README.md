@@ -1,74 +1,84 @@
 # Winston AI
 
-A brutalist AI outreach engine that books calls while you sleep. Upload your leads, let AI handle personalized outreach, and wake up to booked calls.
-
-![Winston AI](public/screenshot.png)
-
-## Quick Start
-
-```bash
-# Install dependencies
-npm install
-
-# Setup environment variables
-cp .env.example .env.local
-
-# Start development server
-npm run dev
-```
-
-Visit `http://localhost:3000`
-
-## Environment Variables
-
-Create a `.env.local` file:
-
-```env
-# SMTP Configuration
-SMTP_HOST=smtp.example.com
-SMTP_PORT=587
-SMTP_USER=your-username
-SMTP_PASS=your-password
-FROM_EMAIL=winston@yourdomain.com
-
-# OpenAI API
-OPENAI_API_KEY=your-openai-key
-```
+Winston AI is an AI-powered sales assistant that helps manage leads, campaigns, and automate sales processes.
 
 ## Features
 
-### 📊 Lead Management
-- CSV upload with drag-and-drop
-- Preview leads before sending
-- Track delivery status
+### Chatbot Assistant
+- **Context-Aware Responses**: The chatbot provides relevant information based on the current page
+- **Navigation**: Clickable topics that can navigate to different sections of the application
+- **Real-Time Interaction**: Instant responses to user queries
+- **Brutalist Design**: Consistent with the application's aesthetic
+  - Monospace font
+  - Uppercase text
+  - Underscore styling
+  - Lime green accent color
 
-### 🤖 AI-Powered Outreach
-- GPT-powered reply classification
-- Personalized email templates
-- Automated follow-ups
+### Pages
+- **Landing Page**: Minimal design with floating animations
+- **Login**: Secure authentication
+- **Dashboard**: Overview of leads and campaigns
+- **Leads**: Lead management and tracking
+- **Campaigns**: Campaign creation and monitoring
+- **Demo**: Request a personalized demo
 
-### 📈 Campaign Tracking
-- Email open tracking
-- Click-through rates
-- Reply monitoring
-- Calendar booking stats
+## Getting Started
 
-## Documentation
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Run the development server:
+   ```bash
+   npm run dev
+   ```
+4. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-Visit our [documentation](https://your-domain.com/docs) for:
-- Detailed setup guide
-- API reference
-- Best practices
-- FAQ
+## Chatbot Usage
 
-## Tech Stack
+The chatbot is accessible from any page in the application:
+
+1. Click the "OPEN_CHAT_" button in the bottom-right corner
+2. Select from available topics or type your query
+3. Click on navigation options to move between pages
+4. Use the "CLEAR_" button to reset the conversation
+
+### Available Commands
+
+#### Dashboard
+- VIEW_YOUR_LEAD_STATS_
+- MANAGE_YOUR_CAMPAIGNS_
+- UPLOAD_NEW_LEADS_
+- CHECK_SYSTEM_STATUS_
+
+#### Leads
+- VIEW_LEAD_DETAILS_
+- CLASSIFY_LEADS_
+- EXPORT_LEAD_DATA_
+- GO_TO_DASHBOARD_
+
+#### Campaigns
+- CREATE_NEW_CAMPAIGN_
+- MONITOR_CAMPAIGN_PERFORMANCE_
+- ADJUST_CAMPAIGN_SETTINGS_
+- GO_TO_DASHBOARD_
+
+## Technologies Used
 
 - Next.js
+- React
 - TypeScript
 - Tailwind CSS
-- OpenAI API
-- Nodemailer
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
-© 2024 Cylon Digital Consulting. All rights reserved.
+This project is licensed under the MIT License.
