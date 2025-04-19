@@ -1,25 +1,46 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
 import Navigation from '@/components/Navigation';
+import { signIn } from 'next-auth/react';
+import { prisma } from '@/lib/prisma';
 
-export default function Login() {
+export default function Login({ needsSetup }: { needsSetup: boolean }) {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (needsSetup) {
+      router.push('/first-time-setup');
+    }
+  }, [needsSetup, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
 
     try {
-      // TODO: Implement actual authentication here
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const result = await signIn('credentials', {
+        redirect: false,
+        email,
+        password,
+      });
+
+      if (result?.error) {
+        setError(result.error);
+        setLoading(false);
+        return;
+      }
+
       router.push('/dashboard');
     } catch (error) {
       console.error('Login error:', error);
+      setError('An unexpected error occurred');
       setLoading(false);
     }
   };
@@ -53,7 +74,13 @@ export default function Login() {
 
             {/* Login Form Card */}
             <div className="bg-white/10 p-8 backdrop-blur-lg">
-              <div className="text-2xl tracking-wider mb-8">INITIALIZE_SESSION_</div>
+              <div className="text-2xl tracking-wider mb-8">LOGIN_TO_SYSTEM_</div>
+
+              {error && (
+                <div className="mb-4 p-4 bg-red-900/50 text-red-200 rounded-lg">
+                  {error}
+                </div>
+              )}
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
@@ -108,10 +135,10 @@ export default function Login() {
 
               <div className="mt-6 pt-6 border-t border-white/10">
                 <Link
-                  href="/solutions"
+                  href="/signup"
                   className="block text-center text-gray-400 hover:text-white transition-colors tracking-wider"
                 >
-                  VIEW_SYSTEM_FEATURES →
+                  CREATE_ACCOUNT →
                 </Link>
               </div>
             </div>
@@ -141,4 +168,14 @@ export default function Login() {
       </div>
     </div>
   );
+}
+
+export async function getServerSideProps() {
+  const users = await prisma.user.findMany();
+  
+  return {
+    props: {
+      needsSetup: users.length === 0,
+    },
+  };
 }

@@ -10,21 +10,53 @@ interface Lead {
 
 const CsvUploader: React.FC = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const onDrop = (acceptedFiles: File[]) => {
+  const onDrop = async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (file) {
-      Papa.parse(file, {
-        complete: (results) => {
-          // Assuming the CSV has headers 'name' and 'email'
-          const parsedLeads = results.data.slice(1).map((row: any) => ({
-            name: row[0],
-            email: row[1],
+      setUploading(true);
+      setError(null);
+
+      try {
+        const results = await new Promise((resolve, reject) => {
+          Papa.parse(file, {
+            complete: resolve,
+            error: reject,
+            header: true,
+          });
+        });
+
+        const parsedLeads = (results as any).data
+          .filter((row: any) => row.name && row.email)
+          .map((row: any) => ({
+            name: row.name,
+            email: row.email,
+            status: 'Pending',
+            classification: null,
           }));
-          setLeads(parsedLeads);
-        },
-        header: false,
-      });
+
+        // Upload leads to the API
+        const response = await fetch('/api/leads', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(parsedLeads),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to upload leads');
+        }
+
+        setLeads(parsedLeads);
+      } catch (err) {
+        console.error('Error processing CSV:', err);
+        setError('Failed to process CSV file. Please check the format and try again.');
+      } finally {
+        setUploading(false);
+      }
     }
   };
 

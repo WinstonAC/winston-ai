@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import dynamic from 'next/dynamic';
+import { useSession } from 'next-auth/react';
 import Navigation from '@/components/Navigation';
 import LeadTable from '@/components/LeadTable';
 
@@ -75,22 +76,39 @@ export default function DashboardPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const { data: session, status } = useSession();
 
   useEffect(() => {
-    // TODO: Add proper authentication check
-    const isAuthenticated = true; // Replace with actual auth check
-    
-    if (!isAuthenticated) {
-      router.push('/');
+    if (status === 'unauthenticated') {
+      router.push('/login');
       return;
     }
 
-    // Simulate loading data
-    setTimeout(() => {
-      setLeads(mockLeads);
-      setLoading(false);
-    }, 1000);
-  }, [router]);
+    if (status === 'authenticated') {
+      const fetchLeads = async () => {
+        try {
+          const response = await fetch('/api/leads');
+          if (!response.ok) throw new Error('Failed to fetch leads');
+          const data = await response.json();
+          setLeads(data);
+        } catch (error) {
+          console.error('Error fetching leads:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchLeads();
+    }
+  }, [status, router]);
+
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="animate-pulse text-white">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-black">
