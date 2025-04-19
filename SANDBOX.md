@@ -22,15 +22,23 @@ You can log in with either of these accounts:
 ### Admin User
 - Email: admin@winston-ai.com
 - Password: demo123
+- Role: Team Admin (Can manage team members and settings)
 
 ### Demo User
 - Email: demo@winston-ai.com
 - Password: demo123
+- Role: Team Member
+
+### Test User
+- Email: test@winston-ai.com
+- Password: demo123
+- Role: Team Member
 
 ## 📊 Sample Data
 
 The sandbox comes pre-loaded with:
-- 2 user accounts (Admin and Demo)
+- 1 demo team with team settings
+- 3 user accounts (Admin and 2 Members)
 - 10 sample leads with various statuses
 - Different lead classifications
 - Varied creation and sent dates
@@ -42,7 +50,13 @@ The sandbox comes pre-loaded with:
 - Try switching between accounts
 - Test password reset (if implemented)
 
-### 2. Lead Management
+### 2. Team Management
+- View team members and their roles
+- Test team member invitation system
+- Manage team settings and permissions
+- Test team collaboration features
+
+### 3. Lead Management
 - View all leads
 - Filter leads by status
 - Sort leads by different criteria
@@ -50,15 +64,16 @@ The sandbox comes pre-loaded with:
 - Edit existing leads
 - Delete leads
 
-### 3. Email Features
+### 4. Email Features
 - Test sending emails to leads
 - Check email tracking functionality
 - View email statistics
 
-### 4. Dashboard
+### 5. Dashboard
 - View lead statistics
 - Check conversion rates
 - Explore data visualizations
+- View team performance metrics
 
 ## 🔄 Reset the Sandbox
 
@@ -72,6 +87,7 @@ npm run sandbox:reset
 - All actions in the sandbox are safe and won't affect any production data
 - Email sending is configured to use a test SMTP server
 - All dates and statistics are generated as sample data
+- Team management features are available to team admins
 - Feel free to experiment with all features!
 
 ## 🆘 Need Help?

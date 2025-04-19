@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/pages/api/auth/[...nextauth]';
-import prisma from '@/lib/prisma';
+import { authOptions } from '../auth/[...nextauth]';
+import { prisma } from '@/lib/prisma';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -10,15 +10,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
+  // Get user's team
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    include: { team: true },
+  });
+
+  if (!user) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+
   switch (req.method) {
     case 'GET':
       try {
         const leads = await prisma.lead.findMany({
           where: {
-            userId: session.user.id,
+            OR: [
+              { userId: session.user.id },
+              user.team ? { teamId: user.team.id } : {},
+            ],
           },
           orderBy: {
-            createdAt: 'desc',
+            created_at: 'desc',
           },
         });
         return res.status(200).json(leads);
@@ -29,20 +42,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     case 'POST':
       try {
-        const { name, email, status, classification } = req.body;
-        const lead = await prisma.lead.create({
-          data: {
-            name,
-            email,
-            status,
-            classification,
-            userId: session.user.id,
-          },
-        });
-        return res.status(201).json(lead);
+        const leadsData = Array.isArray(req.body) ? req.body : [req.body];
+        
+        const createdLeads = await Promise.all(
+          leadsData.map(lead => 
+            prisma.lead.create({
+              data: {
+                name: lead.name,
+                email: lead.email,
+                status: lead.status || 'Pending',
+                classification: lead.classification,
+                userId: session.user.id,
+                teamId: user.team?.id, // Optional team association
+              },
+            })
+          )
+        );
+
+        return res.status(201).json(createdLeads);
       } catch (error) {
-        console.error('Error creating lead:', error);
-        return res.status(500).json({ error: 'Failed to create lead' });
+        console.error('Error creating leads:', error);
+        return res.status(500).json({ error: 'Failed to create leads' });
       }
 
     default:

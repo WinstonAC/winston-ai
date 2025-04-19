@@ -21,7 +21,7 @@ model User {
   image         String?
   password      String?
   role          String    @default("USER")
-  settings      Settings?
+  userSettings  UserSettings?
   accounts      Account[]
   sessions      Session[]
   leads         Lead[]
@@ -32,6 +32,7 @@ model User {
   team          Team?     @relation(fields: [teamId], references: [id])
   teamId        String?
   teamRole      String?   @default("MEMBER") // OWNER, ADMIN, MEMBER
+  sentInvites   TeamInvite[] @relation("SentInvites")
 }
 
 model UserSettings {
@@ -73,21 +74,20 @@ model Session {
 }
 
 model Lead {
-  id             String         @id @default(cuid())
-  name           String
-  email          String        @unique
-  company        String?
-  position       String?
-  phone          String?
-  status         String        @default("Pending")
+  id            String    @id @default(cuid())
+  name          String
+  email         String
+  status        String    @default("Sent")
   classification String?
-  notes          String?       @db.Text
-  sentAt         DateTime?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  userId         String
-  user           User          @relation(fields: [userId], references: [id])
-  emailHistory   EmailHistory[]
+  sent_at       DateTime  @default(now())
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+  team          Team?     @relation(fields: [teamId], references: [id])
+  teamId        String?
+  user          User      @relation(fields: [userId], references: [id])
+  userId        String
+  activities    Activity[]
+  emailHistory  EmailHistory[]
 }
 
 model EmailHistory {
@@ -150,6 +150,9 @@ model Team {
   updatedAt   DateTime  @updatedAt
   users       User[]
   settings    TeamSettings?
+  invites     TeamInvite[]
+  activities  Activity[]
+  leads       Lead[]
 }
 
 model TeamSettings {
@@ -170,9 +173,24 @@ model TeamInvite {
   teamId    String
   team      Team     @relation(fields: [teamId], references: [id])
   invitedBy String
-  user      User     @relation(fields: [invitedBy], references: [id])
+  user      User     @relation("SentInvites", fields: [invitedBy], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([token])
+}
+
+model Activity {
+  id        String   @id @default(cuid())
+  type      String   // e.g., "lead_created", "meeting_scheduled", "email_sent"
+  createdAt DateTime @default(now())
+  
+  // Relations
+  team      Team     @relation(fields: [teamId], references: [id])
+  teamId    String
+  lead      Lead     @relation(fields: [leadId], references: [id])
+  leadId    String
+
+  @@index([teamId])
+  @@index([leadId])
 }

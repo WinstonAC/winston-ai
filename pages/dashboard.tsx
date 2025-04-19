@@ -22,7 +22,21 @@ const DashboardComponent = dynamic(() => import('@/components/Dashboard'), {
   ),
 });
 
-// Mock data interface
+interface DashboardData {
+  stats: {
+    totalLeads: number;
+    openRate: number;
+    responseRate: number;
+    meetings: number;
+  };
+  recentActivity: {
+    id: string;
+    type: string;
+    leadName: string;
+    createdAt: string;
+  }[];
+}
+
 interface Lead {
   id: string;
   name: string;
@@ -33,48 +47,30 @@ interface Lead {
   created_at: string;
 }
 
-// Mock data
-const mockLeads: Lead[] = [
-  {
-    id: '1',
-    name: 'John Doe',
-    email: 'john@example.com',
-    status: 'Sent',
-    classification: 'Interested',
-    sent_at: '2024-04-18T10:00:00Z',
-    created_at: '2024-04-18T09:00:00Z'
-  },
-  {
-    id: '2',
-    name: 'Jane Smith',
-    email: 'jane@example.com',
-    status: 'Opened',
-    classification: 'Needs Info',
-    sent_at: '2024-04-18T11:00:00Z',
-    created_at: '2024-04-18T10:00:00Z'
-  },
-  {
-    id: '3',
-    name: 'Mike Johnson',
-    email: 'mike@example.com',
-    status: 'Clicked',
-    classification: 'Interested',
-    sent_at: '2024-04-18T12:00:00Z',
-    created_at: '2024-04-18T11:00:00Z'
-  }
-];
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1 second
 
-// Mock stats data
-const mockStats = {
-  totalLeads: 156,
-  openRate: 68,
-  responseRate: 42,
-  meetings: 24
-};
+async function fetchWithRetry(url: string, options: RequestInit = {}, retries = MAX_RETRIES): Promise<Response> {
+  try {
+    const response = await fetch(url, options);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response;
+  } catch (error) {
+    if (retries > 0) {
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+      return fetchWithRetry(url, options, retries - 1);
+    }
+    throw error;
+  }
+}
 
 export default function DashboardPage() {
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const { data: session, status } = useSession();
 
@@ -85,27 +81,135 @@ export default function DashboardPage() {
     }
 
     if (status === 'authenticated') {
-      const fetchLeads = async () => {
+      const createTeamIfNeeded = async () => {
         try {
-          const response = await fetch('/api/leads');
-          if (!response.ok) throw new Error('Failed to fetch leads');
-          const data = await response.json();
-          setLeads(data);
+          // Try to create a personal team automatically
+          const createTeamResponse = await fetch('/api/team/create', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ type: 'personal' }),
+          });
+
+          if (!createTeamResponse.ok) {
+            console.error('Failed to create team:', await createTeamResponse.text());
+          }
         } catch (error) {
-          console.error('Error fetching leads:', error);
+          console.error('Error creating team:', error);
+        }
+      };
+
+      const fetchDashboardData = async () => {
+        try {
+          setLoading(true);
+          setError(null);
+
+          // Fetch dashboard stats
+          const statsResponse = await fetchWithRetry('/api/dashboard/stats');
+          
+          if (!statsResponse.ok) {
+            const errorData = await statsResponse.json();
+            
+            // If we need team setup, try to create one automatically
+            if (errorData.code === 'NO_TEAM') {
+              await createTeamIfNeeded();
+              // Retry fetching stats after team creation
+              const retryStatsResponse = await fetchWithRetry('/api/dashboard/stats');
+              if (!retryStatsResponse.ok) {
+                throw new Error(errorData.details || errorData.message);
+              }
+              const statsData = await retryStatsResponse.json();
+              setDashboardData(statsData);
+            } else {
+              throw new Error(errorData.details || errorData.message);
+            }
+          } else {
+            const statsData = await statsResponse.json();
+            setDashboardData(statsData);
+          }
+
+          // Only fetch leads if we have successfully fetched stats
+          const leadsResponse = await fetchWithRetry('/api/leads');
+          const leadsData = await leadsResponse.json();
+          
+          if (!leadsResponse.ok) {
+            throw new Error('Failed to fetch leads');
+          }
+          
+          setLeads(leadsData);
+        } catch (error) {
+          console.error('Error fetching dashboard data:', error);
+          setError(error instanceof Error ? error.message : 'An error occurred while fetching data');
         } finally {
           setLoading(false);
         }
       };
 
-      fetchLeads();
+      fetchDashboardData();
     }
   }, [status, router]);
 
-  if (status === 'loading') {
+  if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="animate-pulse text-white">Loading...</div>
+      <div className="min-h-screen bg-black">
+        <Navigation />
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-pulse text-white">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-black">
+        <Navigation />
+        <div className="max-w-md mx-auto mt-32 p-6 bg-gray-900 rounded-lg border border-gray-800">
+          <h2 className="text-xl font-mono text-white mb-4">Error Loading Dashboard</h2>
+          <p className="text-gray-200 mb-6">{error}</p>
+          <div className="space-y-4">
+            <button
+              onClick={async () => {
+                try {
+                  // Sign out and clear everything first
+                  localStorage.clear();
+                  sessionStorage.clear();
+                  
+                  // Try to create a team
+                  const createTeamResponse = await fetch('/api/team/create', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
+                  });
+
+                  const result = await createTeamResponse.json();
+
+                  if (!createTeamResponse.ok) {
+                    throw new Error(result.details || result.message || 'Failed to create team');
+                  }
+
+                  // Force reload the page
+                  window.location.href = '/dashboard';
+                } catch (error) {
+                  console.error('Error:', error);
+                  alert(error.message || 'Failed to create team. Please try signing out and back in.');
+                }
+              }}
+              className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
+              Reset & Create Team
+            </button>
+            <a
+              href="/api/auth/signout"
+              className="block w-full px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors text-center"
+            >
+              Sign Out & Try Again
+            </a>
+          </div>
+        </div>
       </div>
     );
   }
@@ -122,13 +226,21 @@ export default function DashboardPage() {
       <main className="pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Dashboard Stats and Activity */}
-          <DashboardComponent stats={mockStats} />
+          {dashboardData && (
+            <DashboardComponent 
+              stats={dashboardData.stats}
+              recentActivity={dashboardData.recentActivity}
+            />
+          )}
           
           {/* Leads Table Section */}
           <div className="mt-8">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-light text-white">Recent Leads</h2>
-              <button className="px-4 py-2 bg-white text-black rounded-lg hover:bg-gray-100 transition-colors">
+              <button 
+                onClick={() => router.push('/upload')}
+                className="px-4 py-2 bg-white text-black rounded-lg hover:bg-gray-100 transition-colors"
+              >
                 Upload Leads
               </button>
             </div>

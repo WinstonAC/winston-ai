@@ -30,18 +30,20 @@ export default async function handler(
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user
+    // Create user with settings
     const user = await prisma.user.create({
       data: {
         name,
         email,
         password: hashedPassword,
-        settings: {
+        userSettings: {
           create: {
-            emailNotifications: true,
-            theme: 'dark',
+            emailSignature: '',
           },
         },
+      },
+      include: {
+        userSettings: true,
       },
     });
 
@@ -51,6 +53,6 @@ export default async function handler(
     return res.status(201).json(userWithoutPassword);
   } catch (error) {
     console.error('Registration error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ error: 'Registration failed. Please try again.' });
   }
 } 

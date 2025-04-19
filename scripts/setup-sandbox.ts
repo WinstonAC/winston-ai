@@ -31,7 +31,22 @@ const getRandomElement = <T>(array: readonly T[]): T => {
   return array[Math.floor(Math.random() * array.length)];
 };
 
-async function createSampleUser(email: string, name: string, role: string = 'user') {
+async function createTeam(name: string) {
+  return prisma.team.create({
+    data: {
+      name,
+      settings: {
+        create: {
+          maxUsers: 10,
+          maxLeads: 1000,
+          features: ['email_templates', 'analytics', 'team_collaboration'],
+        },
+      },
+    },
+  });
+}
+
+async function createSampleUser(email: string, name: string, teamId: string, role: string = 'user', teamRole: string = 'MEMBER') {
   const password = await bcrypt.hash('demo123', 10);
   return prisma.user.create({
     data: {
@@ -39,6 +54,8 @@ async function createSampleUser(email: string, name: string, role: string = 'use
       name,
       password,
       role,
+      teamId,
+      teamRole,
       settings: {
         create: {
           emailSignature: `Best regards,\n${name}\n${email}`,
@@ -99,13 +116,20 @@ async function main() {
     await prisma.userSettings.deleteMany();
     await prisma.session.deleteMany();
     await prisma.account.deleteMany();
+    await prisma.teamInvite.deleteMany();
+    await prisma.teamSettings.deleteMany();
+    await prisma.team.deleteMany();
     await prisma.user.deleteMany();
+
+    // Create demo team
+    console.log('👥 Creating demo team...');
+    const demoTeam = await createTeam('Demo Team');
 
     // Create demo users
     console.log('👥 Creating demo users...');
-    const adminUser = await createSampleUser('admin@winston-ai.com', 'Admin User', 'admin');
-    const demoUser = await createSampleUser('demo@winston-ai.com', 'Demo User');
-    const testUser = await createSampleUser('test@winston-ai.com', 'Test User');
+    const adminUser = await createSampleUser('admin@winston-ai.com', 'Admin User', demoTeam.id, 'admin', 'ADMIN');
+    const demoUser = await createSampleUser('demo@winston-ai.com', 'Demo User', demoTeam.id, 'user', 'MEMBER');
+    const testUser = await createSampleUser('test@winston-ai.com', 'Test User', demoTeam.id, 'user', 'MEMBER');
 
     // Create sample leads for each user
     console.log('📊 Creating sample leads...');
@@ -119,19 +143,24 @@ async function main() {
     console.log('Admin User:');
     console.log('Email: admin@winston-ai.com');
     console.log('Password: demo123');
+    console.log('Role: Team Admin');
     console.log('\nDemo User:');
     console.log('Email: demo@winston-ai.com');
     console.log('Password: demo123');
+    console.log('Role: Team Member');
     console.log('\nTest User:');
     console.log('Email: test@winston-ai.com');
     console.log('Password: demo123');
+    console.log('Role: Team Member');
     console.log('------------------------');
     
     // Print some statistics
     const totalLeads = await prisma.lead.count();
     const totalUsers = await prisma.user.count();
     const totalEmails = await prisma.emailHistory.count();
+    const totalTeams = await prisma.team.count();
     console.log('\n📊 Sandbox Statistics:');
+    console.log(`Total Teams: ${totalTeams}`);
     console.log(`Total Users: ${totalUsers}`);
     console.log(`Total Leads: ${totalLeads}`);
     console.log(`Total Emails: ${totalEmails}`);

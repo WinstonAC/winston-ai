@@ -12,12 +12,14 @@ const CsvUploader: React.FC = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const onDrop = async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (file) {
       setUploading(true);
       setError(null);
+      setSuccess(null);
 
       try {
         const results = await new Promise((resolve, reject) => {
@@ -37,6 +39,10 @@ const CsvUploader: React.FC = () => {
             classification: null,
           }));
 
+        if (parsedLeads.length === 0) {
+          throw new Error('No valid leads found in CSV. Please ensure your CSV has "name" and "email" columns.');
+        }
+
         // Upload leads to the API
         const response = await fetch('/api/leads', {
           method: 'POST',
@@ -47,13 +53,15 @@ const CsvUploader: React.FC = () => {
         });
 
         if (!response.ok) {
-          throw new Error('Failed to upload leads');
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to upload leads');
         }
 
         setLeads(parsedLeads);
+        setSuccess(`Successfully uploaded ${parsedLeads.length} leads!`);
       } catch (err) {
         console.error('Error processing CSV:', err);
-        setError('Failed to process CSV file. Please check the format and try again.');
+        setError(err instanceof Error ? err.message : 'Failed to process CSV file. Please check the format and try again.');
       } finally {
         setUploading(false);
       }
@@ -86,6 +94,20 @@ const CsvUploader: React.FC = () => {
           File should contain columns for name and email
         </p>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+          {error}
+        </div>
+      )}
+
+      {/* Success Message */}
+      {success && (
+        <div className="mt-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+          {success}
+        </div>
+      )}
 
       {/* Preview Table */}
       {leads.length > 0 && (
