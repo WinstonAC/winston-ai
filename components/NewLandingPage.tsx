@@ -15,24 +15,22 @@ export default function NewLandingPage() {
             transition={{ duration: 0.8 }}
             className="text-center"
           >
-            <h1 className="text-6xl md:text-7xl font-bold mb-8 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-blue-400">
-              Winston AI
+            <h1 className="text-4xl md:text-6xl font-light mb-6">
+              AI-Powered Sales Automation
             </h1>
-            <p className="text-2xl md:text-3xl text-gray-300 mb-12 max-w-3xl mx-auto">
-              The AI agent that handles the work you dread
+            <p className="text-xl text-gray-400 mb-8 max-w-2xl mx-auto">
+              Automate your sales process with intelligent lead generation, email automation, and meeting scheduling.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                href="/dashboard"
-                className="px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg text-white font-semibold hover:from-purple-700 hover:to-blue-700 transition-all transform hover:scale-105"
-              >
-                Get Started
+              <Link href="/signup">
+                <button className="bg-[#32CD32] text-black px-8 py-3 rounded-lg hover:bg-[#2db82d] transition-colors">
+                  Get Started
+                </button>
               </Link>
-              <Link
-                href="/demo"
-                className="px-8 py-4 border border-purple-400 rounded-lg text-purple-400 font-semibold hover:bg-purple-400/10 transition-all"
-              >
-                Watch Demo
+              <Link href="/solutions">
+                <button className="border border-[#32CD32] text-[#32CD32] px-8 py-3 rounded-lg hover:bg-[#32CD32]/10 transition-colors">
+                  Learn More
+                </button>
               </Link>
             </div>
           </motion.div>

@@ -15,8 +15,9 @@
     "test:e2e": "jest --config jest.config.e2e.js",
     "test:clear": "jest --clearCache",
     "sandbox:setup": "ts-node scripts/setup-sandbox.ts",
-    "sandbox:start": "npm run sandbox:setup && npm run dev",
-    "sandbox:reset": "npm run sandbox:setup"
+    "sandbox:start": "ts-node scripts/sandbox.ts",
+    "sandbox:reset": "ts-node scripts/reset-sandbox.ts",
+    "sandbox": "npm run sandbox:reset && npm run sandbox:start"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",

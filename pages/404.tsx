@@ -9,23 +9,15 @@ export default function Custom404() {
       <Head>
         <title>404 - Page Not Found | Winston AI</title>
       </Head>
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
+      <main className="flex items-center justify-center min-h-screen bg-black">
         <div className="text-center">
-          <h1 className="font-mono text-9xl font-bold text-black">404_</h1>
-          <p className="mt-4 text-xl text-gray-600">Page not found</p>
-          <p className="mt-2 text-gray-500">The page you're looking for doesn't exist or has been moved.</p>
-          
-          <div className="mt-8">
-            <Link 
-              href="/"
-              className="inline-flex items-center px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
-            >
-              <ArrowLeftIcon className="h-4 w-4 mr-2" />
-              Back to home
-            </Link>
-          </div>
+          <h1 className="font-mono text-9xl font-bold text-black">404</h1>
+          <p className="text-xl text-gray-400 mt-4">Page not found</p>
+          <Link href="/" className="mt-8 inline-block text-[#32CD32] hover:text-[#2db82d]">
+            Return Home
+          </Link>
         </div>
-      </div>
+      </main>
     </>
   );
 } 

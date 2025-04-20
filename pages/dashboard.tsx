@@ -234,12 +234,12 @@ export default function DashboardPage() {
           )}
           
           {/* Leads Table Section */}
-          <div className="mt-8">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-light text-white">Recent Leads</h2>
+          <div className="mt-12">
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-2xl font-light text-white">Recent Leads</h2>
               <button 
                 onClick={() => router.push('/upload')}
-                className="px-4 py-2 bg-white text-black rounded-lg hover:bg-gray-100 transition-colors"
+                className="px-6 py-3 bg-white text-black rounded-lg hover:bg-gray-100 transition-colors text-lg"
               >
                 Upload Leads
               </button>

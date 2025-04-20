@@ -4,8 +4,10 @@ import {
   EnvelopeIcon, 
   CalendarIcon, 
   UserGroupIcon, 
-  ArrowTrendingUpIcon 
+  ArrowTrendingUpIcon,
+  BeakerIcon
 } from '@heroicons/react/24/outline';
+import SandboxSettings from './SandboxSettings';
 
 interface DashboardProps {
   stats: {
@@ -20,6 +22,9 @@ interface DashboardProps {
     leadName: string;
     createdAt: string;
   }[];
+  isSandbox?: boolean;
+  onSandboxReset?: () => void;
+  onSandboxSettingsUpdate?: (settings: any) => void;
 }
 
 interface StatCardProps {
@@ -102,37 +107,41 @@ const ActivityFeed: React.FC<{ activities: DashboardProps['recentActivity'] }> =
   </div>
 );
 
-const QuickActions: React.FC = () => {
+const QuickActions: React.FC<{ isSandbox?: boolean }> = ({ isSandbox }) => {
   const handleNewCampaign = () => {
-    // Logic for creating a new campaign
     console.log('New Campaign button clicked');
   };
 
   const handleImportLeads = () => {
-    // Logic for importing leads
     console.log('Import Leads button clicked');
   };
 
   const handleScheduleMeeting = () => {
-    // Logic for scheduling a meeting
     console.log('Schedule Meeting button clicked');
   };
 
   const handleViewReports = () => {
-    // Logic for viewing reports
     console.log('View Reports button clicked');
   };
+
+  const actions = [
+    { text: 'New Campaign', color: 'bg-blue-500', onClick: handleNewCampaign },
+    { text: 'Import Leads', color: 'bg-purple-500', onClick: handleImportLeads },
+    { text: 'Schedule Meeting', color: 'bg-green-500', onClick: handleScheduleMeeting },
+    { text: 'View Reports', color: 'bg-yellow-500', onClick: handleViewReports },
+  ];
+
+  if (isSandbox) {
+    actions.push(
+      { text: 'Reset Data', color: 'bg-red-500', onClick: () => console.log('Reset Data') }
+    );
+  }
 
   return (
     <div className="bg-gray-900 rounded-lg p-6 border border-gray-800">
       <h3 className="text-lg font-light text-white mb-4">Quick Actions</h3>
       <div className="grid grid-cols-2 gap-4">
-        {[
-          { text: 'New Campaign', color: 'bg-blue-500', onClick: handleNewCampaign },
-          { text: 'Import Leads', color: 'bg-purple-500', onClick: handleImportLeads },
-          { text: 'Schedule Meeting', color: 'bg-green-500', onClick: handleScheduleMeeting },
-          { text: 'View Reports', color: 'bg-yellow-500', onClick: handleViewReports },
-        ].map((action, index) => (
+        {actions.map((action, index) => (
           <button
             key={index}
             className={`${action.color} bg-opacity-10 hover:bg-opacity-20 text-white p-4 rounded-lg text-sm font-medium transition-colors`}
@@ -146,9 +155,23 @@ const QuickActions: React.FC = () => {
   );
 };
 
-const Dashboard: React.FC<DashboardProps> = ({ stats, recentActivity }) => {
+const Dashboard: React.FC<DashboardProps> = ({ 
+  stats, 
+  recentActivity, 
+  isSandbox = false,
+  onSandboxReset,
+  onSandboxSettingsUpdate
+}) => {
   return (
     <div className="space-y-6">
+      {/* Sandbox Indicator */}
+      {isSandbox && (
+        <div className="flex items-center justify-center bg-blue-900 bg-opacity-20 border border-blue-800 rounded-lg p-4">
+          <BeakerIcon className="h-5 w-5 text-blue-400 mr-2" />
+          <span className="text-blue-400">Sandbox Mode Active</span>
+        </div>
+      )}
+
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
@@ -184,8 +207,11 @@ const Dashboard: React.FC<DashboardProps> = ({ stats, recentActivity }) => {
           <ActivityFeed activities={recentActivity} />
         </div>
         {/* Sidebar */}
-        <div>
-          <QuickActions />
+        <div className="space-y-6">
+          <QuickActions isSandbox={isSandbox} />
+          {isSandbox && onSandboxSettingsUpdate && (
+            <SandboxSettings onUpdate={onSandboxSettingsUpdate} />
+          )}
         </div>
       </div>
     </div>
