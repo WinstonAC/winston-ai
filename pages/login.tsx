@@ -67,6 +67,9 @@ export default function Login() {
             <h1 className="text-2xl font-semibold text-white">
               Welcome back
             </h1>
+            <p className="text-gray-400 mb-6 text-lg">
+              SECURE_ACCESS_TO_YOUR_WINSTON_AI_ADMINISTRATION_PANEL_
+            </p>
             <p className="mt-2 text-sm text-gray-400">
               Sign in to your account to continue
             </p>
@@ -142,7 +145,7 @@ export default function Login() {
 
                 <div className="text-center text-sm">
                   <Link href="/signup" className="text-green-400 hover:text-green-300">
-                    Don't have an account? Sign up
+                    Don&apos;t have an account? Sign up
                   </Link>
                 </div>
               </form>

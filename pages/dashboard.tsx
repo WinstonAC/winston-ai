@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { useSession } from 'next-auth/react';
 import Navigation from '@/components/Navigation';
 import LeadTable from '@/components/LeadTable';
+import Link from 'next/link';
 
 // Dynamically import the Dashboard component to avoid SSR issues
 const DashboardComponent = dynamic(() => import('@/components/Dashboard'), {
@@ -202,12 +203,9 @@ export default function DashboardPage() {
             >
               Reset & Create Team
             </button>
-            <a
-              href="/api/auth/signout"
-              className="block w-full px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors text-center"
-            >
-              Sign Out & Try Again
-            </a>
+            <Link href="/api/auth/signout" className="text-gray-400 hover:text-white">
+              Sign out
+            </Link>
           </div>
         </div>
       </div>

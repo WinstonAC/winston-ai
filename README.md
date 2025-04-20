@@ -13,14 +13,17 @@ Winston AI is an AI-powered sales assistant that helps manage leads, campaigns, 
 - **Secure Authentication**: Robust session handling and access control
 
 ### Chatbot Assistant
-- **Context-Aware Responses**: The chatbot provides relevant information based on the current page
+- **Unified Interface**: Single chatbot for both general assistance and analytics help
+- **Context-Aware Responses**: The chatbot provides relevant information based on the current page and context
 - **Navigation**: Clickable topics that can navigate to different sections of the application
 - **Real-Time Interaction**: Instant responses to user queries
-- **Modern Design**: Consistent with the application's aesthetic
+- **Brutalist Design**: Consistent with the application's aesthetic
   - Monospace font
-  - Clean typography
-  - Lime green accent color
-  - Dark theme
+  - High contrast colors
+  - Sharp edges
+  - Bold typography
+  - Minimal shadows
+  - Grid-based layouts
 
 ### Pages
 - **Landing Page**: Minimal design with floating animations
@@ -60,64 +63,57 @@ For detailed information about the chatbot and its features, visit our [Chatbot 
 2. Select from available topics or type your query
 3. Click on navigation options to move between pages
 4. Use the "Clear" button to reset the conversation
+5. Toggle between general and analytics modes using the context switch button
 
 ![Chatbot Navigation](public/chatbot-navigation.png)
 *Navigating between pages using the chatbot*
 
 ### Available Commands
 
-#### Dashboard
+#### General Mode
 - View your lead stats
 - Manage your campaigns
 - Upload new leads
 - Check system status
 - View team activity
 
-#### Leads
-- View lead details
-- Classify leads
-- Export lead data
-- Go to dashboard
-
-#### Campaigns
-- Create new campaign
-- Monitor campaign performance
-- Adjust campaign settings
-- Go to dashboard
-
-#### Team Management
-- Invite team member
-- View team members
-- Manage team permissions
-- Go to dashboard
+#### Analytics Mode
+- View different chart types
+- Check key metrics
+- Export data in various formats
+- Compare campaigns
+- Monitor real-time updates
 
 ## Example Interactions
 
 ### Viewing Lead Stats
 ```
-USER: View lead stats
-BOT: Current metrics:
-     Leads: 123
-     Active campaigns: 5
-     Conversion rate: 12%
+USER: VIEW_LEAD_STATS_
+BOT: CURRENT_METRICS_
+     LEADS_123_
+     ACTIVE_CAMPAIGNS_5_
+     CONVERSION_RATE_12%_
 ```
 
 ### Creating a Campaign
 ```
-USER: Create new campaign
-BOT: New campaign setup:
-     1. Select campaign type
-     2. Define target audience
-     3. Set objectives
+USER: CREATE_NEW_CAMPAIGN_
+BOT: NEW_CAMPAIGN_SETUP_
+     1_SELECT_CAMPAIGN_TYPE_
+     2_DEFINE_TARGET_AUDIENCE_
+     3_SET_OBJECTIVES_
 ```
 
-### Team Management
+### Analytics Help
 ```
-USER: Invite team member
-BOT: Team invitation setup:
-     1. Enter email address
-     2. Select role
-     3. Send invitation
+USER: SHOW_CHART_TYPES_
+BOT: AVAILABLE_CHART_TYPES_
+     1_LINE_CHART_TRENDS_OVER_TIME_
+     2_BAR_CHART_COMPARE_METRICS_
+     3_PIE_CHART_DISTRIBUTIONS_
+     4_SCATTER_PLOT_RELATIONSHIPS_
+     5_AREA_CHART_CUMULATIVE_
+     6_HEATMAP_DENSITY_
 ```
 
 ## Technologies Used

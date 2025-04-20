@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'react-hot-toast';
 import { FiUpload, FiImage, FiVideo, FiTrash2, FiX } from 'react-icons/fi';
+import Image from 'next/image';
 
 interface Asset {
   id: string;
@@ -156,10 +157,12 @@ const AssetLibrary: React.FC<AssetLibraryProps> = ({ onSelectAsset, templateId, 
                 >
                   <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-lg bg-gray-800 mb-2">
                     {asset.type === 'image' ? (
-                      <img
+                      <Image
                         src={asset.url}
                         alt={asset.name}
-                        className="object-cover w-full h-full"
+                        width={100}
+                        height={100}
+                        className="object-cover rounded-lg"
                       />
                     ) : (
                       <div className="flex items-center justify-center w-full h-full">

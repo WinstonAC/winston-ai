@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 import { ChatBubbleLeftIcon, XMarkIcon } from '@heroicons/react/24/outline';
@@ -18,40 +18,23 @@ const UserFlowAssistant: React.FC = () => {
   const router = useRouter();
   const { data: session, status } = useSession();
 
-  const messages: Record<string, AssistantMessage> = {
-    '/': {
-      title: 'Welcome to Winston AI',
-      content: 'I can help you get started with Winston AI. Would you like to create an account or sign in to your existing one?',
-      action: {
-        text: 'Get Started',
-        href: '/register'
-      }
+  const messages = useMemo(() => [
+    {
+      id: 'welcome',
+      text: 'Welcome to Winston AI! How can I help you today?',
+      type: 'system' as const,
     },
-    '/register': {
-      title: 'Create Your Account',
-      content: 'Let me help you set up your account. You can create a personal account or set up a team. I\'ll guide you through the process.',
-      action: {
-        text: 'Continue',
-        href: '/register'
-      }
+    {
+      id: 'dashboard',
+      text: 'Here you can manage your leads and campaigns.',
+      type: 'system' as const,
     },
-    '/login': {
-      title: 'Sign In',
-      content: 'Welcome back! Enter your credentials to access your account. Need help remembering your password?',
-      action: {
-        text: 'Forgot Password?',
-        href: '/forgot-password'
-      }
-    },
-    '/dashboard': {
-      title: 'Your Dashboard',
-      content: 'This is your command center. From here, you can manage your campaigns, leads, and team settings. Would you like a tour?',
-      action: {
-        text: 'Take Tour',
-        href: '/dashboard/tour'
-      }
+    {
+      id: 'analytics',
+      text: 'View your campaign performance and metrics here.',
+      type: 'system' as const,
     }
-  };
+  ], []);
 
   useEffect(() => {
     const path = router.pathname;
@@ -59,7 +42,7 @@ const UserFlowAssistant: React.FC = () => {
       setCurrentMessage(messages[path]);
       setIsOpen(true);
     }
-  }, [router.pathname]);
+  }, [messages, router.pathname]);
 
   if (!currentMessage) return null;
 

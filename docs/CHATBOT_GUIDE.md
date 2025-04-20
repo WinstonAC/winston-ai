@@ -5,13 +5,13 @@
 2. [Getting Started](#getting-started)
 3. [Basic Commands](#basic-commands)
 4. [Advanced Features](#advanced-features)
-5. [Team Management](#team-management)
+5. [Analytics Mode](#analytics-mode)
 6. [Troubleshooting](#troubleshooting)
 7. [Best Practices](#best-practices)
 
 ## Introduction
 
-The Winston AI Chatbot is your intelligent assistant for managing leads, campaigns, and team collaboration. It understands natural language and can help you with various tasks across the platform.
+The Winston AI Chatbot is your intelligent assistant for managing leads, campaigns, and analytics. It features a unified interface that can handle both general assistance and analytics-specific queries. The chatbot uses a brutalist design aesthetic with high contrast, monospace typography, and sharp edges for a distinctive look.
 
 ## Getting Started
 
@@ -25,10 +25,15 @@ The Winston AI Chatbot is your intelligent assistant for managing leads, campaig
    - Press Enter to send your message
    - The chatbot will respond with relevant information or actions
 
-3. **Common First Commands**
-   - "What can you do?"
-   - "Show me my dashboard"
-   - "Help me with leads"
+3. **Context Switching**
+   - Use the context switch button to toggle between general and analytics modes
+   - General mode: For lead and campaign management
+   - Analytics mode: For dashboard and data analysis
+
+4. **Common First Commands**
+   - "WHAT_CAN_YOU_DO_"
+   - "SHOW_ME_MY_DASHBOARD_"
+   - "HELP_ME_WITH_LEADS_"
 
 ### For Team Members
 1. **Team-Specific Features**
@@ -37,89 +42,102 @@ The Winston AI Chatbot is your intelligent assistant for managing leads, campaig
    - Coordinate with team members
 
 2. **Collaboration Commands**
-   - "Share this lead with my team"
-   - "Show team activity"
-   - "Assign this to [team member]"
+   - "SHARE_THIS_LEAD_WITH_MY_TEAM_"
+   - "SHOW_TEAM_ACTIVITY_"
+   - "ASSIGN_THIS_TO_[TEAM_MEMBER]_"
 
 ## Basic Commands
 
 ### Navigation
-- "Go to dashboard"
-- "Show me my leads"
-- "Open campaigns"
-- "Take me to team settings"
+- "GO_TO_DASHBOARD_"
+- "SHOW_ME_MY_LEADS_"
+- "OPEN_CAMPAIGNS_"
+- "TAKE_ME_TO_TEAM_SETTINGS_"
 
 ### Information Requests
-- "What's my current status?"
-- "Show me recent activity"
-- "How many leads do I have?"
-- "What's my team's performance?"
+- "WHAT'S_MY_CURRENT_STATUS_"
+- "SHOW_ME_RECENT_ACTIVITY_"
+- "HOW_MANY_LEADS_DO_I_HAVE_"
+- "WHAT'S_MY_TEAM'S_PERFORMANCE_"
 
 ### Actions
-- "Create a new lead"
-- "Start a campaign"
-- "Send an email"
-- "Schedule a meeting"
+- "CREATE_A_NEW_LEAD_"
+- "START_A_CAMPAIGN_"
+- "SEND_AN_EMAIL_"
+- "SCHEDULE_A_MEETING_"
 
 ## Advanced Features
 
 ### Multi-Step Conversations
 The chatbot can handle complex, multi-step interactions:
-1. "I want to create a new campaign"
+1. "I_WANT_TO_CREATE_A_NEW_CAMPAIGN_"
 2. Follow the guided prompts for:
-   - Campaign name
-   - Target audience
-   - Budget
-   - Timeline
+   - CAMPAIGN_NAME_
+   - TARGET_AUDIENCE_
+   - BUDGET_
+   - TIMELINE_
 
 ### Context Awareness
 The chatbot understands your current context:
-- On the leads page: "Show me the most recent ones"
-- In a campaign: "What's the conversion rate?"
-- In team settings: "Add a new member"
+- On the leads page: "SHOW_ME_THE_MOST_RECENT_ONES_"
+- In a campaign: "WHAT'S_THE_CONVERSION_RATE_"
+- In team settings: "ADD_A_NEW_MEMBER_"
 
 ### Natural Language Processing
 You can phrase commands in various ways:
-- "I need to see my leads from last week"
-- "Can you show me the leads from the previous week?"
-- "Display last week's leads"
+- "I_NEED_TO_SEE_MY_LEADS_FROM_LAST_WEEK_"
+- "CAN_YOU_SHOW_ME_THE_LEADS_FROM_THE_PREVIOUS_WEEK_"
+- "DISPLAY_LAST_WEEK'S_LEADS_"
 
-## Team Management
+## Analytics Mode
 
-### Team Commands
-- "Invite [email] to the team"
-- "Show team members"
-- "Change [member]'s role"
-- "View team permissions"
+### Chart Types
+- "SHOW_CHART_TYPES_"
+- "EXPLAIN_LINE_CHARTS_"
+- "HOW_TO_USE_BAR_CHARTS_"
+- "WHAT_ARE_HEATMAPS_"
 
-### Collaboration
-- "Share this with the team"
-- "Get team feedback on this lead"
-- "Schedule a team meeting"
+### Metrics
+- "SHOW_AVAILABLE_METRICS_"
+- "EXPLAIN_CONVERSION_RATE_"
+- "WHAT_IS_LEAD_SCORE_"
+- "HOW_TO_CALCULATE_ROI_"
+
+### Data Export
+- "HOW_TO_EXPORT_DATA_"
+- "AVAILABLE_EXPORT_FORMATS_"
+- "SCHEDULE_AUTOMATIC_EXPORTS_"
+- "CUSTOMIZE_EXPORT_FIELDS_"
+
+### Campaign Comparison
+- "COMPARE_CAMPAIGNS_"
+- "SHOW_PERFORMANCE_METRICS_"
+- "ANALYZE_CONVERSION_RATES_"
+- "GENERATE_COMPARISON_REPORT_"
 
 ## Troubleshooting
 
 ### Common Issues
 1. **Chatbot Not Responding**
-   - Refresh the page
-   - Check your internet connection
-   - Try a simpler command
+   - REFRESH_THE_PAGE_
+   - CHECK_YOUR_INTERNET_CONNECTION_
+   - TRY_A_SIMPLER_COMMAND_
 
 2. **Command Not Understood**
-   - Rephrase your request
-   - Use more specific terms
-   - Check the available commands list
+   - REPHRASE_YOUR_REQUEST_
+   - USE_MORE_SPECIFIC_TERMS_
+   - CHECK_THE_AVAILABLE_COMMANDS_LIST_
 
 3. **Access Denied**
-   - Verify your permissions
-   - Contact your team admin
-   - Check your role settings
+   - VERIFY_YOUR_PERMISSIONS_
+   - CONTACT_YOUR_TEAM_ADMIN_
+   - CHECK_YOUR_ROLE_SETTINGS_
 
 ## Best Practices
 
 ### For Users
 1. **Be Specific**
-   - Instead of "Show me leads", try "Show me leads from last month"
+   - Instead of "SHOW_ME_LEADS_", try "SHOW_ME_LEADS_FROM_LAST_MONTH_"
    - Use clear, concise language
    - Include relevant context
 
@@ -151,6 +169,6 @@ You can phrase commands in various ways:
 
 ## Need More Help?
 
-- Type "help" in the chatbot for context-aware assistance
+- Type "HELP_" in the chatbot for context-aware assistance
 - Contact support at support@winston-ai.com
 - Visit our documentation at docs.winston-ai.com 

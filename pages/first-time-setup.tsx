@@ -70,8 +70,8 @@ export default function FirstTimeSetup() {
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Welcome to Winston AI
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Let's set up your admin account
+          <p className="text-gray-400 mb-6 text-lg">
+            CONFIGURE_YOUR_INITIAL_SETTINGS_AND_PREFERENCES_FOR_OPTIMAL_PERFORMANCE_
           </p>
         </div>
 

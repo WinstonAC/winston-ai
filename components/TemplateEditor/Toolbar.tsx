@@ -15,6 +15,7 @@ import {
   AlignCenter,
   AlignRight,
 } from 'lucide-react';
+import Image from 'next/image';
 
 interface ToolbarProps {
   editor: Editor | null;
@@ -114,7 +115,13 @@ export default function Toolbar({ editor, onOpenAssetLibrary }: ToolbarProps) {
           className={buttonClass(false)}
           title="INSERT MEDIA"
         >
-          <Image size={20} />
+          <Image
+            src={icon}
+            alt=""
+            width={16}
+            height={16}
+            className="w-4 h-4"
+          />
         </button>
         <button
           onClick={onOpenAssetLibrary}

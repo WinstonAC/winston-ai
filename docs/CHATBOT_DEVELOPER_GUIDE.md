@@ -12,20 +12,29 @@
 ## Architecture Overview
 
 ### Core Components
-1. **Natural Language Processing (NLP) Engine**
+1. **Unified Chatbot Interface**
+   - Single component for both general and analytics contexts
+   - Context-aware response generation
+   - Brutalist design implementation
+   - Real-time interaction handling
+
+2. **Natural Language Processing (NLP) Engine**
    - Built on OpenAI's GPT-4
    - Custom fine-tuning for business context
    - Context-aware response generation
+   - Analytics-specific query handling
 
-2. **Command Parser**
+3. **Command Parser**
    - Intent recognition
    - Entity extraction
    - Context management
+   - Analytics command processing
 
-3. **Action Executor**
+4. **Action Executor**
    - API integration layer
    - Permission validation
    - Transaction management
+   - Analytics data processing
 
 ### Data Flow
 1. User input → NLP Engine
@@ -48,6 +57,7 @@ Request: {
     page: string;
     userId: string;
     teamId?: string;
+    mode: 'general' | 'analytics';
   };
 }
 
@@ -57,6 +67,7 @@ Query: {
   userId: string;
   limit?: number;
   before?: Date;
+  mode?: 'general' | 'analytics';
 }
 
 // Execute command
@@ -65,6 +76,7 @@ Request: {
   command: string;
   parameters?: Record<string, any>;
   userId: string;
+  mode: 'general' | 'analytics';
 }
 ```
 
@@ -83,7 +95,9 @@ const EVENTS = {
   MESSAGE_RECEIVED: 'message.received',
   COMMAND_EXECUTED: 'command.executed',
   ERROR_OCCURRED: 'error.occurred',
-  USER_ACTION: 'user.action'
+  USER_ACTION: 'user.action',
+  CONTEXT_SWITCH: 'context.switch',
+  ANALYTICS_QUERY: 'analytics.query'
 };
 ```
 
@@ -123,7 +137,9 @@ const ERROR_CODES = {
   RATE_LIMIT_EXCEEDED: 'RATE_LIMIT_EXCEEDED',
   INVALID_AUTH: 'INVALID_AUTH',
   PERMISSION_DENIED: 'PERMISSION_DENIED',
-  INVALID_COMMAND: 'INVALID_COMMAND'
+  INVALID_COMMAND: 'INVALID_COMMAND',
+  INVALID_CONTEXT: 'INVALID_CONTEXT',
+  ANALYTICS_ERROR: 'ANALYTICS_ERROR'
 };
 ```
 
@@ -137,6 +153,7 @@ interface Command {
   parameters: Parameter[];
   handler: (params: any) => Promise<any>;
   permissions?: string[];
+  context?: 'general' | 'analytics';
 }
 
 interface Parameter {
@@ -169,7 +186,32 @@ const createLeadCommand: Command = {
   handler: async (params) => {
     // Implementation
   },
-  permissions: ['create:lead']
+  permissions: ['create:lead'],
+  context: 'general'
+};
+
+const analyzeMetricsCommand: Command = {
+  name: 'analyze_metrics',
+  description: 'Analyze campaign metrics',
+  parameters: [
+    {
+      name: 'campaignId',
+      type: 'string',
+      required: true,
+      description: 'Campaign ID'
+    },
+    {
+      name: 'metrics',
+      type: 'string[]',
+      required: true,
+      description: 'Metrics to analyze'
+    }
+  ],
+  handler: async (params) => {
+    // Implementation
+  },
+  permissions: ['view:analytics'],
+  context: 'analytics'
 };
 ```
 
@@ -182,14 +224,16 @@ interface AnalyticsEvent {
   userId: string;
   timestamp: Date;
   properties: Record<string, any>;
+  context: 'general' | 'analytics';
 }
 
 // Track command execution
-const trackCommand = async (command: string, success: boolean) => {
+const trackCommand = async (command: string, success: boolean, context: 'general' | 'analytics') => {
   await analytics.track({
     type: 'command_executed',
     userId: currentUser.id,
     timestamp: new Date(),
+    context,
     properties: {
       command,
       success,
@@ -206,10 +250,15 @@ interface ChatbotMetrics {
   successfulCommands: number;
   failedCommands: number;
   averageResponseTime: number;
+  mostUsedCommands: Array<{ command: string; count: number }>;
+  contextUsage: {
+    general: number;
+    analytics: number;
+  };
   userEngagement: {
     activeUsers: number;
-    commandsPerUser: number;
-    retentionRate: number;
+    averageSessionDuration: number;
+    returnRate: number;
   };
 }
 ```
@@ -233,6 +282,7 @@ interface ChatbotMetrics {
    interface Permission {
      resource: string;
      action: string;
+     context?: 'general' | 'analytics';
      conditions?: Record<string, any>;
    }
    ```
@@ -243,6 +293,7 @@ interface ChatbotMetrics {
      teamId: string;
      role: string;
      permissions: Permission[];
+     analyticsAccess?: boolean;
    }
    ```
 
@@ -265,6 +316,7 @@ interface CacheConfig {
   ttl: number;
   maxSize: number;
   strategy: 'LRU' | 'LFU';
+  context?: 'general' | 'analytics';
 }
 
 const commandCache = new Cache<Command>({
@@ -278,25 +330,29 @@ const commandCache = new Cache<Command>({
 1. **Database Indexing**
    ```sql
    CREATE INDEX idx_chatbot_interactions_user 
-   ON chatbot_interactions(user_id, timestamp);
+   ON chatbot_interactions(user_id, timestamp, context);
    
    CREATE INDEX idx_chatbot_interactions_team 
-   ON chatbot_interactions(team_id, timestamp);
+   ON chatbot_interactions(team_id, timestamp, context);
    ```
 
 2. **Query Patterns**
    ```typescript
    // Efficient querying
-   const getRecentInteractions = async (userId: string, limit: number) => {
+   const getRecentInteractions = async (userId: string, limit: number, context?: 'general' | 'analytics') => {
      return prisma.chatbotInteraction.findMany({
-       where: { userId },
+       where: { 
+         userId,
+         context: context || undefined
+       },
        orderBy: { timestamp: 'desc' },
        take: limit,
        select: {
          id: true,
          command: true,
          timestamp: true,
-         success: true
+         success: true,
+         context: true
        }
      });
    };
