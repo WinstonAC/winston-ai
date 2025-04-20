@@ -1,15 +1,25 @@
 import React, { useEffect, useState } from 'react';
 // import { supabase } from '@/lib/supabase';
 import Papa from 'papaparse';
+import { 
+  EnvelopeIcon, 
+  PhoneIcon, 
+  BuildingOfficeIcon,
+  CheckIcon,
+  XMarkIcon,
+  ClockIcon,
+  ArrowPathIcon
+} from '@heroicons/react/24/outline';
 
 interface Lead {
   id: string;
   name: string;
   email: string;
-  status: 'Sent' | 'Opened' | 'Clicked' | 'Booked' | 'Bounced';
-  classification: 'Interested' | 'Not Interested' | 'Needs Info' | null;
-  sent_at: string;
-  created_at: string;
+  company: string;
+  title: string;
+  status: 'new' | 'contacted' | 'qualified' | 'unqualified';
+  lastContacted?: string;
+  notes?: string;
 }
 
 interface LeadTableProps {
@@ -112,121 +122,135 @@ const mockLeads = [
   // Add more mock leads as needed
 ];
 
-const LeadTable: React.FC<LeadTableProps> = ({ leads, loading }) => {
-  const getStatusColor = (status: Lead['status']) => {
-    switch (status) {
-      case 'Booked':
-        return 'bg-green-900 text-green-200';
-      case 'Clicked':
-        return 'bg-blue-900 text-blue-200';
-      case 'Opened':
-        return 'bg-yellow-900 text-yellow-200';
-      case 'Bounced':
-        return 'bg-red-900 text-red-200';
-      default:
-        return 'bg-gray-800 text-gray-200';
+const LeadTable: React.FC = () => {
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  useEffect(() => {
+    fetchLeads();
+  }, []);
+
+  const fetchLeads = async () => {
+    try {
+      const response = await fetch('/api/leads');
+      if (!response.ok) throw new Error('Failed to fetch leads');
+      const data = await response.json();
+      setLeads(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch leads');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getClassificationColor = (classification: Lead['classification']) => {
-    switch (classification) {
-      case 'Interested':
-        return 'bg-green-900 text-green-200';
-      case 'Not Interested':
-        return 'bg-red-900 text-red-200';
-      case 'Needs Info':
-        return 'bg-yellow-900 text-yellow-200';
-      default:
-        return 'bg-gray-800 text-gray-200';
+  const updateLeadStatus = async (leadId: string, newStatus: Lead['status']) => {
+    setIsUpdating(true);
+    try {
+      const response = await fetch(`/api/leads/${leadId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!response.ok) throw new Error('Failed to update lead status');
+
+      setLeads(prev => prev.map(lead => 
+        lead.id === leadId ? { ...lead, status: newStatus } : lead
+      ));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update lead status');
+    } finally {
+      setIsUpdating(false);
     }
   };
 
-  const handleDownloadCsv = () => {
-    const csv = Papa.unparse(leads.map(lead => ({
-      Name: lead.name,
-      Email: lead.email,
-      Status: lead.status,
-      Classification: lead.classification || 'Not Classified',
-      'Sent At': new Date(lead.sent_at).toLocaleDateString()
-    })));
+  const deleteLead = async (leadId: string) => {
+    try {
+      const response = await fetch(`/api/leads/${leadId}`, {
+        method: 'DELETE',
+      });
 
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    
-    link.setAttribute('href', url);
-    link.setAttribute('download', 'winston-leads.csv');
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      if (!response.ok) throw new Error('Failed to delete lead');
+
+      setLeads(prev => prev.filter(lead => lead.id !== leadId));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete lead');
+    }
   };
 
-  if (loading) {
-    return <LoadingState />;
-  }
-
-  if (leads.length === 0) {
-    return (
-      <div className="p-8 text-center text-gray-400">
-        <p>No leads found. Upload some leads to get started!</p>
-      </div>
-    );
-  }
+  if (loading) return <div className="animate-pulse">Loading leads...</div>;
+  if (error) return <div className="text-red-500">Error: {error}</div>;
 
   return (
-    <div className="w-full overflow-x-auto">
-      <div className="mb-4 flex justify-end p-4">
-        <button
-          onClick={handleDownloadCsv}
-          className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors"
-        >
-          Download CSV
-        </button>
-      </div>
-      <table className="w-full border-collapse text-gray-300">
-        <thead>
+    <div className="overflow-x-auto">
+      <table className="min-w-full divide-y divide-gray-200">
+        <thead className="bg-gray-50">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider border-b border-gray-800">
-              Name
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider border-b border-gray-800">
-              Email
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider border-b border-gray-800">
-              Status
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider border-b border-gray-800">
-              Classification
-            </th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider border-b border-gray-800">
-              Sent At
-            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-800">
+        <tbody className="bg-white divide-y divide-gray-200">
           {leads.map((lead) => (
-            <tr key={lead.id} className="hover:bg-gray-800 transition-colors">
-              <td className="px-6 py-4 whitespace-nowrap text-sm">
-                {lead.name}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm">
-                {lead.email}
+            <tr key={lead.id} className="hover:bg-gray-50">
+              <td className="px-6 py-4 whitespace-nowrap">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0 h-10 w-10">
+                    <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                      <span className="text-gray-500">{lead.name.charAt(0)}</span>
+                    </div>
+                  </div>
+                  <div className="ml-4">
+                    <div className="text-sm font-medium text-gray-900">{lead.name}</div>
+                    <div className="text-sm text-gray-500">{lead.title}</div>
+                  </div>
+                </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(lead.status)}`}>
+                <div className="text-sm text-gray-900">{lead.email}</div>
+                <div className="text-sm text-gray-500">{lead.company}</div>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <div className="text-sm text-gray-900">{lead.company}</div>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                  lead.status === 'qualified' ? 'bg-green-100 text-green-800' :
+                  lead.status === 'unqualified' ? 'bg-red-100 text-red-800' :
+                  lead.status === 'contacted' ? 'bg-blue-100 text-blue-800' :
+                  'bg-gray-100 text-gray-800'
+                }`}>
                   {lead.status}
                 </span>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                {lead.classification && (
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getClassificationColor(lead.classification)}`}>
-                    {lead.classification}
-                  </span>
-                )}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm">
-                {new Date(lead.sent_at).toLocaleDateString()}
+              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <button
+                  onClick={() => updateLeadStatus(lead.id, 'qualified')}
+                  disabled={isUpdating}
+                  className="text-green-600 hover:text-green-900 mr-4"
+                >
+                  <CheckIcon className="h-5 w-5" />
+                </button>
+                <button
+                  onClick={() => updateLeadStatus(lead.id, 'unqualified')}
+                  disabled={isUpdating}
+                  className="text-red-600 hover:text-red-900 mr-4"
+                >
+                  <XMarkIcon className="h-5 w-5" />
+                </button>
+                <button
+                  onClick={() => deleteLead(lead.id)}
+                  disabled={isUpdating}
+                  className="text-gray-600 hover:text-gray-900"
+                >
+                  <TrashIcon className="h-5 w-5" />
+                </button>
               </td>
             </tr>
           ))}
@@ -234,7 +258,7 @@ const LeadTable: React.FC<LeadTableProps> = ({ leads, loading }) => {
       </table>
     </div>
   );
-}
+};
 
 export default LeadTable;
 export type { Lead }; 

@@ -1,16 +1,22 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { 
+  CpuChipIcon, 
+  ArrowsPointingOutIcon, 
+  ChatBubbleLeftRightIcon, 
+  CodeBracketIcon 
+} from '@heroicons/react/24/outline';
 
 const Documentation: React.FC = () => {
   const [activeSection, setActiveSection] = useState<string>('overview');
 
   const sections = [
-    { id: 'overview', title: 'OVERVIEW_' },
-    { id: 'features', title: 'FEATURES_' },
-    { id: 'examples', title: 'USAGE_EXAMPLES_' },
-    { id: 'navigation', title: 'NAVIGATION_' },
-    { id: 'technical', title: 'TECHNICAL_DETAILS_' },
-    { id: 'developer', title: 'DEVELOPER_DOCS_' }
+    { id: 'overview', title: 'Overview' },
+    { id: 'features', title: 'Features' },
+    { id: 'examples', title: 'Usage Examples' },
+    { id: 'navigation', title: 'Navigation' },
+    { id: 'technical', title: 'Technical Details' },
+    { id: 'developer', title: 'Developer Docs' }
   ];
 
   return (
@@ -18,7 +24,7 @@ const Documentation: React.FC = () => {
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="mb-8">
           <Link href="/" className="text-[#32CD32] hover:underline font-mono tracking-wider">
-            BACK_TO_HOME_
+            Back to Home
           </Link>
         </div>
 
@@ -26,7 +32,7 @@ const Documentation: React.FC = () => {
           {/* Sidebar Navigation */}
           <div className="w-full md:w-64 flex-shrink-0">
             <div className="sticky top-8">
-              <h1 className="text-2xl font-mono tracking-wider mb-6">CHATBOT_DOCS_</h1>
+              <h1 className="text-2xl font-mono tracking-wider mb-6">Chatbot Docs</h1>
               <nav className="space-y-2">
                 {sections.map((section) => (
                   <button
@@ -64,18 +70,18 @@ export default Documentation;
 
 const OverviewSection: React.FC = () => (
   <section className="space-y-6">
-    <h2 className="text-3xl font-mono tracking-wider mb-6">OVERVIEW_</h2>
+    <h2 className="text-3xl font-mono tracking-wider mb-6">Overview</h2>
     <div className="bg-gray-900 p-8 rounded-lg">
       <p className="text-gray-300 mb-6 leading-relaxed">
         The Winston AI chatbot is a context-aware assistant that helps users navigate and interact with the application. It provides real-time information and can navigate between different sections of the application.
       </p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-gray-800 p-4 rounded-lg">
-          <h3 className="text-[#32CD32] font-mono tracking-wider mb-2">PURPOSE_</h3>
+          <h3 className="text-[#32CD32] font-mono tracking-wider mb-2">Purpose</h3>
           <p className="text-gray-300">Help users navigate and interact with Winston AI efficiently</p>
         </div>
         <div className="bg-gray-800 p-4 rounded-lg">
-          <h3 className="text-[#32CD32] font-mono tracking-wider mb-2">LOCATION_</h3>
+          <h3 className="text-[#32CD32] font-mono tracking-wider mb-2">Location</h3>
           <p className="text-gray-300">Accessible from any page in the bottom-right corner</p>
         </div>
       </div>
@@ -85,39 +91,41 @@ const OverviewSection: React.FC = () => (
 
 const FeaturesSection: React.FC = () => (
   <section className="space-y-6">
-    <h2 className="text-3xl font-mono tracking-wider mb-6">FEATURES_</h2>
+    <h2 className="text-3xl font-mono tracking-wider mb-6">Features</h2>
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <FeatureCard
-        title="CONTEXT_AWARENESS_"
+        title="Context Awareness"
         description="The chatbot understands which page you're on and provides relevant information and commands."
-        icon="🔄"
+        icon={<CpuChipIcon className="h-8 w-8" />}
       />
       <FeatureCard
-        title="NAVIGATION_"
+        title="Navigation"
         description="Click on topics to navigate between pages or get specific information about features."
-        icon="📍"
+        icon={<ArrowsPointingOutIcon className="h-8 w-8" />}
       />
       <FeatureCard
-        title="REAL_TIME_INTERACTION_"
+        title="Real-time Interaction"
         description="Get instant responses to your queries with a typing animation for a natural feel."
-        icon="⚡"
+        icon={<ChatBubbleLeftRightIcon className="h-8 w-8" />}
       />
       <FeatureCard
-        title="BRUTALIST_DESIGN_"
+        title="Brutalist Design"
         description="Consistent with the application's aesthetic, featuring monospace font and lime green accents."
-        icon="🎨"
+        icon={<CodeBracketIcon className="h-8 w-8" />}
       />
     </div>
   </section>
 );
 
-const FeatureCard: React.FC<{ title: string; description: string; icon: string }> = ({
+const FeatureCard: React.FC<{ title: string; description: string; icon: React.ReactNode }> = ({
   title,
   description,
   icon
 }) => (
-  <div className="bg-gray-900 p-6 rounded-lg hover:bg-gray-800 transition-colors">
-    <div className="text-4xl mb-4">{icon}</div>
+  <div className="bg-gray-900 p-6 rounded-lg hover:bg-gray-800 transition-colors border border-gray-700">
+    <div className="text-[#32CD32] mb-4">
+      {icon}
+    </div>
     <h3 className="text-xl font-mono tracking-wider mb-2 text-[#32CD32]">{title}</h3>
     <p className="text-gray-300">{description}</p>
   </div>
@@ -125,35 +133,35 @@ const FeatureCard: React.FC<{ title: string; description: string; icon: string }
 
 const ExamplesSection: React.FC = () => (
   <section className="space-y-6">
-    <h2 className="text-3xl font-mono tracking-wider mb-6">USAGE_EXAMPLES_</h2>
+    <h2 className="text-3xl font-mono tracking-wider mb-6">Usage Examples</h2>
     <div className="space-y-8">
       <ExampleCard
-        title="DASHBOARD_INTERACTION_"
-        userInput="VIEW_YOUR_LEAD_STATS_"
+        title="Dashboard Interaction"
+        userInput="View your lead stats"
         botResponses={[
-          'CURRENT_METRICS_',
-          'LEADS_123_',
-          'ACTIVE_CAMPAIGNS_5_',
-          'CONVERSION_RATE_12%_'
+          'Current metrics',
+          'Leads: 123',
+          'Active campaigns: 5',
+          'Conversion rate: 12%'
         ]}
       />
       <ExampleCard
-        title="LEADS_MANAGEMENT_"
-        userInput="CLASSIFY_LEADS_"
+        title="Leads Management"
+        userInput="Classify leads"
         botResponses={[
-          'LEAD_CLASSIFICATION_',
-          'USE_THE_CLASSIFICATION_TOOL_',
-          'TO_TAG_AND_CATEGORIZE_LEADS_'
+          'Lead classification',
+          'Use the classification tool',
+          'To tag and categorize leads'
         ]}
       />
       <ExampleCard
-        title="CAMPAIGN_CONTROL_"
-        userInput="CREATE_NEW_CAMPAIGN_"
+        title="Campaign Control"
+        userInput="Create new campaign"
         botResponses={[
-          'NEW_CAMPAIGN_SETUP_',
-          '1_SELECT_CAMPAIGN_TYPE_',
-          '2_DEFINE_TARGET_AUDIENCE_',
-          '3_SET_OBJECTIVES_'
+          'New campaign setup',
+          '1. Select campaign type',
+          '2. Define target audience',
+          '3. Set objectives'
         ]}
       />
     </div>
@@ -168,7 +176,7 @@ const ExampleCard: React.FC<{
   <div className="bg-gray-900 p-6 rounded-lg">
     <h3 className="text-xl font-mono tracking-wider mb-4 text-[#32CD32]">{title}</h3>
     <div className="font-mono text-sm space-y-2">
-      <p className="text-gray-400">USER: {userInput}</p>
+      <p className="text-gray-400">User: {userInput}</p>
       {botResponses.map((response, index) => (
         <p key={index} className="text-[#32CD32]">{response}</p>
       ))}
@@ -178,23 +186,32 @@ const ExampleCard: React.FC<{
 
 const NavigationSection: React.FC = () => (
   <section className="space-y-6">
-    <h2 className="text-3xl font-mono tracking-wider mb-6">NAVIGATION_</h2>
+    <h2 className="text-3xl font-mono tracking-wider mb-6">Navigation</h2>
     <div className="bg-gray-900 p-6 rounded-lg">
       <p className="text-gray-300 mb-6">
         The chatbot can help you navigate between different sections of the application. Available navigation options depend on your current page:
       </p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-gray-800 p-4 rounded-lg">
-          <h3 className="text-[#32CD32] font-mono tracking-wider mb-2">FROM_DASHBOARD_</h3>
-          <ul className="space-y-2 text-gray-300">
-            <li>• MANAGE_YOUR_CAMPAIGNS_ → /campaigns</li>
-            <li>• UPLOAD_NEW_LEADS_ → /leads</li>
+        <div className="bg-gray-800 p-6 rounded-lg border border-gray-700">
+          <h3 className="text-[#32CD32] font-mono tracking-wider mb-4">From Dashboard</h3>
+          <ul className="space-y-3 text-gray-300">
+            <li className="flex items-start">
+              <span className="text-green-500 mr-2">•</span>
+              <span>Manage your campaigns → /campaigns</span>
+            </li>
+            <li className="flex items-start">
+              <span className="text-green-500 mr-2">•</span>
+              <span>Upload new leads → /leads</span>
+            </li>
           </ul>
         </div>
-        <div className="bg-gray-800 p-4 rounded-lg">
-          <h3 className="text-[#32CD32] font-mono tracking-wider mb-2">FROM_LEADS_OR_CAMPAIGNS_</h3>
-          <ul className="space-y-2 text-gray-300">
-            <li>• GO_TO_DASHBOARD_ → /dashboard</li>
+        <div className="bg-gray-800 p-6 rounded-lg border border-gray-700">
+          <h3 className="text-[#32CD32] font-mono tracking-wider mb-4">From Leads or Campaigns</h3>
+          <ul className="space-y-3 text-gray-300">
+            <li className="flex items-start">
+              <span className="text-green-500 mr-2">•</span>
+              <span>Go to dashboard → /dashboard</span>
+            </li>
           </ul>
         </div>
       </div>
@@ -204,12 +221,12 @@ const NavigationSection: React.FC = () => (
 
 const TechnicalSection: React.FC = () => (
   <section className="space-y-6">
-    <h2 className="text-3xl font-mono tracking-wider mb-6">TECHNICAL_DETAILS_</h2>
+    <h2 className="text-3xl font-mono tracking-wider mb-6">Technical Details</h2>
     <div className="bg-gray-900 p-6 rounded-lg">
-      <h3 className="text-xl font-mono tracking-wider mb-4 text-[#32CD32]">IMPLEMENTATION_</h3>
+      <h3 className="text-xl font-mono tracking-wider mb-4 text-[#32CD32]">Implementation</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-gray-800 p-4 rounded-lg">
-          <h4 className="font-mono tracking-wider mb-2 text-[#32CD32]">TECHNOLOGIES_</h4>
+          <h4 className="font-mono tracking-wider mb-2 text-[#32CD32]">Technologies</h4>
           <ul className="space-y-2 text-gray-300">
             <li>• React Hooks</li>
             <li>• Next.js Router</li>
@@ -218,7 +235,7 @@ const TechnicalSection: React.FC = () => (
           </ul>
         </div>
         <div className="bg-gray-800 p-4 rounded-lg">
-          <h4 className="font-mono tracking-wider mb-2 text-[#32CD32]">FEATURES_</h4>
+          <h4 className="font-mono tracking-wider mb-2 text-[#32CD32]">Features</h4>
           <ul className="space-y-2 text-gray-300">
             <li>• Context-aware responses</li>
             <li>• Real-time updates</li>
@@ -233,12 +250,12 @@ const TechnicalSection: React.FC = () => (
 
 const DeveloperSection: React.FC = () => (
   <section className="space-y-6">
-    <h2 className="text-3xl font-mono tracking-wider mb-6">DEVELOPER_DOCUMENTATION_</h2>
+    <h2 className="text-3xl font-mono tracking-wider mb-6">Developer Documentation</h2>
     
     <div className="bg-gray-900 p-6 rounded-lg space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-gray-800 p-4 rounded-lg">
-          <h3 className="text-[#32CD32] font-mono tracking-wider mb-2">PROJECT_STRUCTURE_</h3>
+          <h3 className="text-[#32CD32] font-mono tracking-wider mb-2">Project Structure</h3>
           <ul className="space-y-2 text-gray-300">
             <li>• components/ - React components</li>
             <li>• pages/ - Next.js pages</li>
@@ -250,7 +267,7 @@ const DeveloperSection: React.FC = () => (
         </div>
 
         <div className="bg-gray-800 p-4 rounded-lg">
-          <h3 className="text-[#32CD32] font-mono tracking-wider mb-2">TECH_STACK_</h3>
+          <h3 className="text-[#32CD32] font-mono tracking-wider mb-2">Tech Stack</h3>
           <ul className="space-y-2 text-gray-300">
             <li>• Next.js & React</li>
             <li>• TypeScript</li>
@@ -262,25 +279,52 @@ const DeveloperSection: React.FC = () => (
       </div>
 
       <div className="bg-gray-800 p-4 rounded-lg">
-        <h3 className="text-[#32CD32] font-mono tracking-wider mb-2">SETUP_</h3>
+        <h3 className="text-[#32CD32] font-mono tracking-wider mb-2">Feature Documentation</h3>
         <div className="space-y-4">
           <div className="text-gray-300">
-            <p className="mb-2">1. Install dependencies:</p>
-            <code className="block bg-black p-2 rounded font-mono text-sm">npm install</code>
+            <h4 className="font-mono tracking-wider mb-2 text-[#32CD32]">Chatbot Features</h4>
+            <ul className="space-y-2">
+              <li>• Context-aware responses with page-specific information</li>
+              <li>• Real-time interaction handling with typing animations</li>
+              <li>• Navigation between pages via clickable topics</li>
+              <li>• Analytics mode for data-specific queries</li>
+              <li>• Custom command system with permission validation</li>
+            </ul>
           </div>
           <div className="text-gray-300">
-            <p className="mb-2">2. Set up environment variables:</p>
-            <code className="block bg-black p-2 rounded font-mono text-sm">cp .env.example .env.local</code>
+            <h4 className="font-mono tracking-wider mb-2 text-[#32CD32]">Team Management</h4>
+            <ul className="space-y-2">
+              <li>• Role-based access control (Admin, Manager, Member)</li>
+              <li>• Team invitation system with email verification</li>
+              <li>• Team activity tracking and analytics</li>
+              <li>• Secure session management</li>
+            </ul>
           </div>
           <div className="text-gray-300">
-            <p className="mb-2">3. Run database migrations:</p>
-            <code className="block bg-black p-2 rounded font-mono text-sm">npx prisma migrate dev</code>
+            <h4 className="font-mono tracking-wider mb-2 text-[#32CD32]">Campaign Management</h4>
+            <ul className="space-y-2">
+              <li>• Campaign creation and configuration</li>
+              <li>• Real-time performance monitoring</li>
+              <li>• Email template management</li>
+              <li>• A/B testing capabilities</li>
+              <li>• Analytics integration</li>
+            </ul>
+          </div>
+          <div className="text-gray-300">
+            <h4 className="font-mono tracking-wider mb-2 text-[#32CD32]">Lead Management</h4>
+            <ul className="space-y-2">
+              <li>• Lead creation and import</li>
+              <li>• Automated lead scoring</li>
+              <li>• Lead nurturing workflows</li>
+              <li>• Team collaboration features</li>
+              <li>• Analytics and reporting</li>
+            </ul>
           </div>
         </div>
       </div>
 
       <div className="bg-gray-800 p-4 rounded-lg">
-        <h3 className="text-[#32CD32] font-mono tracking-wider mb-2">API_ENDPOINTS_</h3>
+        <h3 className="text-[#32CD32] font-mono tracking-wider mb-2">API Endpoints</h3>
         <div className="space-y-4">
           <div className="text-gray-300">
             <p className="mb-2">Authentication:</p>
@@ -298,11 +342,29 @@ const DeveloperSection: React.FC = () => (
               <li>• PUT /api/team/member/:id</li>
             </ul>
           </div>
+          <div className="text-gray-300">
+            <p className="mb-2">Campaign Management:</p>
+            <ul className="space-y-1">
+              <li>• GET /api/campaigns</li>
+              <li>• POST /api/campaigns</li>
+              <li>• PUT /api/campaigns/:id</li>
+              <li>• GET /api/campaigns/:id/analytics</li>
+            </ul>
+          </div>
+          <div className="text-gray-300">
+            <p className="mb-2">Lead Management:</p>
+            <ul className="space-y-1">
+              <li>• GET /api/leads</li>
+              <li>• POST /api/leads</li>
+              <li>• PUT /api/leads/:id</li>
+              <li>• GET /api/leads/:id/activity</li>
+            </ul>
+          </div>
         </div>
       </div>
 
       <div className="bg-gray-800 p-4 rounded-lg">
-        <h3 className="text-[#32CD32] font-mono tracking-wider mb-2">DATABASE_SCHEMA_</h3>
+        <h3 className="text-[#32CD32] font-mono tracking-wider mb-2">Database Schema</h3>
         <div className="text-gray-300">
           <p className="mb-2">Key Models:</p>
           <ul className="space-y-2">
@@ -310,12 +372,14 @@ const DeveloperSection: React.FC = () => (
             <li>• Team - Team management and organization</li>
             <li>• Campaign - Marketing campaigns</li>
             <li>• Lead - Sales leads and contacts</li>
+            <li>• ChatbotInteraction - Chatbot usage data</li>
+            <li>• AnalyticsEvent - User activity tracking</li>
           </ul>
         </div>
       </div>
 
       <div className="bg-gray-800 p-4 rounded-lg">
-        <h3 className="text-[#32CD32] font-mono tracking-wider mb-2">FULL_DOCUMENTATION_</h3>
+        <h3 className="text-[#32CD32] font-mono tracking-wider mb-2">Full Documentation</h3>
         <p className="text-gray-300 mb-4">
           For complete developer documentation, including:
         </p>
@@ -325,13 +389,14 @@ const DeveloperSection: React.FC = () => (
           <li>• Testing procedures</li>
           <li>• Deployment guide</li>
           <li>• Contributing guidelines</li>
+          <li>• Feature implementation details</li>
+          <li>• API reference</li>
+          <li>• Security best practices</li>
         </ul>
         <div className="mt-4">
           <Link 
-            href="/DEVELOPER_README.md" 
+            href="/docs/CHATBOT_DEVELOPER_GUIDE.md" 
             className="text-[#32CD32] hover:underline font-mono tracking-wider"
-            target="_blank"
-            rel="noopener noreferrer"
           >
             VIEW_FULL_DEVELOPER_DOCS_
           </Link>

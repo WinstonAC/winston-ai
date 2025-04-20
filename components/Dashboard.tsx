@@ -5,9 +5,12 @@ import {
   CalendarIcon, 
   UserGroupIcon, 
   ArrowTrendingUpIcon,
-  BeakerIcon
+  BeakerIcon,
+  DocumentTextIcon,
+  ArrowPathIcon
 } from '@heroicons/react/24/outline';
 import SandboxSettings from './SandboxSettings';
+import { useRouter } from 'next/router';
 
 interface DashboardProps {
   stats: {
@@ -108,20 +111,42 @@ const ActivityFeed: React.FC<{ activities: DashboardProps['recentActivity'] }> =
 );
 
 const QuickActions: React.FC<{ isSandbox?: boolean }> = ({ isSandbox }) => {
+  const router = useRouter();
+
   const handleNewCampaign = () => {
-    console.log('New Campaign button clicked');
+    router.push('/campaigns/new');
   };
 
   const handleImportLeads = () => {
-    console.log('Import Leads button clicked');
+    router.push('/leads/import');
   };
 
   const handleScheduleMeeting = () => {
-    console.log('Schedule Meeting button clicked');
+    router.push('/meetings/schedule');
   };
 
   const handleViewReports = () => {
-    console.log('View Reports button clicked');
+    router.push('/analytics');
+  };
+
+  const handleResetData = async () => {
+    try {
+      const response = await fetch('/api/sandbox/reset', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to reset data');
+      }
+
+      // Refresh the page to show updated data
+      router.reload();
+    } catch (error) {
+      console.error('Error resetting data:', error);
+    }
   };
 
   const actions = [
@@ -133,7 +158,7 @@ const QuickActions: React.FC<{ isSandbox?: boolean }> = ({ isSandbox }) => {
 
   if (isSandbox) {
     actions.push(
-      { text: 'Reset Data', color: 'bg-red-500', onClick: () => console.log('Reset Data') }
+      { text: 'Reset Data', color: 'bg-red-500', onClick: handleResetData }
     );
   }
 

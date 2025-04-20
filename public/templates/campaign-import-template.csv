@@ -1,0 +1,5 @@
+name,description,startDate,endDate,budget,status
+Example Campaign,A sample marketing campaign,2024-03-20,2024-04-20,5000,DRAFT
+Another Campaign,Another example campaign description,2024-04-01,2024-05-01,7500,ACTIVE
+Summer Sale 2024,Promotional campaign for summer products,2024-06-01,2024-08-31,5000,DRAFT
+Back to School,School supplies and electronics promotion,2024-08-15,2024-09-15,3000,PLANNED 

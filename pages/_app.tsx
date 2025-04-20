@@ -3,7 +3,7 @@ import "@/styles/globals.css";
 import type { AppProps } from "next/app";
 import Head from 'next/head';
 import Layout from '@/components/Layout';
-import UserFlowAssistant from '@/components/UserFlowAssistant';
+import Chatbot from '@/components/Chatbot';
 import { SessionProvider } from 'next-auth/react';
 import { Session } from 'next-auth';
 import { useRouter } from 'next/router';
@@ -25,7 +25,7 @@ function AppContent({ Component, pageProps }: AppProps) {
       ) : (
         <Component {...pageProps} />
       )}
-      <UserFlowAssistant />
+      <Chatbot initialContext={router.pathname.includes('analytics') ? 'analytics' : 'general'} />
     </>
   );
 }

@@ -69,6 +69,25 @@ interface CampaignMetrics {
   endDate: string;
 }
 
+interface AnalyticsData {
+  totalLeads: number;
+  openRate: number;
+  responseRate: number;
+  meetings: number;
+  recentActivity: {
+    id: string;
+    type: string;
+    leadName: string;
+    createdAt: string;
+  }[];
+  trends: {
+    date: string;
+    opens: number;
+    clicks: number;
+    responses: number;
+  }[];
+}
+
 interface AnalyticsDashboardProps {
   campaigns: CampaignMetrics[];
   dateRange: {
@@ -212,19 +231,32 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
     y: keyof CampaignMetrics;
   }>({ x: 'sent', y: 'opened' });
   const [showHelp, setShowHelp] = useState(false);
+  const [data, setData] = useState<AnalyticsData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('30d');
   const permissions = getAnalyticsPermissions(user);
 
   useEffect(() => {
-    // Simulate loading data
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, [dateRange]);
+    fetchAnalytics();
+  }, [timeRange]);
+
+  const fetchAnalytics = async () => {
+    try {
+      const response = await fetch(`/api/analytics?range=${timeRange}`);
+      if (!response.ok) throw new Error('Failed to fetch analytics');
+      const data = await response.json();
+      setData(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch analytics');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const connectWebSocket = useCallback(() => {
     try {
-      const ws = new WebSocket('wss://your-websocket-endpoint');
+      const ws = new WebSocket('wss://api.winston-ai.com/ws/analytics');
       
       ws.onopen = () => {
         setWsState(prev => ({
@@ -241,14 +273,18 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
           const data = JSON.parse(event.data);
           if (data.type === 'metrics_update') {
             setLastUpdated(new Date());
-            // Update campaign metrics
-            setOfflineData(prev => 
-              prev.map(campaign => 
-                campaign.id === data.data.campaignId
-                  ? { ...campaign, ...data.data.metrics }
-                  : campaign
-              )
-            );
+            setData(prev => ({
+              ...prev,
+              recentActivity: [
+                {
+                  id: data.data.id,
+                  type: data.data.type,
+                  leadName: data.data.leadName,
+                  createdAt: new Date().toISOString(),
+                },
+                ...(prev?.recentActivity || []).slice(0, 9),
+              ],
+            }));
           }
         } catch (error) {
           console.error('Error processing WebSocket message:', error);
@@ -256,6 +292,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
       };
 
       ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
         setWsState(prev => ({
           ...prev,
           isConnected: false,
@@ -568,13 +605,9 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-2 border-white border-t-transparent"></div>
-      </div>
-    );
-  }
+  if (loading) return <div className="animate-pulse">Loading analytics...</div>;
+  if (error) return <div className="text-red-500">Error: {error}</div>;
+  if (!data) return <div>No data available</div>;
 
   return (
     <div className="space-y-6 bg-black text-white p-6" data-testid="analytics-dashboard">
@@ -629,19 +662,15 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
           </button>
           <div className="flex items-center space-x-2">
             <CalendarIcon className="h-5 w-5 text-white" />
-            <input
-              type="date"
-              value={dateRange.start}
-              onChange={(e) => onDateRangeChange(e.target.value, dateRange.end)}
+            <select
+              value={timeRange}
+              onChange={(e) => setTimeRange(e.target.value as '7d' | '30d' | '90d')}
               className="bg-black border-2 border-white text-white px-3 py-1 rounded-none"
-            />
-            <span className="text-white">to</span>
-            <input
-              type="date"
-              value={dateRange.end}
-              onChange={(e) => onDateRangeChange(dateRange.start, e.target.value)}
-              className="bg-black border-2 border-white text-white px-3 py-1 rounded-none"
-            />
+            >
+              <option value="7d">Last 7 days</option>
+              <option value="30d">Last 30 days</option>
+              <option value="90d">Last 90 days</option>
+            </select>
           </div>
         </div>
       </div>

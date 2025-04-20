@@ -1,6 +1,7 @@
 import type { Preview } from "@storybook/react";
 import "../styles/globals.css";
 import { ThemeProvider } from 'next-themes';
+import React from 'react';
 
 const preview: Preview = {
   parameters: {
@@ -11,27 +12,12 @@ const preview: Preview = {
         date: /Date$/i,
       },
     },
-    backgrounds: {
-      default: 'white',
-      values: [
-        {
-          name: 'white',
-          value: '#ffffff',
-        },
-        {
-          name: 'black',
-          value: '#000000',
-        },
-      ],
-    },
-    nextjs: {
-      appDirectory: true,
-    },
+    layout: 'centered',
   },
   decorators: [
     (Story) => (
-      <ThemeProvider attribute="class" defaultTheme="light">
-        <div style={{ margin: '3em' }}>
+      <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+        <div className="p-8">
           <Story />
         </div>
       </ThemeProvider>

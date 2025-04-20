@@ -3,6 +3,8 @@ import { usePermissions } from '../contexts/PermissionsContext';
 import { UserRole, TeamPermission } from '../types/auth';
 import { CheckIcon, XMarkIcon, ExclamationCircleIcon, TrashIcon, PencilIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
+import { useSession } from 'next-auth/react';
+import { UserGroupIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
 
 interface TeamMember {
   id: string;
@@ -10,6 +12,13 @@ interface TeamMember {
   email: string;
   role: UserRole;
   permissions: TeamPermission[];
+  joinedAt: string;
+}
+
+interface Team {
+  id: string;
+  name: string;
+  members: TeamMember[];
 }
 
 interface FormErrors {
@@ -20,33 +29,21 @@ interface FormErrors {
 
 export const TeamPermissions: React.FC = () => {
   const { state, dispatch } = usePermissions();
-  const [members, setMembers] = useState<TeamMember[]>([]);
+  const [team, setTeam] = useState<Team | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const { data: session } = useSession();
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [formData, setFormData] = useState<Partial<TeamMember>>({});
   const [errors, setErrors] = useState<FormErrors>({});
-  const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const firstInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const fetchMembers = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch('/api/team-members');
-        if (!response.ok) throw new Error('Failed to fetch team members');
-        const data = await response.json();
-        setMembers(data);
-      } catch (error) {
-        toast.error('Failed to load team members');
-        console.error('Failed to fetch team members:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchMembers();
+    fetchTeam();
   }, []);
 
   useEffect(() => {
@@ -54,6 +51,82 @@ export const TeamPermissions: React.FC = () => {
       firstInputRef.current.focus();
     }
   }, [showEditModal]);
+
+  const fetchTeam = async () => {
+    try {
+      const response = await fetch('/api/team');
+      if (!response.ok) throw new Error('Failed to fetch team');
+      const data = await response.json();
+      setTeam(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch team');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateMemberRole = async (memberId: string, newRole: TeamMember['role']) => {
+    setIsUpdating(true);
+    try {
+      const response = await fetch(`/api/team/members/${memberId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: newRole }),
+      });
+
+      if (!response.ok) throw new Error('Failed to update member role');
+
+      setTeam(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          members: prev.members.map(member => 
+            member.id === memberId ? { ...member, role: newRole } : member
+          ),
+        };
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update member role');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const removeMember = async (memberId: string) => {
+    try {
+      const response = await fetch(`/api/team/members/${memberId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) throw new Error('Failed to remove member');
+
+      setTeam(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          members: prev.members.filter(member => member.id !== memberId),
+        };
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to remove member');
+    }
+  };
+
+  const inviteMember = async (email: string, role: TeamMember['role']) => {
+    try {
+      const response = await fetch('/api/team/invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, role }),
+      });
+
+      if (!response.ok) throw new Error('Failed to invite member');
+
+      await fetchTeam(); // Refresh the team data
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to invite member');
+    }
+  };
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -106,10 +179,22 @@ export const TeamPermissions: React.FC = () => {
       const savedMember = await response.json();
       
       if (selectedMember) {
-        setMembers(members.map(m => m.id === savedMember.id ? savedMember : m));
+        setTeam(prev => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            members: prev.members.map(m => m.id === savedMember.id ? savedMember : m),
+          };
+        });
         toast.success('Team member updated successfully');
       } else {
-        setMembers([...members, savedMember]);
+        setTeam(prev => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            members: [...prev.members, savedMember],
+          };
+        });
         toast.success('Team member added successfully');
       }
 
@@ -128,20 +213,13 @@ export const TeamPermissions: React.FC = () => {
     if (!window.confirm('Are you sure you want to delete this team member?')) return;
 
     try {
-      setIsLoading(true);
-      const response = await fetch(`/api/team-members/${memberId}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) throw new Error('Failed to delete member');
-
-      setMembers(members.filter(m => m.id !== memberId));
-      toast.success('Team member deleted successfully');
+      setIsUpdating(true);
+      await removeMember(memberId);
     } catch (error) {
       toast.error('Failed to delete team member');
       console.error('Failed to delete team member:', error);
     } finally {
-      setIsLoading(false);
+      setIsUpdating(false);
     }
   };
 
@@ -151,129 +229,97 @@ export const TeamPermissions: React.FC = () => {
     }
   };
 
-  if (!state.permissions) return null;
+  if (loading) return <div className="animate-pulse">Loading team...</div>;
+  if (error) return <div className="text-red-500">Error: {error}</div>;
+  if (!team) return <div>No team found</div>;
 
-  const { teamPermissions } = state.permissions;
+  const isAdmin = team.members.find(m => m.id === session?.user?.id)?.role === 'admin';
 
   const handleRoleChange = (memberId: string, newRole: UserRole) => {
-    setMembers(members.map(member => 
-      member.id === memberId ? { ...member, role: newRole } : member
-    ));
+    updateMemberRole(memberId, newRole as TeamMember['role']);
   };
 
   const handlePermissionToggle = (memberId: string, permission: TeamPermission) => {
-    setMembers(members.map(member => {
-      if (member.id === memberId) {
-        const hasPermission = member.permissions.includes(permission);
-        return {
-          ...member,
-          permissions: hasPermission
-            ? member.permissions.filter(p => p !== permission)
-            : [...member.permissions, permission]
-        };
-      }
-      return member;
-    }));
+    setTeam(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        members: prev.members.map(member => {
+          if (member.id === memberId) {
+            const hasPermission = member.permissions.includes(permission);
+            return {
+              ...member,
+              permissions: hasPermission
+                ? member.permissions.filter(p => p !== permission)
+                : [...member.permissions, permission]
+            };
+          }
+          return member;
+        }),
+      };
+    });
   };
 
   return (
-    <div className="p-4 border-2 border-black bg-white">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-bold">Team Permissions</h3>
-        <button
-          className="px-4 py-2 border-2 border-black bg-black text-white hover:bg-white hover:text-black flex items-center gap-2"
-          onClick={() => {
-            setFormData({});
-            setSelectedMember(null);
-            setShowEditModal(true);
-          }}
-          aria-label="Add new team member"
-        >
-          <PlusIcon className="w-5 h-5" />
-          Add Member
-        </button>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Team Members</h2>
+        {isAdmin && (
+          <button
+            onClick={() => {
+              const email = prompt('Enter email to invite:');
+              const role = prompt('Enter role (admin/member/viewer):') as TeamMember['role'];
+              if (email && role) inviteMember(email, role);
+            }}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
+          >
+            <PlusIcon className="h-5 w-5 mr-2" />
+            Invite Member
+          </button>
+        )}
       </div>
 
-      {isLoading && (
-        <div className="flex justify-center items-center p-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black" role="status">
-            <span className="sr-only">Loading...</span>
-          </div>
-        </div>
-      )}
-
-      <div className="overflow-x-auto">
-        <table className="w-full border-2 border-black">
-          <thead>
-            <tr className="bg-black text-white">
-              <th className="p-2 text-left">Name</th>
-              <th className="p-2 text-left">Email</th>
-              <th className="p-2 text-left">Role</th>
-              <th className="p-2 text-left">Permissions</th>
-              <th className="p-2 text-left">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {members.map(member => (
-              <tr key={member.id} className="border-b border-black">
-                <td className="p-2">{member.name}</td>
-                <td className="p-2">{member.email}</td>
-                <td className="p-2">
+      <div className="bg-white shadow overflow-hidden sm:rounded-md">
+        <ul className="divide-y divide-gray-200">
+          {team.members.map((member) => (
+            <li key={member.id} className="px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0 h-10 w-10">
+                    <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                      <span className="text-gray-500">{member.name.charAt(0)}</span>
+                    </div>
+                  </div>
+                  <div className="ml-4">
+                    <div className="text-sm font-medium text-gray-900">{member.name}</div>
+                    <div className="text-sm text-gray-500">{member.email}</div>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-4">
                   <select
                     value={member.role}
                     onChange={(e) => handleRoleChange(member.id, e.target.value as UserRole)}
-                    className="border-2 border-black p-1"
-                    aria-label={`Change role for ${member.name}`}
+                    disabled={!isAdmin || isUpdating}
+                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
                   >
-                    {Object.values(UserRole).map(role => (
-                      <option key={role} value={role}>{role}</option>
-                    ))}
+                    <option value="admin">Admin</option>
+                    <option value="member">Member</option>
+                    <option value="viewer">Viewer</option>
                   </select>
-                </td>
-                <td className="p-2">
-                  <div className="flex flex-wrap gap-2">
-                    {Object.values(TeamPermission).map(permission => (
-                      <button
-                        key={permission}
-                        onClick={() => handlePermissionToggle(member.id, permission)}
-                        className={`px-2 py-1 border-2 ${
-                          member.permissions.includes(permission)
-                            ? 'border-black bg-black text-white'
-                            : 'border-black'
-                        }`}
-                        aria-label={`Toggle ${permission} permission for ${member.name}`}
-                      >
-                        {permission}
-                      </button>
-                    ))}
-                  </div>
-                </td>
-                <td className="p-2">
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => {
-                        setSelectedMember(member);
-                        setFormData(member);
-                        setShowEditModal(true);
-                      }}
-                      className="p-2 border-2 border-black hover:bg-black hover:text-white"
-                      aria-label={`Edit ${member.name}`}
-                    >
-                      <PencilIcon className="w-5 h-5" />
-                    </button>
+                  {isAdmin && member.id !== session?.user?.id && (
                     <button
                       onClick={() => handleDelete(member.id)}
-                      className="p-2 border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
-                      aria-label={`Delete ${member.name}`}
+                      disabled={isUpdating}
+                      className="text-red-600 hover:text-red-900"
                     >
-                      <TrashIcon className="w-5 h-5" />
+                      <TrashIcon className="h-5 w-5" />
                     </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  )}
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
       </div>
 
       {showEditModal && (

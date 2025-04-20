@@ -4,8 +4,8 @@ import { Button } from './Button';
 /**
  * A brutalist button component with various styles and states.
  */
-const meta: Meta<typeof Button> = {
-  title: 'UI/Button',
+const meta = {
+  title: 'Components/Button',
   component: Button,
   parameters: {
     layout: 'centered',
@@ -20,39 +20,23 @@ const meta: Meta<typeof Button> = {
     variant: {
       control: 'select',
       options: ['primary', 'secondary', 'danger', 'success'],
-      description: 'The visual style of the button',
-      table: {
-        defaultValue: { summary: 'primary' },
-      },
     },
     size: {
       control: 'select',
       options: ['sm', 'md', 'lg'],
-      description: 'The size of the button',
-      table: {
-        defaultValue: { summary: 'md' },
-      },
     },
     isLoading: {
       control: 'boolean',
-      description: 'Whether the button is in a loading state',
-      table: {
-        defaultValue: { summary: false },
-      },
     },
     disabled: {
       control: 'boolean',
-      description: 'Whether the button is disabled',
-      table: {
-        defaultValue: { summary: false },
-      },
     },
     children: {
       control: 'text',
       description: 'The content of the button',
     },
   },
-};
+} satisfies Meta<typeof Button>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -62,7 +46,7 @@ type Story = StoryObj<typeof meta>;
  */
 export const Primary: Story = {
   args: {
-    children: 'Primary Button',
+    children: 'Button',
     variant: 'primary',
   },
 };
@@ -72,7 +56,7 @@ export const Primary: Story = {
  */
 export const Secondary: Story = {
   args: {
-    children: 'Secondary Button',
+    children: 'Button',
     variant: 'secondary',
   },
 };
@@ -82,7 +66,7 @@ export const Secondary: Story = {
  */
 export const Danger: Story = {
   args: {
-    children: 'Danger Button',
+    children: 'Button',
     variant: 'danger',
   },
 };
@@ -92,7 +76,7 @@ export const Danger: Story = {
  */
 export const Success: Story = {
   args: {
-    children: 'Success Button',
+    children: 'Button',
     variant: 'success',
   },
 };
@@ -124,7 +108,7 @@ export const Large: Story = {
  */
 export const Loading: Story = {
   args: {
-    children: 'Loading Button',
+    children: 'Button',
     isLoading: true,
   },
 };
@@ -134,7 +118,7 @@ export const Loading: Story = {
  */
 export const Disabled: Story = {
   args: {
-    children: 'Disabled Button',
+    children: 'Button',
     disabled: true,
   },
 };

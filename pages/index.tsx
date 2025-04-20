@@ -78,20 +78,13 @@ export default function HomePage() {
               </p>
 
               {/* CTA Buttons */}
-              <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
+              <div className="flex justify-center mt-8">
                 <Link
-                  href="/register"
-                  className="inline-flex items-center justify-center px-8 py-4 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors opacity-0 animate-slide-up"
+                  href="/solutions"
+                  className="inline-flex items-center justify-center px-8 py-4 border border-2 border-[#32CD32] text-base font-medium rounded-md text-[#32CD32] hover:bg-[#32CD32]/10 transition-colors opacity-0 animate-slide-up"
                   style={{ animationDelay: '2s' }}
                 >
-                  Get Started
-                </Link>
-                <Link
-                  href="/demo"
-                  className="inline-flex items-center justify-center px-8 py-4 border border-2 border-blue-600 text-base font-medium rounded-md text-blue-400 hover:bg-blue-600/10 transition-colors opacity-0 animate-slide-up"
-                  style={{ animationDelay: '2s' }}
-                >
-                  Watch Demo
+                  Learn More
                 </Link>
               </div>
             </div>
