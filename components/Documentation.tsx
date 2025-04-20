@@ -9,7 +9,8 @@ const Documentation: React.FC = () => {
     { id: 'features', title: 'FEATURES_' },
     { id: 'examples', title: 'USAGE_EXAMPLES_' },
     { id: 'navigation', title: 'NAVIGATION_' },
-    { id: 'technical', title: 'TECHNICAL_DETAILS_' }
+    { id: 'technical', title: 'TECHNICAL_DETAILS_' },
+    { id: 'developer', title: 'DEVELOPER_DOCS_' }
   ];
 
   return (
@@ -51,6 +52,7 @@ const Documentation: React.FC = () => {
             {activeSection === 'examples' && <ExamplesSection />}
             {activeSection === 'navigation' && <NavigationSection />}
             {activeSection === 'technical' && <TechnicalSection />}
+            {activeSection === 'developer' && <DeveloperSection />}
           </div>
         </div>
       </div>
@@ -223,6 +225,116 @@ const TechnicalSection: React.FC = () => (
             <li>• Smooth animations</li>
             <li>• Responsive design</li>
           </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+);
+
+const DeveloperSection: React.FC = () => (
+  <section className="space-y-6">
+    <h2 className="text-3xl font-mono tracking-wider mb-6">DEVELOPER_DOCUMENTATION_</h2>
+    
+    <div className="bg-gray-900 p-6 rounded-lg space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-gray-800 p-4 rounded-lg">
+          <h3 className="text-[#32CD32] font-mono tracking-wider mb-2">PROJECT_STRUCTURE_</h3>
+          <ul className="space-y-2 text-gray-300">
+            <li>• components/ - React components</li>
+            <li>• pages/ - Next.js pages</li>
+            <li>• prisma/ - Database schema</li>
+            <li>• lib/ - Utility functions</li>
+            <li>• hooks/ - Custom React hooks</li>
+            <li>• types/ - TypeScript types</li>
+          </ul>
+        </div>
+
+        <div className="bg-gray-800 p-4 rounded-lg">
+          <h3 className="text-[#32CD32] font-mono tracking-wider mb-2">TECH_STACK_</h3>
+          <ul className="space-y-2 text-gray-300">
+            <li>• Next.js & React</li>
+            <li>• TypeScript</li>
+            <li>• Tailwind CSS</li>
+            <li>• Prisma ORM</li>
+            <li>• NextAuth.js</li>
+          </ul>
+        </div>
+      </div>
+
+      <div className="bg-gray-800 p-4 rounded-lg">
+        <h3 className="text-[#32CD32] font-mono tracking-wider mb-2">SETUP_</h3>
+        <div className="space-y-4">
+          <div className="text-gray-300">
+            <p className="mb-2">1. Install dependencies:</p>
+            <code className="block bg-black p-2 rounded font-mono text-sm">npm install</code>
+          </div>
+          <div className="text-gray-300">
+            <p className="mb-2">2. Set up environment variables:</p>
+            <code className="block bg-black p-2 rounded font-mono text-sm">cp .env.example .env.local</code>
+          </div>
+          <div className="text-gray-300">
+            <p className="mb-2">3. Run database migrations:</p>
+            <code className="block bg-black p-2 rounded font-mono text-sm">npx prisma migrate dev</code>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-gray-800 p-4 rounded-lg">
+        <h3 className="text-[#32CD32] font-mono tracking-wider mb-2">API_ENDPOINTS_</h3>
+        <div className="space-y-4">
+          <div className="text-gray-300">
+            <p className="mb-2">Authentication:</p>
+            <ul className="space-y-1">
+              <li>• POST /api/auth/signin</li>
+              <li>• POST /api/auth/signout</li>
+              <li>• GET /api/auth/session</li>
+            </ul>
+          </div>
+          <div className="text-gray-300">
+            <p className="mb-2">Team Management:</p>
+            <ul className="space-y-1">
+              <li>• GET /api/team</li>
+              <li>• POST /api/team/invite</li>
+              <li>• PUT /api/team/member/:id</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-gray-800 p-4 rounded-lg">
+        <h3 className="text-[#32CD32] font-mono tracking-wider mb-2">DATABASE_SCHEMA_</h3>
+        <div className="text-gray-300">
+          <p className="mb-2">Key Models:</p>
+          <ul className="space-y-2">
+            <li>• User - Authentication and profile data</li>
+            <li>• Team - Team management and organization</li>
+            <li>• Campaign - Marketing campaigns</li>
+            <li>• Lead - Sales leads and contacts</li>
+          </ul>
+        </div>
+      </div>
+
+      <div className="bg-gray-800 p-4 rounded-lg">
+        <h3 className="text-[#32CD32] font-mono tracking-wider mb-2">FULL_DOCUMENTATION_</h3>
+        <p className="text-gray-300 mb-4">
+          For complete developer documentation, including:
+        </p>
+        <ul className="space-y-2 text-gray-300">
+          <li>• Detailed setup instructions</li>
+          <li>• Environment configuration</li>
+          <li>• Testing procedures</li>
+          <li>• Deployment guide</li>
+          <li>• Contributing guidelines</li>
+        </ul>
+        <div className="mt-4">
+          <Link 
+            href="/DEVELOPER_README.md" 
+            className="text-[#32CD32] hover:underline font-mono tracking-wider"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            VIEW_FULL_DEVELOPER_DOCS_
+          </Link>
         </div>
       </div>
     </div>

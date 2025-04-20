@@ -1,12 +1,44 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
+import { useSession } from 'next-auth/react';
+
+// Command synonyms and variations
+const COMMAND_VARIATIONS = {
+  'stats': ['stats', 'statistics', 'metrics', 'numbers', 'performance'],
+  'campaigns': ['campaigns', 'marketing', 'ads', 'promotions'],
+  'leads': ['leads', 'contacts', 'prospects', 'customers'],
+  'dashboard': ['dashboard', 'home', 'main', 'overview'],
+  'create': ['create', 'new', 'start', 'launch'],
+  'monitor': ['monitor', 'track', 'watch', 'follow'],
+  'settings': ['settings', 'configure', 'setup', 'options']
+};
+
+// Intent patterns
+const INTENT_PATTERNS = {
+  greeting: [/^hi$|^hello$|^hey$/i],
+  help: [/help|what can you do|how do i/i],
+  navigation: [/go to|navigate|take me|show me/i],
+  status: [/status|how is|what's up|check/i]
+};
 
 const Chatbot: React.FC = () => {
   const router = useRouter();
+  const { data: session } = useSession();
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<Array<{ text: string; sender: 'user' | 'bot'; key?: string; action?: string }>>([]);
+  const [messages, setMessages] = useState<Array<{
+    text: string;
+    sender: 'user' | 'bot';
+    key?: string;
+    action?: string;
+    type?: 'text' | 'action' | 'form';
+    data?: any;
+  }>>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [conversationContext, setConversationContext] = useState<{
+    currentStep?: string;
+    formData?: Record<string, any>;
+  }>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Scroll to bottom when messages change
@@ -25,87 +57,147 @@ const Chatbot: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen]);
 
-  // Context-aware responses based on current page
+  // Enhanced context-aware responses
   const getContextResponses = () => {
     const path = router.pathname;
-    switch (path) {
-      case '/dashboard':
-        return {
-          greeting: 'WELCOME_TO_DASHBOARD_\nYOU_CAN_VIEW_AND_MANAGE_YOUR_LEADS_AND_CAMPAIGNS_HERE_',
-          help: [
-            { text: 'VIEW_YOUR_LEAD_STATS_', key: 'stats' },
-            { text: 'MANAGE_YOUR_CAMPAIGNS_', key: 'campaigns', action: '/campaigns' },
-            { text: 'UPLOAD_NEW_LEADS_', key: 'leads', action: '/leads' },
-            { text: 'CHECK_SYSTEM_STATUS_', key: 'status' }
-          ],
-          responses: {
-            'stats': 'CURRENT_METRICS_\nLEADS_123_\nACTIVE_CAMPAIGNS_5_\nCONVERSION_RATE_12%_',
-            'campaigns': 'NAVIGATING_TO_CAMPAIGNS_',
-            'leads': 'NAVIGATING_TO_LEADS_',
-            'status': 'SYSTEM_STATUS_\nOPERATIONAL_\nPERFORMANCE_OPTIMAL_\nLAST_UPDATE_2M_AGO_'
-          }
-        };
-      case '/leads':
-        return {
-          greeting: 'LEAD_MANAGEMENT_\nMANAGE_AND_TRACK_YOUR_LEADS_HERE_',
-          help: [
-            { text: 'VIEW_LEAD_DETAILS_', key: 'details' },
-            { text: 'CLASSIFY_LEADS_', key: 'classify' },
-            { text: 'EXPORT_LEAD_DATA_', key: 'export' },
-            { text: 'GO_TO_DASHBOARD_', key: 'dashboard', action: '/dashboard' }
-          ],
-          responses: {
-            'details': 'LEAD_DETAILS_VIEW_\nCLICK_ON_ANY_LEAD_TO_VIEW_\nFULL_INFORMATION_AND_HISTORY_',
-            'classify': 'LEAD_CLASSIFICATION_\nUSE_THE_CLASSIFICATION_TOOL_\nTO_TAG_AND_CATEGORIZE_LEADS_',
-            'export': 'EXPORT_OPTIONS_\n1_CSV_FORMAT_\n2_JSON_FORMAT_\n3_API_ENDPOINT_',
-            'dashboard': 'NAVIGATING_TO_DASHBOARD_'
-          }
-        };
-      case '/campaigns':
-        return {
-          greeting: 'CAMPAIGN_CONTROL_\nMANAGE_YOUR_MARKETING_CAMPAIGNS_HERE_',
-          help: [
-            { text: 'CREATE_NEW_CAMPAIGN_', key: 'create' },
-            { text: 'MONITOR_CAMPAIGN_PERFORMANCE_', key: 'monitor' },
-            { text: 'ADJUST_CAMPAIGN_SETTINGS_', key: 'settings' },
-            { text: 'GO_TO_DASHBOARD_', key: 'dashboard', action: '/dashboard' }
-          ],
-          responses: {
-            'create': 'NEW_CAMPAIGN_SETUP_\n1_SELECT_CAMPAIGN_TYPE_\n2_DEFINE_TARGET_AUDIENCE_\n3_SET_OBJECTIVES_',
-            'monitor': 'PERFORMANCE_METRICS_\nOPEN_RATE_25%_\nCLICK_RATE_10%_\nCONVERSION_5%_',
-            'settings': 'CAMPAIGN_SETTINGS_\nADJUST_IN_REAL_TIME_\nSAVE_CHANGES_AUTOMATICALLY_',
-            'dashboard': 'NAVIGATING_TO_DASHBOARD_'
-          }
-        };
-      default:
-        return {
-          greeting: 'WELCOME_TO_WINSTON_AI_\nYOUR_AI_POWERED_SALES_ASSISTANT_',
-          help: [
-            { text: 'GO_TO_DASHBOARD_', key: 'dashboard', action: '/dashboard' },
-            { text: 'VIEW_SYSTEM_FEATURES_', key: 'features' },
-            { text: 'REQUEST_A_DEMO_', key: 'demo', action: '/demo' },
-            { text: 'CHECK_PRICING_OPTIONS_', key: 'pricing' }
-          ],
-          responses: {
-            'dashboard': 'NAVIGATING_TO_DASHBOARD_',
-            'features': 'KEY_FEATURES_\n1_AI_POWERED_LEAD_GENERATION_\n2_AUTOMATED_CAMPAIGNS_\n3_REAL_TIME_ANALYTICS_\n4_INTEGRATION_OPTIONS_',
-            'demo': 'NAVIGATING_TO_DEMO_PAGE_',
-            'pricing': 'PRICING_PLANS_\n1_STARTER_$99/MO_\n2_PRO_$299/MO_\n3_ENTERPRISE_CUSTOM_'
-          }
-        };
+    const userRole = session?.user?.role || 'USER';
+    const teamId = session?.user?.teamId;
+
+    const baseResponses = {
+      dashboard: {
+        greeting: `WELCOME_TO_DASHBOARD_\nYOU_CAN_VIEW_AND_MANAGE_YOUR_LEADS_AND_CAMPAIGNS_HERE_`,
+        help: [
+          { text: 'VIEW_YOUR_LEAD_STATS_', key: 'stats' },
+          { text: 'MANAGE_YOUR_CAMPAIGNS_', key: 'campaigns', action: '/campaigns' },
+          { text: 'UPLOAD_NEW_LEADS_', key: 'leads', action: '/leads' },
+          { text: 'CHECK_SYSTEM_STATUS_', key: 'status' }
+        ],
+        responses: {
+          'stats': 'CURRENT_METRICS_\nLEADS_123_\nACTIVE_CAMPAIGNS_5_\nCONVERSION_RATE_12%_',
+          'campaigns': 'NAVIGATING_TO_CAMPAIGNS_',
+          'leads': 'NAVIGATING_TO_LEADS_',
+          'status': 'SYSTEM_STATUS_\nOPERATIONAL_\nPERFORMANCE_OPTIMAL_\nLAST_UPDATE_2M_AGO_'
+        }
+      },
+      // ... other path responses ...
+    };
+
+    // Add role-specific responses
+    if (userRole === 'ADMIN') {
+      baseResponses.dashboard.help.push(
+        { text: 'MANAGE_TEAM_SETTINGS_', key: 'team', action: '/team' }
+      );
+      baseResponses.dashboard.responses['team'] = 'NAVIGATING_TO_TEAM_SETTINGS_';
     }
+
+    return baseResponses[path] || baseResponses.default;
   };
 
-  useEffect(() => {
-    if (isOpen) {
-      const context = getContextResponses();
-      setMessages([
-        { text: context.greeting, sender: 'bot' },
-        { text: 'AVAILABLE_COMMANDS_', sender: 'bot' },
-        ...context.help.map(item => ({ text: item.text, sender: 'bot' as const, key: item.key, action: item.action }))
-      ]);
+  // Enhanced command matching
+  const matchCommand = (input: string) => {
+    const normalizedInput = input.toLowerCase().trim();
+    
+    // Check for exact matches first
+    for (const [key, variations] of Object.entries(COMMAND_VARIATIONS)) {
+      if (variations.includes(normalizedInput)) {
+        return key;
+      }
     }
-  }, [isOpen, router.pathname]);
+
+    // Check for fuzzy matches
+    for (const [key, variations] of Object.entries(COMMAND_VARIATIONS)) {
+      for (const variation of variations) {
+        if (normalizedInput.includes(variation)) {
+          return key;
+        }
+      }
+    }
+
+    // Check for intent patterns
+    for (const [intent, patterns] of Object.entries(INTENT_PATTERNS)) {
+      for (const pattern of patterns) {
+        if (pattern.test(normalizedInput)) {
+          return intent;
+        }
+      }
+    }
+
+    return null;
+  };
+
+  // Handle multi-step conversations
+  const handleMultiStep = (command: string) => {
+    const { currentStep, formData } = conversationContext;
+
+    switch (currentStep) {
+      case 'creating_campaign':
+        if (!formData) {
+          setConversationContext({
+            currentStep: 'creating_campaign',
+            formData: { type: command }
+          });
+          return 'SELECT_TARGET_AUDIENCE_';
+        }
+        if (!formData.audience) {
+          setConversationContext({
+            currentStep: 'creating_campaign',
+            formData: { ...formData, audience: command }
+          });
+          return 'SET_CAMPAIGN_OBJECTIVES_';
+        }
+        // ... handle other steps
+        break;
+      // ... other multi-step scenarios
+    }
+
+    return null;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim()) return;
+
+    // Add user message
+    setMessages(prev => [...prev, { text: input, sender: 'user' }]);
+    setInput('');
+    setIsTyping(true);
+
+    // Process input
+    const command = matchCommand(input);
+    const multiStepResponse = handleMultiStep(command);
+
+    if (multiStepResponse) {
+      setMessages(prev => [...prev, { text: multiStepResponse, sender: 'bot' }]);
+      setIsTyping(false);
+      return;
+    }
+
+    // Generate response
+    setTimeout(() => {
+      const context = getContextResponses();
+      let response = 'I_DONT_UNDERSTAND_PLEASE_TRY_AGAIN_';
+      
+      if (command) {
+        response = context.responses[command] || response;
+      }
+
+      // Add interactive elements if needed
+      const message: any = { text: response, sender: 'bot' };
+      
+      if (command === 'create') {
+        message.type = 'form';
+        message.data = {
+          fields: [
+            { type: 'text', label: 'CAMPAIGN_NAME_', name: 'name' },
+            { type: 'select', label: 'CAMPAIGN_TYPE_', name: 'type', options: ['EMAIL_', 'SMS_', 'SOCIAL_'] }
+          ]
+        };
+      }
+
+      setMessages(prev => [...prev, message]);
+      setIsTyping(false);
+    }, 1000);
+  };
 
   const handleTopicClick = (key: string, action?: string) => {
     const context = getContextResponses();
@@ -120,34 +212,6 @@ const Chatbot: React.FC = () => {
         router.push(action);
       }, 1000);
     }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim()) return;
-
-    // Add user message
-    const userMessage = input.trim().toLowerCase();
-    setMessages(prev => [...prev, { text: input, sender: 'user' }]);
-    setInput('');
-    setIsTyping(true);
-
-    // Generate bot response
-    setTimeout(() => {
-      const context = getContextResponses();
-      let response = 'I_DONT_UNDERSTAND_PLEASE_TRY_AGAIN_';
-      
-      // Check for matching responses
-      for (const [key, value] of Object.entries(context.responses)) {
-        if (userMessage.includes(key)) {
-          response = value;
-          break;
-        }
-      }
-
-      setMessages(prev => [...prev, { text: response, sender: 'bot' }]);
-      setIsTyping(false);
-    }, 1000);
   };
 
   const clearChat = () => {
@@ -200,7 +264,41 @@ const Chatbot: React.FC = () => {
                       : 'bg-gray-800 text-white'
                   }`}
                 >
-                  {message.key ? (
+                  {message.type === 'form' ? (
+                    <form onSubmit={(e) => {
+                      e.preventDefault();
+                      // Handle form submission
+                    }}>
+                      {message.data.fields.map((field: any, i: number) => (
+                        <div key={i} className="mb-4">
+                          <label className="block text-sm mb-2">{field.label}</label>
+                          {field.type === 'text' && (
+                            <input
+                              type="text"
+                              className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white"
+                              name={field.name}
+                            />
+                          )}
+                          {field.type === 'select' && (
+                            <select
+                              className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white"
+                              name={field.name}
+                            >
+                              {field.options.map((opt: string, j: number) => (
+                                <option key={j} value={opt}>{opt}</option>
+                              ))}
+                            </select>
+                          )}
+                        </div>
+                      ))}
+                      <button
+                        type="submit"
+                        className="bg-[#32CD32] text-black px-4 py-2 rounded font-mono tracking-wider"
+                      >
+                        SUBMIT_
+                      </button>
+                    </form>
+                  ) : message.key ? (
                     <button
                       onClick={() => handleTopicClick(message.key!, message.action)}
                       className="text-left w-full hover:text-[#32CD32] transition-colors whitespace-pre-wrap text-sm"

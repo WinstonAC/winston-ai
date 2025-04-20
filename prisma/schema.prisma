@@ -194,3 +194,21 @@ model Activity {
   @@index([teamId])
   @@index([leadId])
 }
+
+model ChatbotInteraction {
+  id        String   @id @default(cuid())
+  userId    String
+  sessionId String
+  timestamp DateTime @default(now())
+  command   String
+  response  String
+  success   Boolean
+  page      String
+  userRole  String
+  teamId    String?
+  duration  Int
+
+  @@index([userId])
+  @@index([sessionId])
+  @@index([timestamp])
+}

@@ -7,6 +7,11 @@ Winston AI is an AI-powered sales assistant that helps manage leads, campaigns, 
 
 ## Features
 
+### Team Management
+- **Team Member Invitation**: Invite team members via email
+- **Team Dashboard**: Manage team members and their roles
+- **Secure Authentication**: Robust session handling and access control
+
 ### Chatbot Assistant
 - **Context-Aware Responses**: The chatbot provides relevant information based on the current page
 - **Navigation**: Clickable topics that can navigate to different sections of the application
@@ -19,10 +24,11 @@ Winston AI is an AI-powered sales assistant that helps manage leads, campaigns, 
 
 ### Pages
 - **Landing Page**: Minimal design with floating animations
-- **Login**: Secure authentication
-- **Dashboard**: Overview of leads and campaigns
+- **Login**: Secure authentication with team support
+- **Dashboard**: Overview of leads, campaigns, and team activity
 - **Leads**: Lead management and tracking
 - **Campaigns**: Campaign creation and monitoring
+- **Team Management**: Manage team members and permissions
 - **Demo**: Request a personalized demo
 
 ## Getting Started
@@ -32,11 +38,15 @@ Winston AI is an AI-powered sales assistant that helps manage leads, campaigns, 
    ```bash
    npm install
    ```
-3. Run the development server:
+3. Set up your environment variables:
+   ```bash
+   cp .env.example .env.local
+   ```
+4. Run the development server:
    ```bash
    npm run dev
    ```
-4. Open [http://localhost:3000](http://localhost:3000) in your browser
+5. Open [http://localhost:3000](http://localhost:3000) in your browser
 
 ## Documentation
 
@@ -59,6 +69,7 @@ For detailed information about the chatbot and its features, visit our [Chatbot 
 - MANAGE_YOUR_CAMPAIGNS_
 - UPLOAD_NEW_LEADS_
 - CHECK_SYSTEM_STATUS_
+- VIEW_TEAM_ACTIVITY_
 
 #### Leads
 - VIEW_LEAD_DETAILS_
@@ -70,6 +81,12 @@ For detailed information about the chatbot and its features, visit our [Chatbot 
 - CREATE_NEW_CAMPAIGN_
 - MONITOR_CAMPAIGN_PERFORMANCE_
 - ADJUST_CAMPAIGN_SETTINGS_
+- GO_TO_DASHBOARD_
+
+#### Team Management
+- INVITE_TEAM_MEMBER_
+- VIEW_TEAM_MEMBERS_
+- MANAGE_TEAM_PERMISSIONS_
 - GO_TO_DASHBOARD_
 
 ## Example Interactions
@@ -92,12 +109,23 @@ BOT: NEW_CAMPAIGN_SETUP_
      3_SET_OBJECTIVES_
 ```
 
+### Team Management
+```
+USER: INVITE_TEAM_MEMBER_
+BOT: TEAM_INVITATION_SETUP_
+     1_ENTER_EMAIL_ADDRESS_
+     2_SELECT_ROLE_
+     3_SEND_INVITATION_
+```
+
 ## Technologies Used
 
 - Next.js
 - React
 - TypeScript
 - Tailwind CSS
+- Prisma (Database ORM)
+- NextAuth.js (Authentication)
 
 ## Contributing
 
