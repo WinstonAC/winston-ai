@@ -13,144 +13,78 @@ export default function Pricing() {
       <div className="min-h-screen bg-black">
         <Navigation />
         
-        <main className="pt-24 pb-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h1 className="text-3xl font-mono text-white mb-12 text-center">PRICING_</h1>
+        <main className="pt-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <h1 className="text-3xl font-mono text-white mb-12 text-center">PRICING</h1>
             
             {/* Pricing Tiers */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               {/* Starter Plan */}
-              <div className="bg-gray-900 rounded-lg p-8 border border-gray-800 hover:border-gray-700 transition-colors">
-                <h2 className="text-xl font-mono text-white mb-4 tracking-wider">STARTER_</h2>
-                <p className="text-3xl font-light text-white mb-6">$29<span className="text-gray-200 text-lg">/mo</span></p>
-                <ul className="space-y-4 text-gray-200">
-                  <li className="flex items-start">
-                    <span className="text-green-400 mr-2">✓</span>
-                    <span>CSV upload & preview</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-green-400 mr-2">✓</span>
-                    <span>Basic email automation</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-green-400 mr-2">✓</span>
-                    <span>GPT-powered reply classification</span>
-                  </li>
+              <div className="bg-gray-900 rounded-lg p-8 border border-gray-800">
+                <h2 className="text-xl font-mono text-white mb-4 tracking-wider">STARTER</h2>
+                <p className="text-3xl font-light text-white mb-6">$99/mo</p>
+                <ul className="space-y-4 text-gray-400">
+                  <li>500 leads per month</li>
+                  <li>Basic email templates</li>
+                  <li>Standard support</li>
                 </ul>
               </div>
 
               {/* Pro Plan */}
-              <div className="bg-gray-900 rounded-lg p-8 border border-gray-800 hover:border-gray-700 transition-colors">
-                <h2 className="text-xl font-mono text-white mb-4 tracking-wider">PRO_</h2>
-                <p className="text-3xl font-light text-white mb-6">$99<span className="text-gray-200 text-lg">/mo</span></p>
-                <ul className="space-y-4 text-gray-200">
-                  <li className="flex items-start">
-                    <span className="text-green-400 mr-2">✓</span>
-                    <span>Everything in Starter</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-green-400 mr-2">✓</span>
-                    <span>Automatic demo-link emails</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-green-400 mr-2">✓</span>
-                    <span>Delivery analytics & storage</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-green-400 mr-2">✓</span>
-                    <span>Priority support</span>
-                  </li>
+              <div className="bg-gray-900 rounded-lg p-8 border border-gray-800">
+                <h2 className="text-xl font-mono text-white mb-4 tracking-wider">PRO</h2>
+                <p className="text-3xl font-light text-white mb-6">$299/mo</p>
+                <ul className="space-y-4 text-gray-400">
+                  <li>2,000 leads per month</li>
+                  <li>Advanced email templates</li>
+                  <li>Priority support</li>
                 </ul>
               </div>
 
               {/* Business Plan */}
-              <div className="bg-gray-900 rounded-lg p-8 border border-gray-800 hover:border-gray-700 transition-colors">
-                <h2 className="text-xl font-mono text-white mb-4 tracking-wider">BUSINESS_</h2>
-                <p className="text-3xl font-light text-white mb-6">$199<span className="text-gray-200 text-lg">/mo</span></p>
-                <ul className="space-y-4 text-gray-200">
-                  <li className="flex items-start">
-                    <span className="text-green-400 mr-2">✓</span>
-                    <span>Everything in Pro</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-green-400 mr-2">✓</span>
-                    <span>On-site Chatbot module</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-green-400 mr-2">✓</span>
-                    <span>Lead qualification & onboarding</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-green-400 mr-2">✓</span>
-                    <span>Custom templates & branding</span>
-                  </li>
+              <div className="bg-gray-900 rounded-lg p-8 border border-gray-800">
+                <h2 className="text-xl font-mono text-white mb-4 tracking-wider">BUSINESS</h2>
+                <p className="text-3xl font-light text-white mb-6">$799/mo</p>
+                <ul className="space-y-4 text-gray-400">
+                  <li>5,000 leads per month</li>
+                  <li>Custom email templates</li>
+                  <li>Dedicated support</li>
                 </ul>
               </div>
 
               {/* Enterprise Plan */}
-              <div className="bg-gray-900 rounded-lg p-8 border border-gray-800 hover:border-gray-700 transition-colors">
-                <h2 className="text-xl font-mono text-white mb-4 tracking-wider">ENTERPRISE_</h2>
-                <p className="text-3xl font-light text-white mb-6">CUSTOM_</p>
-                <ul className="space-y-4 text-gray-200">
-                  <li className="flex items-start">
-                    <span className="text-green-400 mr-2">✓</span>
-                    <span>Everything in Business</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-green-400 mr-2">✓</span>
-                    <span>Dedicated account manager</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-green-400 mr-2">✓</span>
-                    <span>SLA & advanced integrations</span>
-                  </li>
+              <div className="bg-gray-900 rounded-lg p-8 border border-gray-800">
+                <h2 className="text-xl font-mono text-white mb-4 tracking-wider">ENTERPRISE</h2>
+                <p className="text-3xl font-light text-white mb-6">CUSTOM</p>
+                <ul className="space-y-4 text-gray-400">
+                  <li>Unlimited leads</li>
+                  <li>Custom integrations</li>
+                  <li>24/7 support</li>
                 </ul>
               </div>
             </div>
 
-            {/* Chatbot Add-On */}
-            <div className="mt-16 bg-gray-900 rounded-lg p-8 border border-gray-800 hover:border-gray-700 transition-colors">
-              <h2 className="text-xl font-mono text-white mb-4 tracking-wider">CHATBOT_ADD-ON_</h2>
-              <p className="text-3xl font-light text-white mb-6">+$49<span className="text-gray-200 text-lg">/mo</span></p>
-              <p className="text-gray-200 mb-8">Live-chat assistant for qualification & support</p>
+            {/* Chatbot Add-on */}
+            <div className="mt-12 bg-gray-900 rounded-lg p-8 border border-gray-800">
+              <h2 className="text-xl font-mono text-white mb-4 tracking-wider">CHATBOT ADD-ON</h2>
+              <p className="text-3xl font-light text-white mb-6">$49/mo</p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-4">
-                  <h3 className="text-lg font-mono text-white tracking-wider">FUNCTIONALITY_</h3>
-                  <ul className="space-y-4 text-gray-200">
-                    <li className="flex items-start">
-                      <span className="text-green-400 mr-2">✓</span>
-                      <span>Lead Qualification</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="text-green-400 mr-2">✓</span>
-                      <span>User Onboarding</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="text-green-400 mr-2">✓</span>
-                      <span>Quick Support</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="text-green-400 mr-2">✓</span>
-                      <span>Demo Scheduling</span>
-                    </li>
+                <div>
+                  <h3 className="text-lg font-mono text-white tracking-wider">FUNCTIONALITY</h3>
+                  <ul className="mt-4 space-y-2 text-gray-400">
+                    <li>AI-powered responses</li>
+                    <li>24/7 availability</li>
+                    <li>Lead qualification</li>
                   </ul>
                 </div>
-                <div className="space-y-4">
-                  <h3 className="text-lg font-mono text-white tracking-wider">ADDITIONAL_FEATURES_</h3>
-                  <ul className="space-y-4 text-gray-200">
-                    <li className="flex items-start">
-                      <span className="text-green-400 mr-2">✓</span>
-                      <span>Feedback Collection</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="text-green-400 mr-2">✓</span>
-                      <span>Contextual Tips</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="text-green-400 mr-2">✓</span>
-                      <span>API/Doc Assistance</span>
-                    </li>
+                
+                <div>
+                  <h3 className="text-lg font-mono text-white tracking-wider">ADDITIONAL FEATURES</h3>
+                  <ul className="mt-4 space-y-2 text-gray-400">
+                    <li>Custom branding</li>
+                    <li>Analytics dashboard</li>
+                    <li>Integration support</li>
                   </ul>
                 </div>
               </div>
@@ -159,10 +93,10 @@ export default function Pricing() {
         </main>
 
         {/* Footer */}
-        <div className="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 z-50">
+        <div className="fixed bottom-0 left-0 right-0 bg-[#111111] border-t border-[#222222] z-50">
           <div className="max-w-7xl mx-auto px-4 py-4">
-            <p className="text-sm font-mono text-green-400 tracking-widest">
-              POWERED_BY_CYLON_DIGITAL
+            <p className="text-xs font-mono tracking-widest text-left" style={{ color: 'rgb(50, 205, 50)' }}>
+              Powered by Cylon Digital Consulting
             </p>
           </div>
         </div>

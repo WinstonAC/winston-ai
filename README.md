@@ -16,11 +16,11 @@ Winston AI is an AI-powered sales assistant that helps manage leads, campaigns, 
 - **Context-Aware Responses**: The chatbot provides relevant information based on the current page
 - **Navigation**: Clickable topics that can navigate to different sections of the application
 - **Real-Time Interaction**: Instant responses to user queries
-- **Brutalist Design**: Consistent with the application's aesthetic
+- **Modern Design**: Consistent with the application's aesthetic
   - Monospace font
-  - Uppercase text
-  - Underscore styling
+  - Clean typography
   - Lime green accent color
+  - Dark theme
 
 ### Pages
 - **Landing Page**: Minimal design with floating animations
@@ -30,6 +30,8 @@ Winston AI is an AI-powered sales assistant that helps manage leads, campaigns, 
 - **Campaigns**: Campaign creation and monitoring
 - **Team Management**: Manage team members and permissions
 - **Demo**: Request a personalized demo
+- **Solutions**: Overview of available features and capabilities
+- **Pricing**: Transparent pricing plans and add-ons
 
 ## Getting Started
 
@@ -54,10 +56,10 @@ For detailed information about the chatbot and its features, visit our [Chatbot 
 
 ### Quick Start with the Chatbot
 
-1. Click the "OPEN_CHAT_" button in the bottom-right corner
+1. Click the "Open Chat" button in the bottom-right corner
 2. Select from available topics or type your query
 3. Click on navigation options to move between pages
-4. Use the "CLEAR_" button to reset the conversation
+4. Use the "Clear" button to reset the conversation
 
 ![Chatbot Navigation](public/chatbot-navigation.png)
 *Navigating between pages using the chatbot*
@@ -65,57 +67,57 @@ For detailed information about the chatbot and its features, visit our [Chatbot 
 ### Available Commands
 
 #### Dashboard
-- VIEW_YOUR_LEAD_STATS_
-- MANAGE_YOUR_CAMPAIGNS_
-- UPLOAD_NEW_LEADS_
-- CHECK_SYSTEM_STATUS_
-- VIEW_TEAM_ACTIVITY_
+- View your lead stats
+- Manage your campaigns
+- Upload new leads
+- Check system status
+- View team activity
 
 #### Leads
-- VIEW_LEAD_DETAILS_
-- CLASSIFY_LEADS_
-- EXPORT_LEAD_DATA_
-- GO_TO_DASHBOARD_
+- View lead details
+- Classify leads
+- Export lead data
+- Go to dashboard
 
 #### Campaigns
-- CREATE_NEW_CAMPAIGN_
-- MONITOR_CAMPAIGN_PERFORMANCE_
-- ADJUST_CAMPAIGN_SETTINGS_
-- GO_TO_DASHBOARD_
+- Create new campaign
+- Monitor campaign performance
+- Adjust campaign settings
+- Go to dashboard
 
 #### Team Management
-- INVITE_TEAM_MEMBER_
-- VIEW_TEAM_MEMBERS_
-- MANAGE_TEAM_PERMISSIONS_
-- GO_TO_DASHBOARD_
+- Invite team member
+- View team members
+- Manage team permissions
+- Go to dashboard
 
 ## Example Interactions
 
 ### Viewing Lead Stats
 ```
-USER: VIEW_YOUR_LEAD_STATS_
-BOT: CURRENT_METRICS_
-     LEADS_123_
-     ACTIVE_CAMPAIGNS_5_
-     CONVERSION_RATE_12%_
+USER: View lead stats
+BOT: Current metrics:
+     Leads: 123
+     Active campaigns: 5
+     Conversion rate: 12%
 ```
 
 ### Creating a Campaign
 ```
-USER: CREATE_NEW_CAMPAIGN_
-BOT: NEW_CAMPAIGN_SETUP_
-     1_SELECT_CAMPAIGN_TYPE_
-     2_DEFINE_TARGET_AUDIENCE_
-     3_SET_OBJECTIVES_
+USER: Create new campaign
+BOT: New campaign setup:
+     1. Select campaign type
+     2. Define target audience
+     3. Set objectives
 ```
 
 ### Team Management
 ```
-USER: INVITE_TEAM_MEMBER_
-BOT: TEAM_INVITATION_SETUP_
-     1_ENTER_EMAIL_ADDRESS_
-     2_SELECT_ROLE_
-     3_SEND_INVITATION_
+USER: Invite team member
+BOT: Team invitation setup:
+     1. Enter email address
+     2. Select role
+     3. Send invitation
 ```
 
 ## Technologies Used

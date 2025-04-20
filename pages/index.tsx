@@ -2,8 +2,10 @@ import React from 'react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
+import Link from 'next/link';
+import UserFlowAssistant from '@/components/UserFlowAssistant';
 
-export default function LandingPage() {
+export default function HomePage() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
 
@@ -74,6 +76,24 @@ export default function LandingPage() {
               >
                 Cold emails, replies, and demo booking — handled.
               </p>
+
+              {/* CTA Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
+                <Link
+                  href="/register"
+                  className="inline-flex items-center justify-center px-8 py-4 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors opacity-0 animate-slide-up"
+                  style={{ animationDelay: '2s' }}
+                >
+                  Get Started
+                </Link>
+                <Link
+                  href="/demo"
+                  className="inline-flex items-center justify-center px-8 py-4 border border-2 border-blue-600 text-base font-medium rounded-md text-blue-400 hover:bg-blue-600/10 transition-colors opacity-0 animate-slide-up"
+                  style={{ animationDelay: '2s' }}
+                >
+                  Watch Demo
+                </Link>
+              </div>
             </div>
           </main>
         </div>
@@ -82,11 +102,14 @@ export default function LandingPage() {
       {/* Footer */}
       <div className="fixed bottom-0 left-0 right-0 bg-[#111111] border-t border-[#222222] z-50">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <p className="text-sm font-mono tracking-widest" style={{ color: 'rgb(50, 205, 50)' }}>
-            POWERED_BY_CYLON_DIGITAL
+          <p className="text-xs font-mono tracking-widest text-left" style={{ color: 'rgb(50, 205, 50)' }}>
+            Powered by Cylon Digital Consulting
           </p>
         </div>
       </div>
+
+      {/* User Flow Assistant */}
+      <UserFlowAssistant />
 
       <style jsx global>{`
         @keyframes float-circle-1 {

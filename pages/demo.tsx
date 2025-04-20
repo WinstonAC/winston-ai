@@ -42,23 +42,21 @@ export default function DemoPage() {
           <div className="w-full max-w-md relative z-10">
             {/* System Status Card */}
             <div className="bg-white/10 p-6 mb-8 backdrop-blur-lg">
-              <div className="flex items-center justify-between">
-                <span className="tracking-wider">SYSTEM_STATUS</span>
-                <span className="flex items-center">
-                  <span className="w-2 h-2 bg-[#32CD32] rounded-full mr-2 animate-pulse"></span>
-                  READY_FOR_DEMO
-                </span>
+              <div className="text-center">
+                <span className="tracking-wider">SYSTEM STATUS</span>
+                <div className="text-4xl font-mono text-[#32CD32] mb-8">
+                  READY FOR DEMO
+                </div>
+                <div className="text-2xl tracking-wider mb-8">REQUEST DEMO</div>
               </div>
             </div>
 
             {/* Demo Form Card */}
             <div className="bg-white/10 p-8 backdrop-blur-lg">
-              <div className="text-2xl tracking-wider mb-8">REQUEST_DEMO_</div>
-
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                  <label htmlFor="name" className="block text-sm tracking-wider mb-2">
-                    FULL_NAME
+                  <label className="block text-sm font-mono text-gray-400 mb-2">
+                    FULL NAME
                   </label>
                   <input
                     id="name"
@@ -66,15 +64,14 @@ export default function DemoPage() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
-                    className="w-full px-4 py-3 bg-white text-black font-mono
-                             focus:outline-none placeholder-gray-500 tracking-wider"
-                    placeholder="ENTER_NAME"
+                    className="w-full px-4 py-3 bg-gray-900 border border-gray-800 rounded-lg text-white"
+                    placeholder="Enter Name"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="email" className="block text-sm tracking-wider mb-2">
-                    EMAIL_ADDRESS
+                  <label className="block text-sm font-mono text-gray-400 mb-2">
+                    EMAIL ADDRESS
                   </label>
                   <input
                     id="email"
@@ -82,15 +79,14 @@ export default function DemoPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="w-full px-4 py-3 bg-white text-black font-mono
-                             focus:outline-none placeholder-gray-500 tracking-wider"
-                    placeholder="ENTER_EMAIL"
+                    className="w-full px-4 py-3 bg-gray-900 border border-gray-800 rounded-lg text-white"
+                    placeholder="Enter Email"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="company" className="block text-sm tracking-wider mb-2">
-                    COMPANY_NAME
+                  <label className="block text-sm font-mono text-gray-400 mb-2">
+                    COMPANY NAME
                   </label>
                   <input
                     id="company"
@@ -98,18 +94,16 @@ export default function DemoPage() {
                     value={company}
                     onChange={(e) => setCompany(e.target.value)}
                     required
-                    className="w-full px-4 py-3 bg-white text-black font-mono
-                             focus:outline-none placeholder-gray-500 tracking-wider"
-                    placeholder="ENTER_COMPANY"
+                    className="w-full px-4 py-3 bg-gray-900 border border-gray-800 rounded-lg text-white"
+                    placeholder="Enter Company"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className={`w-full py-4 bg-white text-black font-mono tracking-wider
-                           transition-colors text-lg
-                           ${loading ? 'bg-gray-300 cursor-not-allowed' : 'hover:bg-gray-100'}`}
+                  className={`w-full px-6 py-4 bg-[#32CD32] text-black rounded-lg hover:bg-[#2db82d] transition-colors text-lg
+                           ${loading ? 'bg-gray-300 cursor-not-allowed' : ''}`}
                 >
                   {loading ? (
                     <span className="flex items-center justify-center space-x-2">
@@ -117,7 +111,7 @@ export default function DemoPage() {
                       <span className="animate-pulse">...</span>
                     </span>
                   ) : (
-                    'SCHEDULE_DEMO'
+                    'SCHEDULE DEMO'
                   )}
                 </button>
               </form>
@@ -125,9 +119,9 @@ export default function DemoPage() {
               <div className="mt-6 pt-6 border-t border-white/10">
                 <Link
                   href="/solutions"
-                  className="block text-center text-gray-400 hover:text-white transition-colors tracking-wider"
+                  className="text-center text-gray-400 hover:text-white transition-colors"
                 >
-                  VIEW_SYSTEM_FEATURES →
+                  VIEW SYSTEM FEATURES →
                 </Link>
               </div>
             </div>
@@ -137,8 +131,8 @@ export default function DemoPage() {
         {/* Footer */}
         <div className="fixed bottom-0 left-0 right-0 bg-[#111111] border-t border-[#222222] z-50">
           <div className="max-w-7xl mx-auto px-4 py-4">
-            <p className="text-sm font-mono tracking-widest" style={{ color: 'rgb(50, 205, 50)' }}>
-              POWERED_BY_CYLON_DIGITAL
+            <p className="text-xs font-mono tracking-widest text-left" style={{ color: 'rgb(50, 205, 50)' }}>
+              Powered by Cylon Digital Consulting
             </p>
           </div>
         </div>
