@@ -1,31 +1,14 @@
 import '@testing-library/jest-dom';
 
-// Mock next-auth
-jest.mock('next-auth/react', () => ({
-  useSession: () => ({
-    data: {
-      user: {
-        name: 'Test User',
-        email: 'test@example.com',
-        image: 'https://example.com/avatar.jpg',
-      },
-      expires: '2024-12-31T23:59:59.999Z',
-    },
-    status: 'authenticated',
-  }),
-  signIn: jest.fn(),
-  signOut: jest.fn(),
-}));
-
 // Mock next/router
 jest.mock('next/router', () => ({
   useRouter: () => ({
     push: jest.fn(),
     replace: jest.fn(),
-    prefetch: jest.fn(),
+    reload: jest.fn(),
     back: jest.fn(),
-    query: {},
     pathname: '/',
+    query: {},
     asPath: '/',
     events: {
       on: jest.fn(),
@@ -35,13 +18,16 @@ jest.mock('next/router', () => ({
   }),
 }));
 
-// Mock fetch
-global.fetch = jest.fn(() =>
-  Promise.resolve({
-    ok: true,
-    json: () => Promise.resolve({}),
-  })
-);
+// Mock next-auth
+jest.mock('next-auth/react', () => ({
+  useSession: jest.fn(() => ({
+    data: null,
+    status: 'unauthenticated',
+  })),
+  signIn: jest.fn(),
+  signOut: jest.fn(),
+  getSession: jest.fn(),
+}));
 
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
@@ -58,37 +44,38 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 });
 
-// Mock next/image
-jest.mock('next/image', () => ({
-  __esModule: true,
-  default: (props) => {
-    // eslint-disable-next-line jsx-a11y/alt-text
-    return <img {...props} />;
-  },
-}));
-
 // Mock IntersectionObserver
-class IntersectionObserver {
-  observe = jest.fn();
-  disconnect = jest.fn();
-  unobserve = jest.fn();
-}
-
-Object.defineProperty(window, 'IntersectionObserver', {
-  writable: true,
-  configurable: true,
-  value: IntersectionObserver,
+const mockIntersectionObserver = jest.fn();
+mockIntersectionObserver.mockReturnValue({
+  observe: () => null,
+  unobserve: () => null,
+  disconnect: () => null
 });
+window.IntersectionObserver = mockIntersectionObserver;
 
 // Mock ResizeObserver
-class ResizeObserver {
-  observe = jest.fn();
-  disconnect = jest.fn();
-  unobserve = jest.fn();
-}
+const mockResizeObserver = jest.fn();
+mockResizeObserver.mockReturnValue({
+  observe: () => null,
+  unobserve: () => null,
+  disconnect: () => null
+});
+window.ResizeObserver = mockResizeObserver;
 
-Object.defineProperty(window, 'ResizeObserver', {
-  writable: true,
-  configurable: true,
-  value: ResizeObserver,
+// Suppress console errors during tests
+const originalError = console.error;
+beforeAll(() => {
+  console.error = (...args) => {
+    if (
+      typeof args[0] === 'string' &&
+      args[0].includes('Warning: ReactDOM.render is no longer supported')
+    ) {
+      return;
+    }
+    originalError.call(console, ...args);
+  };
+});
+
+afterAll(() => {
+  console.error = originalError;
 }); 

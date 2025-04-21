@@ -31,7 +31,7 @@ export const Button = ({
       {...props}
     >
       {label}
-      <style jsx>{`
+      <style jsx="true">{`
         button {
           background-color: ${backgroundColor};
         }

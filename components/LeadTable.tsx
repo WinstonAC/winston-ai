@@ -24,7 +24,6 @@ interface Lead {
 
 interface LeadTableProps {
   leads: Lead[];
-  loading: boolean;
 }
 
 const StatusBadge: React.FC<{ status: Lead['status'] }> = ({ status }) => {
@@ -122,140 +121,53 @@ const mockLeads = [
   // Add more mock leads as needed
 ];
 
-const LeadTable: React.FC = () => {
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
-  const [isUpdating, setIsUpdating] = useState(false);
-
-  useEffect(() => {
-    fetchLeads();
-  }, []);
-
-  const fetchLeads = async () => {
-    try {
-      const response = await fetch('/api/leads');
-      if (!response.ok) throw new Error('Failed to fetch leads');
-      const data = await response.json();
-      setLeads(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch leads');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateLeadStatus = async (leadId: string, newStatus: Lead['status']) => {
-    setIsUpdating(true);
-    try {
-      const response = await fetch(`/api/leads/${leadId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus }),
-      });
-
-      if (!response.ok) throw new Error('Failed to update lead status');
-
-      setLeads(prev => prev.map(lead => 
-        lead.id === leadId ? { ...lead, status: newStatus } : lead
-      ));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update lead status');
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const deleteLead = async (leadId: string) => {
-    try {
-      const response = await fetch(`/api/leads/${leadId}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) throw new Error('Failed to delete lead');
-
-      setLeads(prev => prev.filter(lead => lead.id !== leadId));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete lead');
-    }
-  };
-
-  if (loading) return <div className="animate-pulse">Loading leads...</div>;
-  if (error) return <div className="text-red-500">Error: {error}</div>;
-
+const LeadTable: React.FC<LeadTableProps> = ({ leads }) => {
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
-          {leads.map((lead) => (
-            <tr key={lead.id} className="hover:bg-gray-50">
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0 h-10 w-10">
-                    <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                      <span className="text-gray-500">{lead.name.charAt(0)}</span>
-                    </div>
-                  </div>
-                  <div className="ml-4">
-                    <div className="text-sm font-medium text-gray-900">{lead.name}</div>
-                    <div className="text-sm text-gray-500">{lead.title}</div>
-                  </div>
-                </div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm text-gray-900">{lead.email}</div>
-                <div className="text-sm text-gray-500">{lead.company}</div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm text-gray-900">{lead.company}</div>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">
-                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                  lead.status === 'qualified' ? 'bg-green-100 text-green-800' :
-                  lead.status === 'unqualified' ? 'bg-red-100 text-red-800' :
-                  lead.status === 'contacted' ? 'bg-blue-100 text-blue-800' :
-                  'bg-gray-100 text-gray-800'
-                }`}>
-                  {lead.status}
-                </span>
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <button
-                  onClick={() => updateLeadStatus(lead.id, 'qualified')}
-                  disabled={isUpdating}
-                  className="text-green-600 hover:text-green-900 mr-4"
-                >
-                  <CheckIcon className="h-5 w-5" />
-                </button>
-                <button
-                  onClick={() => updateLeadStatus(lead.id, 'unqualified')}
-                  disabled={isUpdating}
-                  className="text-red-600 hover:text-red-900 mr-4"
-                >
-                  <XMarkIcon className="h-5 w-5" />
-                </button>
-                <button
-                  onClick={() => deleteLead(lead.id)}
-                  disabled={isUpdating}
-                  className="text-gray-600 hover:text-gray-900"
-                >
-                  <TrashIcon className="h-5 w-5" />
-                </button>
-              </td>
+    <div className="bg-gray-900 rounded-lg shadow border border-gray-800 overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-800">
+          <thead className="bg-gray-800">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                Name
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                Email
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                Company
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                Status
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                Last Contacted
+              </th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="bg-gray-900 divide-y divide-gray-800">
+            {leads.map((lead) => (
+              <tr key={lead.id} className="hover:bg-gray-800">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
+                  {lead.name}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
+                  {lead.email}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
+                  {lead.company}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
+                  <StatusBadge status={lead.status} />
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
+                  {lead.lastContacted || 'Never'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { 
   ChartBarIcon, 
   EnvelopeIcon, 
@@ -11,6 +11,7 @@ import {
 } from '@heroicons/react/24/outline';
 import SandboxSettings from './SandboxSettings';
 import { useRouter } from 'next/router';
+import Papa from 'papaparse';
 
 interface DashboardProps {
   stats: {
@@ -35,6 +36,16 @@ interface StatCardProps {
   value: string | number;
   change?: string;
   icon: React.ElementType;
+}
+
+interface Lead {
+  id: string;
+  name: string;
+  email: string;
+  status: string;
+  classification: string | null;
+  sent_at?: string;
+  created_at: string;
 }
 
 const StatCard: React.FC<StatCardProps> = ({ title, value, change, icon: Icon }) => (
@@ -112,13 +123,64 @@ const ActivityFeed: React.FC<{ activities: DashboardProps['recentActivity'] }> =
 
 const QuickActions: React.FC<{ isSandbox?: boolean }> = ({ isSandbox }) => {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleNewCampaign = () => {
     router.push('/campaigns/new');
   };
 
   const handleImportLeads = () => {
-    router.push('/leads/import');
+    fileInputRef.current?.click();
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const results = await new Promise((resolve, reject) => {
+        Papa.parse(file, {
+          complete: resolve,
+          error: reject,
+          header: true,
+        });
+      });
+
+      const parsedLeads = (results as any).data
+        .filter((row: any) => row.name && row.email)
+        .map((row: any) => ({
+          name: row.name,
+          email: row.email,
+          status: 'Pending',
+          classification: null,
+        }));
+
+      if (parsedLeads.length === 0) {
+        throw new Error('No valid leads found in CSV. Please ensure your CSV has "name" and "email" columns.');
+      }
+
+      const response = await fetch('/api/leads', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(parsedLeads),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to upload leads');
+      }
+
+      window.location.reload();
+    } catch (error) {
+      console.error('Error processing CSV:', error);
+      alert(error instanceof Error ? error.message : 'Failed to process CSV file. Please check the format and try again.');
+    }
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleScheduleMeeting = () => {
@@ -142,7 +204,6 @@ const QuickActions: React.FC<{ isSandbox?: boolean }> = ({ isSandbox }) => {
         throw new Error('Failed to reset data');
       }
 
-      // Refresh the page to show updated data
       router.reload();
     } catch (error) {
       console.error('Error resetting data:', error);
@@ -150,32 +211,43 @@ const QuickActions: React.FC<{ isSandbox?: boolean }> = ({ isSandbox }) => {
   };
 
   const actions = [
-    { text: 'New Campaign', color: 'bg-blue-500', onClick: handleNewCampaign },
-    { text: 'Import Leads', color: 'bg-purple-500', onClick: handleImportLeads },
-    { text: 'Schedule Meeting', color: 'bg-green-500', onClick: handleScheduleMeeting },
-    { text: 'View Reports', color: 'bg-yellow-500', onClick: handleViewReports },
+    { text: 'NEW CAMPAIGN', onClick: handleNewCampaign },
+    { text: 'IMPORT LEADS', onClick: handleImportLeads },
+    { text: 'SCHEDULE MEETING', onClick: handleScheduleMeeting },
+    { text: 'VIEW REPORTS', onClick: handleViewReports },
   ];
 
   if (isSandbox) {
     actions.push(
-      { text: 'Reset Data', color: 'bg-red-500', onClick: handleResetData }
+      { text: 'RESET DATA', onClick: handleResetData }
     );
   }
 
   return (
-    <div className="bg-gray-900 rounded-lg p-6 border border-gray-800">
-      <h3 className="text-lg font-light text-white mb-4">Quick Actions</h3>
-      <div className="grid grid-cols-2 gap-4">
-        {actions.map((action, index) => (
-          <button
-            key={index}
-            className={`${action.color} bg-opacity-10 hover:bg-opacity-20 text-white p-4 rounded-lg text-sm font-medium transition-colors`}
-            onClick={action.onClick}
-          >
-            {action.text}
-          </button>
-        ))}
+    <div className="bg-black border border-gray-800">
+      <div className="p-6">
+        <h3 className="font-mono text-gray-300 mb-6 tracking-widest uppercase text-sm">QUICK ACTIONS</h3>
+        <div className="grid grid-cols-2 gap-3">
+          {actions.map((action, index) => (
+            <button
+              key={index}
+              onClick={action.onClick}
+              className="border border-gray-700 p-4 font-mono text-xs tracking-widest
+                       text-gray-400 uppercase bg-black
+                       hover:border-gray-600 hover:text-gray-300 transition-colors"
+            >
+              {action.text}
+            </button>
+          ))}
+        </div>
       </div>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".csv"
+        className="hidden"
+        onChange={handleFileUpload}
+      />
     </div>
   );
 };
@@ -187,6 +259,87 @@ const Dashboard: React.FC<DashboardProps> = ({
   onSandboxReset,
   onSandboxSettingsUpdate
 }) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchLeads();
+  }, []);
+
+  const fetchLeads = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/leads');
+      if (!response.ok) {
+        throw new Error('Failed to fetch leads');
+      }
+      const data = await response.json();
+      setLeads(data);
+    } catch (error) {
+      console.error('Error fetching leads:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setLoading(true);
+      const results = await new Promise((resolve, reject) => {
+        Papa.parse(file, {
+          complete: resolve,
+          error: reject,
+          header: true,
+        });
+      });
+
+      const parsedLeads = (results as any).data
+        .filter((row: any) => row.name && row.email)
+        .map((row: any) => ({
+          name: row.name,
+          email: row.email,
+          status: 'Pending',
+          classification: null,
+        }));
+
+      if (parsedLeads.length === 0) {
+        throw new Error('No valid leads found in CSV. Please ensure your CSV has "name" and "email" columns.');
+      }
+
+      const response = await fetch('/api/leads', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(parsedLeads),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to upload leads');
+      }
+
+      // Fetch updated leads instead of reloading the page
+      await fetchLeads();
+    } catch (error) {
+      console.error('Error processing CSV:', error);
+      alert(error instanceof Error ? error.message : 'Failed to process CSV file. Please check the format and try again.');
+    } finally {
+      setLoading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Sandbox Indicator */}
@@ -230,7 +383,34 @@ const Dashboard: React.FC<DashboardProps> = ({
         {/* Main Content */}
         <div className="lg:col-span-2">
           <ActivityFeed activities={recentActivity} />
+          
+          {/* Recent Leads Section */}
+          <div className="mt-12">
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="font-mono text-xl text-gray-300 tracking-widest uppercase">Recent Leads</h2>
+              <button 
+                onClick={handleUploadClick}
+                className="border border-gray-700 bg-black text-gray-300 px-6 py-3
+                         font-mono text-xs tracking-widest uppercase hover:text-white
+                         hover:border-gray-600 transition-colors"
+              >
+                Upload Leads
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv"
+                className="hidden"
+                onChange={handleFileUpload}
+              />
+            </div>
+            
+            <div className="bg-black border border-gray-800">
+              <LeadTable leads={leads} loading={loading} />
+            </div>
+          </div>
         </div>
+
         {/* Sidebar */}
         <div className="space-y-6">
           <QuickActions isSandbox={isSandbox} />

@@ -1,35 +1,68 @@
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import CampaignCreator from '@/components/CampaignCreator';
 import { useRouter } from 'next/router';
-
-// Mock data for development
-const mockTemplates = [
-  { id: '1', name: 'Welcome Email' },
-  { id: '2', name: 'Follow-up Email' },
-  { id: '3', name: 'Newsletter' },
-];
-
-const mockSegments = [
-  { id: '1', name: 'All Leads' },
-  { id: '2', name: 'New Leads' },
-  { id: '3', name: 'Engaged Leads' },
-];
-
-const mockLeads = [
-  { id: '1', name: 'John Doe', email: 'john@example.com', company: 'Acme Inc', title: 'CEO' },
-  { id: '2', name: 'Jane Smith', email: 'jane@example.com', company: 'Tech Corp', title: 'CTO' },
-];
+import { CampaignCreator } from '@/components/CampaignCreator';
+import { Loader } from '@/components/Loader';
+import Navigation from '@/components/Navigation';
+import Head from 'next/head';
 
 const Campaigns = () => {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
+  const [templates, setTemplates] = useState([]);
+  const [segments, setSegments] = useState([]);
+  const [leads, setLeads] = useState([]);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/auth/signin');
+      return;
+    }
+
+    if (status === 'authenticated') {
+      fetchData();
+    }
+  }, [status, router]);
+
+  const fetchData = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const [templatesRes, segmentsRes, leadsRes] = await Promise.all([
+        fetch('/api/templates'),
+        fetch('/api/segments'),
+        fetch('/api/leads')
+      ]);
+
+      if (!templatesRes.ok || !segmentsRes.ok || !leadsRes.ok) {
+        throw new Error('Failed to fetch campaign data');
+      }
+
+      const [templatesData, segmentsData, leadsData] = await Promise.all([
+        templatesRes.json(),
+        segmentsRes.json(),
+        leadsRes.json()
+      ]);
+
+      setTemplates(templatesData);
+      setSegments(segmentsData);
+      setLeads(leadsData);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch campaign data');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleCreateCampaign = async (campaign: any) => {
     try {
+      setIsLoading(true);
       setError(null);
+      
       const response = await fetch('/api/campaigns', {
         method: 'POST',
         headers: {
@@ -42,19 +75,21 @@ const Campaigns = () => {
         throw new Error('Failed to create campaign');
       }
 
-      const data = await response.json();
-      setSuccessMessage('Campaign created successfully!');
-      router.push(`/campaigns/${data.id}`);
-      return data;
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to create campaign');
-      throw error;
+      setSuccessMessage('Campaign created successfully');
+      setTimeout(() => setSuccessMessage(null), 3000);
+      fetchData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create campaign');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleUpdateCampaign = async (campaign: any) => {
     try {
+      setIsLoading(true);
       setError(null);
+      
       const response = await fetch(`/api/campaigns/${campaign.id}`, {
         method: 'PUT',
         headers: {
@@ -67,18 +102,21 @@ const Campaigns = () => {
         throw new Error('Failed to update campaign');
       }
 
-      const data = await response.json();
-      setSuccessMessage('Campaign updated successfully!');
-      return data;
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to update campaign');
-      throw error;
+      setSuccessMessage('Campaign updated successfully');
+      setTimeout(() => setSuccessMessage(null), 3000);
+      fetchData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update campaign');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleDeleteCampaign = async (id: string) => {
     try {
+      setIsLoading(true);
       setError(null);
+      
       const response = await fetch(`/api/campaigns/${id}`, {
         method: 'DELETE',
       });
@@ -87,38 +125,58 @@ const Campaigns = () => {
         throw new Error('Failed to delete campaign');
       }
 
-      setSuccessMessage('Campaign deleted successfully!');
-      router.reload();
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to delete campaign');
-      throw error;
+      setSuccessMessage('Campaign deleted successfully');
+      setTimeout(() => setSuccessMessage(null), 3000);
+      fetchData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete campaign');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  return (
-    <div className="min-h-screen bg-black text-white p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-4xl font-mono font-bold mb-4">CAMPAIGN_MANAGER_</h1>
-          <p className="text-[#32CD32] font-mono">CREATE_AND_MANAGE_YOUR_EMAIL_CAMPAIGNS_</p>
-        </div>
+  if (status === 'loading' || isLoading) {
+    return <Loader />;
+  }
 
-        {error && (
-          <div className="mb-4 p-4 bg-red-900 text-white rounded-lg">
-            {error}
+  if (error) {
+    return (
+      <div className="min-h-screen bg-black text-white">
+        <Navigation />
+        <div className="container mx-auto px-4 py-8">
+          <div className="bg-red-900/50 border border-red-500 rounded-lg p-4">
+            <h2 className="text-xl font-bold mb-2">Error</h2>
+            <p>{error}</p>
+            <button
+              onClick={fetchData}
+              className="mt-4 px-4 py-2 bg-red-500 hover:bg-red-600 rounded-lg"
+            >
+              Retry
+            </button>
           </div>
-        )}
+        </div>
+      </div>
+    );
+  }
 
+  return (
+    <div className="min-h-screen bg-black text-white">
+      <Head>
+        <title>Campaigns - Winston AI</title>
+      </Head>
+      <Navigation />
+      
+      <div className="container mx-auto px-4 py-8">
         {successMessage && (
-          <div className="mb-4 p-4 bg-green-900 text-white rounded-lg">
+          <div className="mb-4 bg-green-900/50 border border-green-500 rounded-lg p-4">
             {successMessage}
           </div>
         )}
-
+        
         <CampaignCreator
-          leads={mockLeads}
-          templates={mockTemplates}
-          segments={mockSegments}
+          leads={leads}
+          templates={templates}
+          segments={segments}
           onCreateCampaign={handleCreateCampaign}
           onUpdateCampaign={handleUpdateCampaign}
           onDeleteCampaign={handleDeleteCampaign}

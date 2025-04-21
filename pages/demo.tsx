@@ -137,7 +137,7 @@ export default function DemoPage() {
           </div>
         </div>
 
-        <style jsx global>{`
+        <style jsx="true" global="true">{`
           @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap');
 
           * {

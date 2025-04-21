@@ -161,18 +161,12 @@ const CampaignCreator: React.FC<CampaignCreatorProps> = ({
     setIsCreating(true);
     setError(null);
     try {
-      const response = await fetch('/api/sendCampaign', {
+      const response = await fetch('/api/campaigns', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          name: newCampaign.name,
-          description: newCampaign.description,
-          templateId: newCampaign.templateId,
-          targetAudience: newCampaign.targetAudience,
-          schedule: newCampaign.schedule,
-        }),
+        body: JSON.stringify(newCampaign),
       });
 
       if (!response.ok) {

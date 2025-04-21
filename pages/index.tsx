@@ -104,7 +104,7 @@ export default function HomePage() {
       {/* User Flow Assistant */}
       <UserFlowAssistant />
 
-      <style jsx global>{`
+      <style jsx="true" global="true">{`
         @keyframes float-circle-1 {
           0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
           50% { transform: translate(-100px, 50px) rotate(-180deg) scale(1.2); }
