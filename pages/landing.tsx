@@ -7,7 +7,7 @@ export default function Landing() {
       <Head>
         <title>Winston AI - Your AI Work Assistant</title>
         <meta name="description" content="Winston is the AI agent that does the work you dread. Cold emails, replies, and demo booking — handled." />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href="/favicon.ico" sizes="32x32" />
       </Head>
       <NewLandingPage />
     </>

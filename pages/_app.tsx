@@ -15,7 +15,7 @@ function AppContent({ Component, pageProps }: AppProps) {
   return (
     <>
       <Head>
-        <link rel="icon" href="/assets/winston-favicon.ico" />
+        <link rel="icon" href="/assets/winston-favicon.ico" sizes="32x32" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
       {!isAuthPage ? (

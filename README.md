@@ -39,19 +39,22 @@ Winston AI is an AI-powered sales assistant that helps manage leads, campaigns, 
 ## Getting Started
 
 1. Clone the repository
-2. Install dependencies:
+2. Install Node.js v18.18.0 (required for compatibility)
+3. Install dependencies:
    ```bash
-   npm install
+   npm install --legacy-peer-deps
    ```
-3. Set up your environment variables:
+4. Set up your environment variables:
    ```bash
    cp .env.example .env.local
    ```
-4. Run the development server:
+5. Run the development server:
    ```bash
    npm run dev
    ```
-5. Open [http://localhost:3000](http://localhost:3000) in your browser
+6. Open [http://localhost:3000](http://localhost:3000) in your browser
+
+Note: The `--legacy-peer-deps` flag is required due to dependency conflicts between Storybook versions.
 
 ## Documentation
 
