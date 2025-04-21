@@ -77,10 +77,10 @@ export default function DashboardPage() {
     }
   }, [status, router]);
 
-  const fetchDashboardData = async () => {
-    try {
+      const fetchDashboardData = async () => {
+        try {
       setIsLoading(true);
-      setError(null);
+          setError(null);
 
       const [statsRes, activityRes, leadsRes] = await Promise.all([
         fetch('/api/dashboard/stats'),
@@ -99,10 +99,10 @@ export default function DashboardPage() {
       ]);
 
       setDashboardData({ stats, recentActivity: activity });
-      setLeads(leadsData);
+          setLeads(leadsData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch dashboard data');
-    } finally {
+        } finally {
       setIsLoading(false);
     }
   };
@@ -137,17 +137,17 @@ export default function DashboardPage() {
         <title>Dashboard - Winston AI</title>
       </Head>
       <Navigation />
-      
-      {dashboardData && (
-        <DashboardComponent
-          stats={dashboardData.stats}
-          recentActivity={dashboardData.recentActivity}
-        />
-      )}
-      
+
+          {dashboardData && (
+            <DashboardComponent 
+              stats={dashboardData.stats}
+              recentActivity={dashboardData.recentActivity}
+            />
+          )}
+          
       <div className="container mx-auto px-4 py-8">
         <LeadTable leads={leads} />
-      </div>
+        </div>
     </div>
   );
 } 
