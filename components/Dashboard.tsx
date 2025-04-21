@@ -12,6 +12,7 @@ import {
 import SandboxSettings from './SandboxSettings';
 import { useRouter } from 'next/router';
 import Papa from 'papaparse';
+import LeadTable from './LeadTable';
 
 interface DashboardProps {
   stats: {
@@ -49,19 +50,19 @@ interface Lead {
 }
 
 const StatCard: React.FC<StatCardProps> = ({ title, value, change, icon: Icon }) => (
-  <div className="bg-gray-900 rounded-lg p-6 border border-gray-800">
+  <div className="bg-gray-900/50 backdrop-blur rounded-lg p-6 border border-gray-800/50">
     <div className="flex items-center justify-between">
-      <div>
-        <p className="text-gray-400 text-sm">{title}</p>
-        <p className="text-2xl font-light text-white mt-2">{value}</p>
+      <div className="space-y-2">
+        <p className="text-gray-400 text-sm font-mono tracking-wider">{title}</p>
+        <p className="text-2xl font-light text-white">{value || '0'}</p>
         {change && (
-          <p className="text-green-400 text-sm mt-2 flex items-center">
+          <p className="text-green-400 text-sm flex items-center font-mono">
             <ArrowTrendingUpIcon className="w-4 h-4 mr-1" />
             {change}
           </p>
         )}
       </div>
-      <div className="bg-gray-800 p-3 rounded-lg">
+      <div className="bg-gray-800/50 p-3 rounded-lg">
         <Icon className="w-6 h-6 text-gray-400" />
       </div>
     </div>
@@ -224,22 +225,21 @@ const QuickActions: React.FC<{ isSandbox?: boolean }> = ({ isSandbox }) => {
   }
 
   return (
-    <div className="bg-black border border-gray-800">
-      <div className="p-6">
-        <h3 className="font-mono text-gray-300 mb-6 tracking-widest uppercase text-sm">QUICK ACTIONS</h3>
-        <div className="grid grid-cols-2 gap-3">
-          {actions.map((action, index) => (
-            <button
-              key={index}
-              onClick={action.onClick}
-              className="border border-gray-700 p-4 font-mono text-xs tracking-widest
-                       text-gray-400 uppercase bg-black
-                       hover:border-gray-600 hover:text-gray-300 transition-colors"
-            >
-              {action.text}
-            </button>
-          ))}
-        </div>
+    <div className="p-6">
+      <h3 className="font-mono text-gray-400 mb-6 tracking-wider uppercase text-sm">Quick Actions</h3>
+      <div className="grid grid-cols-2 gap-3">
+        {actions.map((action, index) => (
+          <button
+            key={index}
+            onClick={action.onClick}
+            className="border border-gray-800/50 p-4 font-mono text-xs tracking-wider
+                     text-gray-400 uppercase bg-gray-900/30 rounded-lg
+                     hover:bg-gray-800/50 hover:text-white hover:border-gray-700 
+                     transition-all duration-200 ease-in-out"
+          >
+            {action.text}
+          </button>
+        ))}
       </div>
       <input
         ref={fileInputRef}
@@ -341,12 +341,12 @@ const Dashboard: React.FC<DashboardProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Sandbox Indicator */}
       {isSandbox && (
-        <div className="flex items-center justify-center bg-blue-900 bg-opacity-20 border border-blue-800 rounded-lg p-4">
+        <div className="flex items-center justify-center bg-blue-900/20 border border-blue-800/50 rounded-lg p-4 mb-8">
           <BeakerIcon className="h-5 w-5 text-blue-400 mr-2" />
-          <span className="text-blue-400">Sandbox Mode Active</span>
+          <span className="text-blue-400 font-mono">Sandbox Mode Active</span>
         </div>
       )}
 
@@ -354,58 +354,56 @@ const Dashboard: React.FC<DashboardProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Total Leads"
-          value={stats.totalLeads}
+          value={stats.totalLeads || 0}
           change="+12% from last month"
           icon={UserGroupIcon}
         />
         <StatCard
           title="Open Rate"
-          value={`${stats.openRate}%`}
+          value={`${stats.openRate || 0}%`}
           change="+5% from last week"
           icon={EnvelopeIcon}
         />
         <StatCard
           title="Response Rate"
-          value={`${stats.responseRate}%`}
+          value={`${stats.responseRate || 0}%`}
           change="+8% from last week"
           icon={ChartBarIcon}
         />
         <StatCard
           title="Meetings Booked"
-          value={stats.meetings}
+          value={stats.meetings || 0}
           change="+3 from last week"
           icon={CalendarIcon}
         />
       </div>
 
       {/* Two Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Content */}
-        <div className="lg:col-span-2">
-          <ActivityFeed activities={recentActivity} />
+        <div className="lg:col-span-2 space-y-8">
+          <div className="bg-gray-900/50 backdrop-blur rounded-lg border border-gray-800/50 overflow-hidden">
+            <ActivityFeed activities={recentActivity} />
+          </div>
           
           {/* Recent Leads Section */}
-          <div className="mt-12">
-            <div className="flex justify-between items-center mb-8">
-              <h2 className="font-mono text-xl text-gray-300 tracking-widest uppercase">Recent Leads</h2>
-              <button 
-                onClick={handleUploadClick}
-                className="border border-gray-700 bg-black text-gray-300 px-6 py-3
-                         font-mono text-xs tracking-widest uppercase hover:text-white
-                         hover:border-gray-600 transition-colors"
-              >
-                Upload Leads
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".csv"
-                className="hidden"
-                onChange={handleFileUpload}
-              />
+          <div className="bg-gray-900/50 backdrop-blur rounded-lg border border-gray-800/50 overflow-hidden">
+            <div className="p-6 border-b border-gray-800/50">
+              <div className="flex justify-between items-center">
+                <h2 className="font-mono text-xl text-gray-300 tracking-wider uppercase">Recent Leads</h2>
+                <button 
+                  onClick={handleUploadClick}
+                  className="border border-gray-800/50 bg-gray-900/30 text-gray-300 px-6 py-3
+                           font-mono text-xs tracking-wider uppercase rounded-lg
+                           hover:bg-gray-800/50 hover:text-white hover:border-gray-700
+                           transition-all duration-200 ease-in-out"
+                >
+                  Upload Leads
+                </button>
+              </div>
             </div>
             
-            <div className="bg-black border border-gray-800">
+            <div className="bg-black/50">
               <LeadTable leads={leads} loading={loading} />
             </div>
           </div>
@@ -413,9 +411,13 @@ const Dashboard: React.FC<DashboardProps> = ({
 
         {/* Sidebar */}
         <div className="space-y-6">
-          <QuickActions isSandbox={isSandbox} />
+          <div className="bg-gray-900/50 backdrop-blur rounded-lg border border-gray-800/50 overflow-hidden">
+            <QuickActions isSandbox={isSandbox} />
+          </div>
           {isSandbox && onSandboxSettingsUpdate && (
-            <SandboxSettings onUpdate={onSandboxSettingsUpdate} />
+            <div className="bg-gray-900/50 backdrop-blur rounded-lg border border-gray-800/50 overflow-hidden">
+              <SandboxSettings onUpdate={onSandboxSettingsUpdate} />
+            </div>
           )}
         </div>
       </div>

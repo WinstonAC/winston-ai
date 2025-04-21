@@ -30,22 +30,21 @@ const StatusBadge: React.FC<{ status: Lead['status'] }> = ({ status }) => {
   const getStatusStyle = (status: Lead['status']) => {
     switch (status) {
       case 'Clicked':
-        return 'bg-brutalist-lime border-black';
+        return 'bg-green-400/20 text-green-400 border-green-400/50';
       case 'Opened':
-        return 'bg-white border-black';
+        return 'bg-blue-400/20 text-blue-400 border-blue-400/50';
       case 'Bounced':
-        return 'bg-brutalist-gray border-black';
+        return 'bg-red-400/20 text-red-400 border-red-400/50';
       default:
-        return 'bg-white border-black';
+        return 'bg-gray-400/20 text-gray-400 border-gray-400/50';
     }
   };
 
   return (
     <span className={`
-      inline-block px-2 py-1
-      text-sm
-      border-2
-      font-mono
+      inline-flex items-center px-2.5 py-0.5
+      text-xs font-mono
+      border rounded-full
       ${getStatusStyle(status)}
     `}>
       {status}
@@ -123,51 +122,54 @@ const mockLeads = [
 
 const LeadTable: React.FC<LeadTableProps> = ({ leads }) => {
   return (
-    <div className="bg-gray-900 rounded-lg shadow border border-gray-800 overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-800">
-          <thead className="bg-gray-800">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Name
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Email
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Company
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Status
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                Last Contacted
-              </th>
+    <div className="overflow-x-auto">
+      <table className="min-w-full divide-y divide-gray-800/50">
+        <thead className="bg-gray-900/50">
+          <tr>
+            <th className="px-6 py-4 text-left text-xs font-mono text-gray-400 uppercase tracking-wider">
+              Name
+            </th>
+            <th className="px-6 py-4 text-left text-xs font-mono text-gray-400 uppercase tracking-wider">
+              Email
+            </th>
+            <th className="px-6 py-4 text-left text-xs font-mono text-gray-400 uppercase tracking-wider">
+              Company
+            </th>
+            <th className="px-6 py-4 text-left text-xs font-mono text-gray-400 uppercase tracking-wider">
+              Status
+            </th>
+            <th className="px-6 py-4 text-left text-xs font-mono text-gray-400 uppercase tracking-wider">
+              Last Contacted
+            </th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-800/50">
+          {leads.map((lead) => (
+            <tr key={lead.id} className="hover:bg-gray-800/50 transition-colors duration-150">
+              <td className="px-6 py-4 whitespace-nowrap">
+                <div className="text-sm text-gray-200 font-mono">{lead.name}</div>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <div className="text-sm text-gray-200 font-mono">{lead.email}</div>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <div className="text-sm text-gray-200 font-mono">{lead.company}</div>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <StatusBadge status={lead.status} />
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <div className="text-sm text-gray-200 font-mono">{lead.lastContacted || 'Never'}</div>
+              </td>
             </tr>
-          </thead>
-          <tbody className="bg-gray-900 divide-y divide-gray-800">
-            {leads.map((lead) => (
-              <tr key={lead.id} className="hover:bg-gray-800">
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
-                  {lead.name}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
-                  {lead.email}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
-                  {lead.company}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
-                  <StatusBadge status={lead.status} />
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
-                  {lead.lastContacted || 'Never'}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          ))}
+        </tbody>
+      </table>
+      {leads.length === 0 && (
+        <div className="text-center py-12">
+          <p className="text-gray-400 font-mono">No leads found</p>
+        </div>
+      )}
     </div>
   );
 };
