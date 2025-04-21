@@ -1,4 +1,5 @@
-export interface EmailTemplate {
+// Types
+interface EmailTemplate {
   id: string;
   name: string;
   subject: string;
@@ -6,7 +7,8 @@ export interface EmailTemplate {
   variables: string[];
 }
 
-export const defaultTemplates: EmailTemplate[] = [
+// Constants and functions
+const defaultTemplates: EmailTemplate[] = [
   {
     id: 'welcome',
     name: 'Welcome Email',
@@ -52,13 +54,13 @@ Best regards,
   },
 ];
 
-export function parseTemplate(template: string, variables: Record<string, string>): string {
+function parseTemplate(template: string, variables: Record<string, string>): string {
   return template.replace(/\{\{(\w+)\}\}/g, (match, variable) => {
     return variables[variable] || match;
   });
 }
 
-export function validateTemplate(template: EmailTemplate): string[] {
+function validateTemplate(template: EmailTemplate): string[] {
   const errors: string[] = [];
   
   if (!template.id) errors.push('Template ID is required');
@@ -82,4 +84,11 @@ export function validateTemplate(template: EmailTemplate): string[] {
   }
   
   return errors;
-} 
+}
+
+module.exports = {
+  defaultTemplates,
+  parseTemplate,
+  validateTemplate,
+  EmailTemplate,
+}; 

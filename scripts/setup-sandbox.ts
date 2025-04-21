@@ -1,7 +1,7 @@
-import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
-import { faker } from '@faker-js/faker';
-import { defaultTemplates } from '../lib/templates';
+const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcryptjs');
+const { faker } = require('@faker-js/faker');
+const { defaultTemplates } = require('../lib/templates');
 
 const prisma = new PrismaClient({
   datasources: {
@@ -38,8 +38,7 @@ async function createTeam(name: string) {
       settings: {
         create: {
           maxUsers: 10,
-          maxLeads: 1000,
-          features: ['email_templates', 'analytics', 'team_collaboration'],
+          plan: 'FREE',
         },
       },
     },
@@ -56,11 +55,11 @@ async function createSampleUser(email: string, name: string, teamId: string, rol
       role,
       teamId,
       teamRole,
-      settings: {
+      userSettings: {
         create: {
           emailSignature: `Best regards,\n${name}\n${email}`,
           defaultTemplate: defaultTemplates[0].id,
-          templates: defaultTemplates,
+          templates: JSON.stringify(defaultTemplates),
         },
       },
     },

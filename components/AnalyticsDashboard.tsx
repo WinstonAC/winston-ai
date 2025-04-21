@@ -219,8 +219,8 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
     success: false,
   });
   const [comparisonView, setComparisonView] = useState<ComparisonView>({
-    type: 'table',
-    metric: 'sent',
+    type: 'chart',
+    metric: 'openRate'
   });
   const [showComparison, setShowComparison] = useState(false);
   const [chartType, setChartType] = useState<'line' | 'bar' | 'pie' | 'scatter' | 'area' | 'heatmap'>('line');
@@ -394,7 +394,6 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
 
   const handleCompare = () => {
     if (onCompare && selectedCampaigns.length >= 2) {
-      setShowComparison(true);
       onCompare(selectedCampaigns);
     }
   };
@@ -413,27 +412,21 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
     change?: number;
     icon: React.ElementType;
   }) => (
-    <div className="bg-black border-2 border-white p-4">
+    <div className="bg-white rounded-lg shadow p-4">
       <div className="flex items-center">
         <div className="flex-shrink-0">
-          <Icon className="h-6 w-6 text-white" />
+          <Icon className="h-6 w-6 text-gray-400" />
         </div>
         <div className="ml-4">
-          <p className="text-sm font-bold text-white uppercase tracking-wider">{title}</p>
+          <p className="text-sm font-medium text-gray-500">{title}</p>
           <div className="flex items-baseline">
-            <p className="text-2xl font-bold text-white">{value}</p>
+            <p className="text-2xl font-semibold text-gray-900">{value}</p>
             {change !== undefined && (
-              <div className={`ml-2 flex items-baseline text-sm font-bold ${
-                change >= 0 ? 'text-green-500' : 'text-red-500'
+              <span className={`ml-2 flex items-baseline text-sm font-semibold ${
+                change >= 0 ? 'text-green-600' : 'text-red-600'
               }`}>
-                {change >= 0 ? (
-                  <ArrowTrendingUpIcon className="h-4 w-4" />
-                ) : (
-                  <ArrowTrendingDownIcon className="h-4 w-4" />
-                )}
-                <span className="sr-only">{change >= 0 ? 'Increased' : 'Decreased'} by</span>
-                {Math.abs(change)}%
-              </div>
+                {change >= 0 ? '+' : ''}{change}%
+              </span>
             )}
           </div>
         </div>

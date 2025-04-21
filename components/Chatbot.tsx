@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 import { ChatBubbleLeftIcon, XMarkIcon, QuestionMarkCircleIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
+import { motion } from 'framer-motion';
 
 // Command synonyms and variations
 const COMMAND_VARIATIONS = {
@@ -478,47 +479,57 @@ You can ask about:
     <>
       {/* Welcome Notification - Only show on non-landing pages */}
       {showWelcomeNotification && !isLandingPage && (
-        <div className="fixed bottom-32 right-4 z-50 bg-black border-2 border-[#32CD32] p-4 w-64
-                      font-mono text-white animate-fade-in-up">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 20 }}
+          className="fixed bottom-32 right-4 z-50 bg-black border-2 border-[#32CD32] p-4 w-64
+                    font-mono text-white rounded-lg shadow-lg"
+        >
           <div className="flex items-center justify-between">
-            <p className="text-sm">WINSTON_AI_ASSISTANT_IS_READY_TO_HELP_</p>
+            <p className="text-sm text-[#32CD32] tracking-wider">WINSTON_AI_ASSISTANT_IS_READY_TO_HELP_</p>
             <button 
               onClick={() => setShowWelcomeNotification(false)}
-              className="text-[#32CD32] hover:text-white"
+              className="text-[#32CD32] hover:text-white transition-colors"
             >
               <XMarkIcon className="h-4 w-4" />
             </button>
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* Chatbot Window */}
       {isOpen && (
-        <div className="fixed bottom-16 right-4 z-50 w-80 bg-black border border-gray-800
-                      font-mono text-white shadow-lg shadow-gray-900/50 max-h-[60vh] flex flex-col">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          className="fixed bottom-16 right-4 z-50 w-80 bg-black border-2 border-[#32CD32]
+                    font-mono text-white rounded-lg shadow-xl max-h-[60vh] flex flex-col"
+        >
           {/* Chat Header */}
-          <div className="p-2.5 border-b border-gray-800">
+          <div className="p-3 border-b-2 border-[#32CD32] bg-black/50">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <div className="p-1.5 border border-gray-700 text-gray-400">
-                  <QuestionMarkCircleIcon className="h-4 w-4" />
+                <div className="p-2 border-2 border-[#32CD32] text-[#32CD32] rounded-full">
+                  <QuestionMarkCircleIcon className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-mono font-bold tracking-wider text-gray-300">
+                  <h3 className="text-sm font-mono font-bold tracking-wider text-[#32CD32]">
                     {context === 'analytics' ? 'ANALYTICS_HELP_' : 'WINSTON_CHAT_'}
                   </h3>
-                  <p className="text-xs text-gray-500 tracking-wider">
+                  <p className="text-xs text-gray-400 tracking-wider">
                     {context === 'analytics' 
                       ? 'ASK_ABOUT_CHARTS_METRICS_DATA_'
                       : 'HOW_CAN_I_HELP_YOU_TODAY_'}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center space-x-1.5">
+              <div className="flex items-center space-x-2">
                 <button
                   onClick={toggleContext}
-                  className="p-1.5 border border-gray-700 text-gray-400 
-                           hover:bg-gray-800 hover:text-gray-300 transition-colors"
+                  className="p-2 border-2 border-[#32CD32] text-[#32CD32] rounded-full
+                           hover:bg-[#32CD32] hover:text-black transition-colors"
                   title={`SWITCH_TO_${context === 'analytics' ? 'GENERAL' : 'ANALYTICS'}_MODE_`}
                 >
                   <ArrowPathIcon className="h-4 w-4" />
@@ -528,8 +539,8 @@ You can ask about:
                     setIsOpen(false);
                     onClose?.();
                   }}
-                  className="p-1.5 border border-gray-700 text-gray-400 
-                           hover:bg-gray-800 hover:text-gray-300 transition-colors"
+                  className="p-2 border-2 border-[#32CD32] text-[#32CD32] rounded-full
+                           hover:bg-[#32CD32] hover:text-black transition-colors"
                 >
                   <XMarkIcon className="h-4 w-4" />
                 </button>
@@ -539,115 +550,134 @@ You can ask about:
 
           {/* Quick Actions */}
           {showQuickActions && (
-            <div className="p-4 border-b border-gray-800">
+            <div className="p-4 border-b-2 border-[#32CD32] bg-black/50">
               <div className="grid grid-cols-2 gap-3">
                 {QUICK_ACTIONS[context].map((action) => (
-                  <button
+                  <motion.button
                     key={action.command}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => handleQuickAction(action.command)}
-                    className="border border-gray-700 p-3 font-mono text-xs tracking-widest
-                             text-gray-400 hover:text-gray-300 transition-colors uppercase
-                             bg-black hover:border-gray-600"
+                    className="border-2 border-[#32CD32] p-3 font-mono text-xs tracking-widest
+                             text-[#32CD32] hover:bg-[#32CD32] hover:text-black transition-colors
+                             rounded-lg uppercase"
                   >
                     {action.label}
-                  </button>
+                  </motion.button>
                 ))}
               </div>
             </div>
           )}
 
           {/* Chat Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-black/50">
             {messages.map((message) => (
-              <div
+              <motion.div
                 key={message.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
                 className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[85%] border border-gray-700 ${
+                  className={`max-w-[85%] border-2 ${
                     message.sender === 'user'
-                      ? 'bg-gray-900'
-                      : 'bg-black'
-                  }`}
+                      ? 'border-[#32CD32] bg-black/50'
+                      : 'border-gray-700 bg-black'
+                  } rounded-lg`}
                 >
-                  <div className="p-3 text-xs font-mono tracking-widest text-gray-400 break-words">
+                  <div className="p-3 text-xs font-mono tracking-widest text-gray-300 break-words">
                     {message.text}
                   </div>
                 </div>
-              </div>
+              </motion.div>
             ))}
             {isTyping && (
-              <div className="flex justify-start">
-                <div className="border border-gray-700 p-2">
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex justify-start"
+              >
+                <div className="border-2 border-[#32CD32] p-3 rounded-lg">
                   <div className="flex space-x-2">
-                    <div className="w-1.5 h-1.5 bg-gray-500 animate-bounce" />
-                    <div className="w-1.5 h-1.5 bg-gray-500 animate-bounce delay-100" />
-                    <div className="w-1.5 h-1.5 bg-gray-500 animate-bounce delay-200" />
+                    <div className="w-2 h-2 bg-[#32CD32] rounded-full animate-bounce" />
+                    <div className="w-2 h-2 bg-[#32CD32] rounded-full animate-bounce delay-100" />
+                    <div className="w-2 h-2 bg-[#32CD32] rounded-full animate-bounce delay-200" />
                   </div>
                 </div>
-              </div>
+              </motion.div>
             )}
             <div ref={messagesEndRef} />
           </div>
 
           {/* Chat Input */}
-          <form onSubmit={handleSubmit} className="border-t border-gray-800 p-4">
+          <form onSubmit={handleSubmit} className="border-t-2 border-[#32CD32] p-4 bg-black/50">
             <div className="flex space-x-3">
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="TYPE MESSAGE"
-                className="flex-1 bg-black border border-gray-700 p-3
+                className="flex-1 bg-black border-2 border-[#32CD32] p-3 rounded-lg
                          font-mono text-xs tracking-widest text-gray-300
-                         placeholder-gray-600 focus:outline-none focus:border-gray-600"
+                         placeholder-gray-500 focus:outline-none focus:border-[#32CD32]"
               />
-              <button
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 type="submit"
-                className="border border-gray-700 bg-black text-gray-300 px-6 py-3
-                         font-mono text-xs tracking-widest uppercase hover:text-white
-                         hover:border-gray-600 transition-colors"
+                className="border-2 border-[#32CD32] bg-[#32CD32] text-black px-6 py-3 rounded-lg
+                         font-mono text-xs tracking-widest uppercase hover:bg-black hover:text-[#32CD32]
+                         transition-colors"
               >
                 SEND
-              </button>
+              </motion.button>
             </div>
           </form>
-        </div>
+        </motion.div>
       )}
 
       {/* Help Bubble */}
       {showHelpBubble && !isOpen && !isLandingPage && (
-        <div className="fixed bottom-16 right-4 z-50 bg-black border border-gray-800 p-2.5 w-64
-                      font-mono text-white shadow-lg shadow-gray-900/50">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 20 }}
+          className="fixed bottom-16 right-4 z-50 bg-black border-2 border-[#32CD32] p-3 w-64
+                    font-mono text-white rounded-lg shadow-xl"
+        >
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs text-gray-400 tracking-wider">NEED_HELP_WITH_THIS_PAGE_</p>
+            <p className="text-xs text-[#32CD32] tracking-wider">NEED_HELP_WITH_THIS_PAGE_</p>
             <button 
               onClick={() => setShowHelpBubble(false)}
-              className="text-gray-400 hover:text-gray-300"
+              className="text-[#32CD32] hover:text-white transition-colors"
             >
               <XMarkIcon className="h-4 w-4" />
             </button>
           </div>
           <div className="flex space-x-2">
-            <button
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => {
                 setShowHelpBubble(false);
                 setIsOpen(true);
               }}
-              className="px-3 py-1.5 border border-gray-700 text-gray-400 text-xs tracking-wider
-                       hover:bg-gray-800 hover:text-gray-300"
+              className="px-4 py-2 border-2 border-[#32CD32] text-[#32CD32] text-xs tracking-wider
+                       hover:bg-[#32CD32] hover:text-black rounded-lg transition-colors"
             >
               YES_
-            </button>
-            <button
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => setShowHelpBubble(false)}
-              className="px-3 py-1.5 border border-gray-700 text-gray-500 text-xs tracking-wider
-                       hover:bg-gray-800 hover:text-gray-400"
+              className="px-4 py-2 border-2 border-gray-500 text-gray-500 text-xs tracking-wider
+                       hover:bg-gray-500 hover:text-black rounded-lg transition-colors"
             >
               NO_
-            </button>
+            </motion.button>
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* Page Help Prompt */}
@@ -685,11 +715,13 @@ You can ask about:
       )}
 
       {/* Chatbot Toggle Button */}
-      <button
+      <motion.button
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-4 right-4 z-50 bg-black border border-gray-700 p-3 
-                 text-gray-400 font-mono hover:bg-gray-900 hover:text-gray-300 transition-colors
-                 shadow-lg"
+        className="fixed bottom-4 right-4 z-50 bg-black border-2 border-[#32CD32] p-3 rounded-full
+                 text-[#32CD32] font-mono hover:bg-[#32CD32] hover:text-black transition-colors
+                 shadow-xl"
       >
         {isOpen ? (
           <XMarkIcon className="h-5 w-5" />
@@ -704,7 +736,7 @@ You can ask about:
             />
           </div>
         )}
-      </button>
+      </motion.button>
     </>
   );
 };
