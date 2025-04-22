@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   RocketLaunchIcon, 
   EnvelopeIcon, 
@@ -12,55 +12,22 @@ import {
   CheckIcon,
   PencilIcon,
   XMarkIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  Trash2
 } from '@heroicons/react/24/outline';
-
-interface Campaign {
-  id: string;
-  name: string;
-  description: string;
-  templateId: string;
-  targetAudience: {
-    segment: string;
-    filters: Record<string, any>;
-  };
-  schedule: {
-    type: 'immediate' | 'scheduled';
-    date?: string;
-    time?: string;
-  };
-  status: 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed';
-  metrics?: {
-    sent: number;
-    delivered: number;
-    opened: number;
-    clicked: number;
-    bounced: number;
-  };
-}
-
-interface Lead {
-  id: string;
-  name: string;
-  email: string;
-  company: string;
-  title: string;
-}
-
-interface EmailTemplate {
-  id: string;
-  name: string;
-  subject: string;
-}
-
-interface CampaignCreatorProps {
-  leads: Lead[];
-  templates: EmailTemplate[];
-  segments: Array<{ id: string; name: string }>;
-  onCreateCampaign: (campaign: Omit<Campaign, 'id' | 'status' | 'metrics'>) => Promise<void>;
-  onUpdateCampaign: (campaign: Campaign) => Promise<void>;
-  onDeleteCampaign: (id: string) => Promise<void>;
-}
+import Modal from '@/components/ui/Modal';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { Textarea } from '@/components/ui/Textarea';
+import Loader from '@/components/Loader';
+import { 
+  Campaign, 
+  CampaignCreatorProps, 
+  CreateCampaignInput,
+  UpdateCampaignInput
+} from '@/types/campaign';
+import { toast } from 'react-hot-toast';
 
 interface ValidationErrors {
   name?: string;
@@ -91,8 +58,9 @@ const CampaignCreator: React.FC<CampaignCreatorProps> = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const [newCampaign, setNewCampaign] = useState<Omit<Campaign, 'id' | 'status' | 'metrics'>>({
+  const defaultCampaignInput: CreateCampaignInput = {
     name: '',
     description: '',
     templateId: '',
@@ -102,51 +70,139 @@ const CampaignCreator: React.FC<CampaignCreatorProps> = ({
     },
     schedule: {
       type: 'immediate',
-    },
-  });
-
-  useEffect(() => {
-    fetchCampaigns();
-  }, []);
-
-  const fetchCampaigns = async () => {
-    try {
-      setIsLoading(true);
-      // TODO: Implement API call to fetch campaigns
-      const response = await fetch('/api/campaigns');
-      const data = await response.json();
-      setCampaigns(data);
-    } catch (err) {
-      setError('Failed to fetch campaigns');
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  const validateCampaign = (campaign: Campaign | Omit<Campaign, 'id' | 'status' | 'metrics'>): boolean => {
+  const [campaignInput, setCampaignInput] = useState<CreateCampaignInput>(defaultCampaignInput);
+
+  // Memoize the campaign list to prevent unnecessary re-renders
+  const campaignList = useMemo(() => (
+    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {campaigns.map((campaign) => (
+        <div
+          key={campaign.id}
+          className="bg-black border-2 border-[#32CD32] p-6"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-mono text-[#32CD32]">{campaign.name}</h3>
+            <div className="flex space-x-2">
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setSelectedCampaign(campaign);
+                  setCampaignInput({
+                    name: campaign.name,
+                    description: campaign.description,
+                    templateId: campaign.templateId,
+                    targetAudience: campaign.targetAudience || { segment: '', filters: {} },
+                    schedule: campaign.schedule,
+                  });
+                  setIsModalOpen(true);
+                }}
+                role="button"
+                name="edit-campaign"
+                aria-label={`Edit campaign ${campaign.name}`}
+              >
+                <PencilIcon className="h-5 w-5" aria-hidden="true" />
+              </Button>
+              <Button
+                variant="danger"
+                onClick={() => setShowDeleteConfirm(campaign.id)}
+                role="button"
+                name="delete-campaign"
+                aria-label={`Delete campaign ${campaign.name}`}
+              >
+                <TrashIcon className="h-5 w-5" aria-hidden="true" />
+              </Button>
+            </div>
+          </div>
+          <p className="text-gray-400 font-mono mb-4">{campaign.description}</p>
+          <dl className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 text-sm font-mono">
+            <div>
+              <dt className="text-gray-400">TEMPLATE_</dt>
+              <dd className="text-[#32CD32]">
+                {templates.find((t) => t.id === campaign.templateId)?.name || 'No template'}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-gray-400">TARGET_</dt>
+              <dd className="text-[#32CD32]">
+                {campaign.targetAudience?.segment || 'No target segment'}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-gray-400">SCHEDULE_</dt>
+              <dd className="text-[#32CD32]">
+                {campaign.schedule?.type === 'immediate'
+                  ? 'SEND_NOW_'
+                  : campaign.schedule?.date && campaign.schedule?.time
+                    ? `SCHEDULED_${new Date(
+                        `${campaign.schedule.date} ${campaign.schedule.time}`
+                      ).toLocaleString()}`
+                    : 'No schedule set'}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-gray-400">STATUS_</dt>
+              <dd className="text-[#32CD32]">{campaign.status?.toUpperCase() || 'UNKNOWN'}_</dd>
+            </div>
+          </dl>
+        </div>
+      ))}
+    </div>
+  ), [campaigns, templates]);
+
+  // Memoize the fetch function to prevent unnecessary re-renders
+  const fetchCampaigns = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await fetch('/api/campaigns');
+      if (!response.ok) {
+        throw new Error('Failed to fetch campaigns');
+      }
+      const data = await response.json();
+      setCampaigns(data || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch campaigns');
+      setCampaigns([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCampaigns();
+    // Cleanup function
+    return () => {
+      // Cleanup any subscriptions or event listeners if needed
+    };
+  }, [fetchCampaigns]);
+
+  const validateCampaign = (input: CreateCampaignInput): boolean => {
     const errors: ValidationErrors = {};
     
-    if (!campaign.name.trim()) {
+    if (!input.name.trim()) {
       errors.name = 'Campaign name is required';
     }
     
-    if (!campaign.description.trim()) {
+    if (!input.description.trim()) {
       errors.description = 'Description is required';
     }
     
-    if (!campaign.templateId) {
+    if (!input.templateId) {
       errors.templateId = 'Please select an email template';
     }
     
-    if (!campaign.targetAudience.segment) {
+    if (!input.targetAudience.segment) {
       errors.targetAudience = { segment: 'Please select a target segment' };
     }
     
-    if (campaign.schedule.type === 'scheduled') {
-      if (!campaign.schedule.date) {
+    if (input.schedule.type === 'scheduled') {
+      if (!input.schedule.date) {
         errors.schedule = { ...errors.schedule, date: 'Please select a date' };
       }
-      if (!campaign.schedule.time) {
+      if (!input.schedule.time) {
         errors.schedule = { ...errors.schedule, time: 'Please select a time' };
       }
     }
@@ -155,567 +211,194 @@ const CampaignCreator: React.FC<CampaignCreatorProps> = ({
     return Object.keys(errors).length === 0;
   };
 
-  const handleCreateCampaign = async () => {
-    if (!validateCampaign(newCampaign)) return;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateCampaign(campaignInput)) return;
 
     setIsCreating(true);
     setError(null);
+    
     try {
-      const response = await fetch('/api/campaigns', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newCampaign),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create campaign');
+      if (selectedCampaign) {
+        await onUpdateCampaign(selectedCampaign.id, campaignInput);
+        toast.success('Campaign updated successfully');
+      } else {
+        await onCreateCampaign(campaignInput);
+        toast.success('Campaign created successfully');
       }
-
-      const data = await response.json();
-      setCampaigns(prev => [...prev, data]);
-      setSuccessMessage('Campaign created successfully!');
-      setNewCampaign({
-        name: '',
-        description: '',
-        templateId: '',
-        targetAudience: {
-          segment: '',
-          filters: {},
-        },
-        schedule: {
-          type: 'immediate',
-        },
-      });
+      
+      setIsModalOpen(false);
+      resetForm();
+      await fetchCampaigns();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create campaign');
+      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setIsCreating(false);
     }
   };
 
-  const handleUpdateCampaign = async (campaign: Campaign) => {
-    if (!validateCampaign(campaign)) return;
-
+  const handleDelete = async (id: string) => {
     try {
-      const response = await fetch(`/api/campaigns/${campaign.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(campaign),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update campaign');
-      }
-
-      const updatedCampaign = await response.json();
-      setCampaigns(prev => prev.map(c => c.id === updatedCampaign.id ? updatedCampaign : c));
-      setSuccessMessage('Campaign updated successfully!');
+      setIsLoading(true);
+      setError(null);
+      await onDeleteCampaign(id);
+      toast.success('Campaign deleted successfully');
+      setShowDeleteConfirm(null);
+      await fetchCampaigns();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update campaign');
+      setError(err instanceof Error ? err.message : 'Failed to delete campaign');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleDeleteCampaign = async (id: string) => {
-    try {
-      const response = await fetch(`/api/campaigns/${id}`, {
-        method: 'DELETE',
-      });
+  const resetForm = () => {
+    setCampaignInput(defaultCampaignInput);
+    setSelectedCampaign(null);
+    setValidationErrors({});
+  };
 
-      if (!response.ok) {
-        throw new Error('Failed to delete campaign');
-      }
-
-      setCampaigns(prev => prev.filter(c => c.id !== id));
-      setSuccessMessage('Campaign deleted successfully!');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete campaign');
-    }
+  const handleOpenCreateModal = () => {
+    resetForm();
+    setIsModalOpen(true);
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-mono text-[#32CD32]">EMAIL_CAMPAIGNS_</h2>
-        <button
-          onClick={() => setIsCreating(true)}
-          className="bg-black border-2 border-[#32CD32] px-4 py-2 text-[#32CD32] font-mono
-                   hover:bg-[#32CD32] hover:text-black transition-colors"
+        <Button
+          variant="primary"
+          onClick={handleOpenCreateModal}
+          role="button"
+          name="open-create-campaign-modal"
+          aria-label="Create new campaign"
         >
-          <PlusIcon className="h-5 w-5 inline-block mr-2" />
-          CREATE_CAMPAIGN_
-        </button>
+          Create Campaign
+        </Button>
       </div>
 
       {error && (
         <div className="border-2 border-red-500 bg-black p-4">
-          <div className="text-sm text-red-500 font-mono">{error}</div>
+          <div className="text-sm text-red-500 font-mono">Error: {error}</div>
         </div>
       )}
 
       {isLoading ? (
         <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-2 border-[#32CD32] border-t-transparent"></div>
+          <Loader />
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {campaigns.map((campaign) => (
-            <div
-              key={campaign.id}
-              className="bg-black border-2 border-[#32CD32] p-6"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-mono text-[#32CD32]">{campaign.name}</h3>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => setSelectedCampaign(campaign)}
-                    className="text-[#32CD32] hover:text-white transition-colors"
-                  >
-                    <PencilIcon className="h-5 w-5" />
-                  </button>
-                  <button
-                    onClick={() => setShowDeleteConfirm(campaign.id)}
-                    className="text-red-500 hover:text-red-400 transition-colors"
-                  >
-                    <TrashIcon className="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
-              <p className="text-gray-400 font-mono mb-4">{campaign.description}</p>
-              <dl className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 text-sm font-mono">
-                <div>
-                  <dt className="text-gray-400">TEMPLATE_</dt>
-                  <dd className="text-[#32CD32]">
-                    {templates.find((t) => t.id === campaign.templateId)?.name}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-gray-400">TARGET_</dt>
-                  <dd className="text-[#32CD32]">
-                    {segments.find((s) => s.id === campaign.targetAudience.segment)?.name}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-gray-400">SCHEDULE_</dt>
-                  <dd className="text-[#32CD32]">
-                    {campaign.schedule.type === 'immediate'
-                      ? 'SEND_NOW_'
-                      : `SCHEDULED_${new Date(
-                          `${campaign.schedule.date} ${campaign.schedule.time}`
-                        ).toLocaleString()}_`}
-                  </dd>
-                </div>
-              </dl>
-            </div>
-          ))}
-        </div>
+        campaignList
       )}
 
-      {/* Create Campaign Modal */}
-      {isCreating && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center">
-          <div className="bg-black border-2 border-[#32CD32] p-6 max-w-2xl w-full">
-            <h3 className="text-lg font-mono text-[#32CD32] mb-4">CREATE_NEW_CAMPAIGN_</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-mono text-[#32CD32] mb-2">CAMPAIGN_NAME_</label>
-                <input
-                  type="text"
-                  value={newCampaign.name}
-                  onChange={(e) => setNewCampaign({ ...newCampaign, name: e.target.value })}
-                  className="w-full bg-black border-2 border-[#32CD32] text-white px-4 py-2 font-mono
-                           focus:outline-none focus:border-white"
-                />
-                {validationErrors.name && (
-                  <p className="mt-1 text-sm text-red-500 font-mono">{validationErrors.name}</p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-mono text-[#32CD32] mb-2">DESCRIPTION_</label>
-                <textarea
-                  value={newCampaign.description}
-                  onChange={(e) =>
-                    setNewCampaign({ ...newCampaign, description: e.target.value })
-                  }
-                  rows={3}
-                  className="w-full bg-black border-2 border-[#32CD32] text-white px-4 py-2 font-mono
-                           focus:outline-none focus:border-white"
-                />
-                {validationErrors.description && (
-                  <p className="mt-1 text-sm text-red-500 font-mono">{validationErrors.description}</p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-mono text-[#32CD32] mb-2">EMAIL_TEMPLATE_</label>
-                <select
-                  value={newCampaign.templateId}
-                  onChange={(e) =>
-                    setNewCampaign({ ...newCampaign, templateId: e.target.value })
-                  }
-                  className="w-full bg-black border-2 border-[#32CD32] text-white px-4 py-2 font-mono
-                           focus:outline-none focus:border-white"
-                >
-                  <option value="">Select a template</option>
-                  {templates.map((template) => (
-                    <option key={template.id} value={template.id}>
-                      {template.name}
-                    </option>
-                  ))}
-                </select>
-                {validationErrors.templateId && (
-                  <p className="mt-1 text-sm text-red-500 font-mono">{validationErrors.templateId}</p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-mono text-[#32CD32] mb-2">TARGET_SEGMENT_</label>
-                <select
-                  value={newCampaign.targetAudience.segment}
-                  onChange={(e) =>
-                    setNewCampaign({
-                      ...newCampaign,
-                      targetAudience: {
-                        ...newCampaign.targetAudience,
-                        segment: e.target.value,
-                      },
-                    })
-                  }
-                  className="w-full bg-black border-2 border-[#32CD32] text-white px-4 py-2 font-mono
-                           focus:outline-none focus:border-white"
-                >
-                  <option value="">Select a segment</option>
-                  {segments.map((segment) => (
-                    <option key={segment.id} value={segment.id}>
-                      {segment.name}
-                    </option>
-                  ))}
-                </select>
-                {validationErrors.targetAudience?.segment && (
-                  <p className="mt-1 text-sm text-red-500 font-mono">{validationErrors.targetAudience.segment}</p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-mono text-[#32CD32] mb-2">SCHEDULE_</label>
-                <div className="mt-1 space-y-2">
-                  <div className="flex items-center">
-                    <input
-                      type="radio"
-                      id="immediate"
-                      name="schedule"
-                      value="immediate"
-                      checked={newCampaign.schedule.type === 'immediate'}
-                      onChange={(e) =>
-                        setNewCampaign({
-                          ...newCampaign,
-                          schedule: { type: 'immediate' },
-                        })
-                      }
-                      className="h-4 w-4 text-[#32CD32] focus:ring-[#32CD32] border-gray-300"
-                    />
-                    <label htmlFor="immediate" className="ml-3 block text-sm text-gray-300">
-                      Send Immediately
-                    </label>
-                  </div>
-                  <div className="flex items-center">
-                    <input
-                      type="radio"
-                      id="scheduled"
-                      name="schedule"
-                      value="scheduled"
-                      checked={newCampaign.schedule.type === 'scheduled'}
-                      onChange={(e) =>
-                        setNewCampaign({
-                          ...newCampaign,
-                          schedule: { type: 'scheduled', date: '', time: '' },
-                        })
-                      }
-                      className="h-4 w-4 text-[#32CD32] focus:ring-[#32CD32] border-gray-300"
-                    />
-                    <label htmlFor="scheduled" className="ml-3 block text-sm text-gray-300">
-                      Schedule for later
-                    </label>
-                  </div>
-                  {newCampaign.schedule.type === 'scheduled' && (
-                    <div className="ml-7 space-y-2">
-                      <input
-                        type="date"
-                        value={newCampaign.schedule.date}
-                        onChange={(e) =>
-                          setNewCampaign({
-                            ...newCampaign,
-                            schedule: {
-                              ...newCampaign.schedule,
-                              date: e.target.value,
-                            },
-                          })
-                        }
-                        className="w-full bg-black border-2 border-[#32CD32] text-white px-4 py-2 font-mono
-                                 focus:outline-none focus:border-white"
-                      />
-                      <input
-                        type="time"
-                        value={newCampaign.schedule.time}
-                        onChange={(e) =>
-                          setNewCampaign({
-                            ...newCampaign,
-                            schedule: {
-                              ...newCampaign.schedule,
-                              time: e.target.value,
-                            },
-                          })
-                        }
-                        className="w-full bg-black border-2 border-[#32CD32] text-white px-4 py-2 font-mono
-                                 focus:outline-none focus:border-white"
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={() => setIsCreating(false)}
-                  className="px-4 py-2 border-2 border-gray-500 text-gray-500 font-mono
-                           hover:bg-gray-500 hover:text-black transition-colors"
-                >
-                  CANCEL_
-                </button>
-                <button
-                  onClick={handleCreateCampaign}
-                  className="px-4 py-2 border-2 border-[#32CD32] text-[#32CD32] font-mono
-                           hover:bg-[#32CD32] hover:text-black transition-colors"
-                >
-                  CREATE_CAMPAIGN_
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Campaign Modal */}
-      {selectedCampaign && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center">
-          <div className="bg-black border-2 border-[#32CD32] p-6 max-w-2xl w-full">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-mono text-[#32CD32]">EDIT_CAMPAIGN_</h3>
-              <button
-                onClick={() => setSelectedCampaign(null)}
-                className="text-gray-400 hover:text-gray-500"
-              >
-                <XMarkIcon className="h-6 w-6" />
-              </button>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-mono text-[#32CD32] mb-2">CAMPAIGN_NAME_</label>
-                <input
-                  type="text"
-                  value={selectedCampaign.name}
-                  onChange={(e) => setSelectedCampaign({ ...selectedCampaign, name: e.target.value })}
-                  className="w-full bg-black border-2 border-[#32CD32] text-white px-4 py-2 font-mono
-                           focus:outline-none focus:border-white"
-                />
-                {validationErrors.name && (
-                  <p className="mt-1 text-sm text-red-500 font-mono">{validationErrors.name}</p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-mono text-[#32CD32] mb-2">DESCRIPTION_</label>
-                <textarea
-                  value={selectedCampaign.description}
-                  onChange={(e) => setSelectedCampaign({ ...selectedCampaign, description: e.target.value })}
-                  rows={3}
-                  className="w-full bg-black border-2 border-[#32CD32] text-white px-4 py-2 font-mono
-                           focus:outline-none focus:border-white"
-                />
-                {validationErrors.description && (
-                  <p className="mt-1 text-sm text-red-500 font-mono">{validationErrors.description}</p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-mono text-[#32CD32] mb-2">EMAIL_TEMPLATE_</label>
-                <select
-                  value={selectedCampaign.templateId}
-                  onChange={(e) => setSelectedCampaign({ ...selectedCampaign, templateId: e.target.value })}
-                  className="w-full bg-black border-2 border-[#32CD32] text-white px-4 py-2 font-mono
-                           focus:outline-none focus:border-white"
-                >
-                  <option value="">Select a template</option>
-                  {templates.map((template) => (
-                    <option key={template.id} value={template.id}>
-                      {template.name}
-                    </option>
-                  ))}
-                </select>
-                {validationErrors.templateId && (
-                  <p className="mt-1 text-sm text-red-500 font-mono">{validationErrors.templateId}</p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-mono text-[#32CD32] mb-2">TARGET_SEGMENT_</label>
-                <select
-                  value={selectedCampaign.targetAudience.segment}
-                  onChange={(e) => setSelectedCampaign({
-                    ...selectedCampaign,
-                    targetAudience: {
-                      ...selectedCampaign.targetAudience,
-                      segment: e.target.value,
-                    },
-                  })}
-                  className="w-full bg-black border-2 border-[#32CD32] text-white px-4 py-2 font-mono
-                           focus:outline-none focus:border-white"
-                >
-                  <option value="">Select a segment</option>
-                  {segments.map((segment) => (
-                    <option key={segment.id} value={segment.id}>
-                      {segment.name}
-                    </option>
-                  ))}
-                </select>
-                {validationErrors.targetAudience?.segment && (
-                  <p className="mt-1 text-sm text-red-500 font-mono">{validationErrors.targetAudience.segment}</p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-mono text-[#32CD32] mb-2">SCHEDULE_</label>
-                <div className="mt-1 space-y-2">
-                  <div className="flex items-center">
-                    <input
-                      type="radio"
-                      id="edit-immediate"
-                      name="edit-schedule"
-                      value="immediate"
-                      checked={selectedCampaign.schedule.type === 'immediate'}
-                      onChange={(e) => setSelectedCampaign({
-                        ...selectedCampaign,
-                        schedule: { type: 'immediate' },
-                      })}
-                      className="h-4 w-4 text-[#32CD32] focus:ring-[#32CD32] border-gray-300"
-                    />
-                    <label htmlFor="edit-immediate" className="ml-3 block text-sm text-gray-300">
-                      Send Immediately
-                    </label>
-                  </div>
-                  <div className="flex items-center">
-                    <input
-                      type="radio"
-                      id="edit-scheduled"
-                      name="edit-schedule"
-                      value="scheduled"
-                      checked={selectedCampaign.schedule.type === 'scheduled'}
-                      onChange={(e) => setSelectedCampaign({
-                        ...selectedCampaign,
-                        schedule: { type: 'scheduled', date: '', time: '' },
-                      })}
-                      className="h-4 w-4 text-[#32CD32] focus:ring-[#32CD32] border-gray-300"
-                    />
-                    <label htmlFor="edit-scheduled" className="ml-3 block text-sm text-gray-300">
-                      Schedule for later
-                    </label>
-                  </div>
-                  {selectedCampaign.schedule.type === 'scheduled' && (
-                    <div className="ml-7 space-y-2">
-                      <input
-                        type="date"
-                        value={selectedCampaign.schedule.date}
-                        onChange={(e) => setSelectedCampaign({
-                          ...selectedCampaign,
-                          schedule: {
-                            ...selectedCampaign.schedule,
-                            date: e.target.value,
-                          },
-                        })}
-                        className="w-full bg-black border-2 border-[#32CD32] text-white px-4 py-2 font-mono
-                                 focus:outline-none focus:border-white"
-                      />
-                      <input
-                        type="time"
-                        value={selectedCampaign.schedule.time}
-                        onChange={(e) => setSelectedCampaign({
-                          ...selectedCampaign,
-                          schedule: {
-                            ...selectedCampaign.schedule,
-                            time: e.target.value,
-                          },
-                        })}
-                        className="w-full bg-black border-2 border-[#32CD32] text-white px-4 py-2 font-mono
-                                 focus:outline-none focus:border-white"
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={() => setSelectedCampaign(null)}
-                  className="px-4 py-2 border-2 border-gray-500 text-gray-500 font-mono
-                           hover:bg-gray-500 hover:text-black transition-colors"
-                >
-                  CANCEL_
-                </button>
-                <button
-                  onClick={() => handleUpdateCampaign(selectedCampaign)}
-                  disabled={isCreating}
-                  className="px-4 py-2 border-2 border-[#32CD32] text-[#32CD32] font-mono
-                           hover:bg-[#32CD32] hover:text-black transition-colors"
-                >
-                  {isCreating ? 'Saving...' : 'Save Changes'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center">
-          <div className="bg-black border-2 border-red-500 p-6 max-w-md w-full">
-            <div className="flex items-center mb-4">
-              <ExclamationTriangleIcon className="h-6 w-6 text-red-500 mr-3" />
-              <h3 className="text-lg font-mono text-red-500">DELETE_CAMPAIGN_</h3>
-            </div>
-            <p className="text-gray-400 font-mono mb-6">
-              Are you sure you want to delete this campaign? This action cannot be undone.
-            </p>
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => setShowDeleteConfirm(null)}
-                className="px-4 py-2 border-2 border-gray-500 text-gray-500 font-mono
-                         hover:bg-gray-500 hover:text-black transition-colors"
-              >
-                CANCEL_
-              </button>
-              <button
-                onClick={() => handleDeleteCampaign(showDeleteConfirm)}
-                className="px-4 py-2 border-2 border-red-500 text-red-500 font-mono
-                         hover:bg-red-500 hover:text-black transition-colors"
-              >
-                DELETE_
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Success Message */}
       {successMessage && (
-        <div className="fixed bottom-4 right-4">
-          <div className="bg-black border-2 border-[#32CD32] p-4">
-            <div className="flex items-center">
-              <CheckIcon className="h-5 w-5 text-[#32CD32] mr-3" />
-              <p className="text-sm font-mono text-[#32CD32]">{successMessage}</p>
-              <button
-                onClick={() => setSuccessMessage(null)}
-                className="ml-4 text-[#32CD32] hover:text-white"
+        <div className="border-2 border-[#32CD32] bg-black p-4">
+          <div className="text-sm text-[#32CD32] font-mono">{successMessage}</div>
+        </div>
+      )}
+
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          resetForm();
+        }}
+        title={selectedCampaign ? 'Update Campaign' : 'Create Campaign'}
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <Input
+            label="Campaign name"
+            name="name"
+            value={campaignInput.name}
+            onChange={(e) => setCampaignInput({ ...campaignInput, name: e.target.value })}
+            error={validationErrors.name}
+          />
+          
+          <Textarea
+            label="Campaign description"
+            name="description"
+            value={campaignInput.description}
+            onChange={(e) => setCampaignInput({ ...campaignInput, description: e.target.value })}
+            error={validationErrors.description}
+          />
+          
+          <Select
+            label="Select email template"
+            name="templateId"
+            value={campaignInput.templateId}
+            onChange={(e) => setCampaignInput({ ...campaignInput, templateId: e.target.value })}
+            error={validationErrors.templateId}
+          >
+            <option value="">Select a template</option>
+            {templates.map((template) => (
+              <option key={template.id} value={template.id}>
+                {template.name}
+              </option>
+            ))}
+          </Select>
+          
+          <Select
+            label="Select target segment"
+            name="targetSegment"
+            value={campaignInput.targetAudience.segment}
+            onChange={(e) => setCampaignInput({
+              ...campaignInput,
+              targetAudience: { ...campaignInput.targetAudience, segment: e.target.value }
+            })}
+            error={validationErrors.targetAudience?.segment}
+          >
+            <option value="">Select a segment</option>
+            {segments.map((segment) => (
+              <option key={segment.id} value={segment.id}>
+                {segment.name}
+              </option>
+            ))}
+          </Select>
+
+          <Button
+            type="submit"
+            disabled={isCreating}
+            aria-label={selectedCampaign ? 'submit-update-campaign' : 'submit-create-campaign'}
+            className="w-full"
+          >
+            {isCreating ? (
+              <Loader className="w-5 h-5" />
+            ) : selectedCampaign ? (
+              'Update Campaign'
+            ) : (
+              'Create Campaign'
+            )}
+          </Button>
+        </form>
+      </Modal>
+
+      {showDeleteConfirm && (
+        <Modal
+          isOpen={!!showDeleteConfirm}
+          onClose={() => setShowDeleteConfirm(null)}
+          title="Confirm Delete"
+        >
+          <div className="space-y-4">
+            <p className="text-gray-400">Are you sure you want to delete this campaign?</p>
+            <div className="flex justify-end space-x-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteConfirm(null)}
               >
-                <XMarkIcon className="h-5 w-5" />
-              </button>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => handleDelete(showDeleteConfirm)}
+                aria-label="confirm-delete"
+                className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
+              >
+                Confirm Delete
+              </Button>
             </div>
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

@@ -1,3 +1,10 @@
+export enum TeamPermission {
+  VIEW_TEAM_METRICS = 'VIEW_TEAM_METRICS',
+  SHARE_REPORTS = 'SHARE_REPORTS',
+  COLLABORATE_ON_ANNOTATIONS = 'COLLABORATE_ON_ANNOTATIONS',
+  CREATE_TEAM_DASHBOARDS = 'CREATE_TEAM_DASHBOARDS'
+}
+
 export type UserRole = 'admin' | 'manager' | 'user';
 export type DataAccessLevel = 'own' | 'team' | 'department' | 'organization';
 export type PlanType = 'free' | 'pro' | 'enterprise';

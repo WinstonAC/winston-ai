@@ -1,7 +1,7 @@
-const { PrismaClient } = require('@prisma/client');
-const bcrypt = require('bcryptjs');
-const { faker } = require('@faker-js/faker');
-const { defaultTemplates } = require('../lib/templates');
+import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcrypt';
+import { faker } from '@faker-js/faker';
+import { EmailTemplate, defaultTemplates } from '../lib/templates';
 
 const prisma = new PrismaClient({
   datasources: {
@@ -45,25 +45,28 @@ async function createTeam(name: string) {
   });
 }
 
-async function createSampleUser(email: string, name: string, teamId: string, role: string = 'user', teamRole: string = 'MEMBER') {
-  const password = await bcrypt.hash('demo123', 10);
-  return prisma.user.create({
+async function createSampleUser(
+  prisma: PrismaClient,
+  email: string,
+  password: string,
+  role: 'ADMIN' | 'USER' = 'USER'
+) {
+  const hashedPassword = await bcrypt.hash(password, 10);
+  
+  const user = await prisma.user.create({
     data: {
       email,
-      name,
-      password,
+      password: hashedPassword,
       role,
-      teamId,
-      teamRole,
-      userSettings: {
+      settings: {
         create: {
-          emailSignature: `Best regards,\n${name}\n${email}`,
-          defaultTemplate: defaultTemplates[0].id,
-          templates: JSON.stringify(defaultTemplates),
+          emailTemplate: defaultTemplates[0] as EmailTemplate,
         },
       },
     },
   });
+
+  return user;
 }
 
 async function createSampleLeads(userId: string, count: number) {
@@ -126,9 +129,9 @@ async function main() {
 
     // Create demo users
     console.log('👥 Creating demo users...');
-    const adminUser = await createSampleUser('admin@winston-ai.com', 'Admin User', demoTeam.id, 'admin', 'ADMIN');
-    const demoUser = await createSampleUser('demo@winston-ai.com', 'Demo User', demoTeam.id, 'user', 'MEMBER');
-    const testUser = await createSampleUser('test@winston-ai.com', 'Test User', demoTeam.id, 'user', 'MEMBER');
+    const adminUser = await createSampleUser(prisma, 'admin@winston-ai.com', 'demo123', 'ADMIN');
+    const demoUser = await createSampleUser(prisma, 'demo@winston-ai.com', 'demo123', 'USER');
+    const testUser = await createSampleUser(prisma, 'test@winston-ai.com', 'demo123', 'USER');
 
     // Create sample leads for each user
     console.log('📊 Creating sample leads...');

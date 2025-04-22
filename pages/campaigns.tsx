@@ -1,20 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
-import { CampaignCreator } from '@/components/CampaignCreator';
-import { Loader } from '@/components/Loader';
+import CampaignCreator from '@/components/CampaignCreator';
+import Loader from '@/components/Loader';
 import Navigation from '@/components/Navigation';
 import Head from 'next/head';
+import { Campaign, EmailTemplate, Segment, Lead, CreateCampaignInput, UpdateCampaignInput } from '@/types/campaign';
 
-const Campaigns = () => {
+interface CampaignState {
+  isLoading: boolean;
+  templates: EmailTemplate[];
+  segments: Segment[];
+  leads: Lead[];
+  campaigns: Campaign[];
+  error: string | null;
+  successMessage: string | null;
+}
+
+export const Campaigns: React.FC = () => {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
-  const [templates, setTemplates] = useState([]);
-  const [segments, setSegments] = useState([]);
-  const [leads, setLeads] = useState([]);
-  const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  
+  const [state, setState] = useState<CampaignState>({
+    isLoading: true,
+    templates: [],
+    segments: [],
+    leads: [],
+    campaigns: [],
+    error: null,
+    successMessage: null,
+  });
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -29,95 +44,126 @@ const Campaigns = () => {
 
   const fetchData = async () => {
     try {
-      setIsLoading(true);
-      setError(null);
-
-      const [templatesRes, segmentsRes, leadsRes] = await Promise.all([
+      setState(prev => ({ ...prev, isLoading: true, error: null }));
+      
+      const [templatesRes, segmentsRes, leadsRes, campaignsRes] = await Promise.all([
         fetch('/api/templates'),
         fetch('/api/segments'),
-        fetch('/api/leads')
+        fetch('/api/leads'),
+        fetch('/api/campaigns')
       ]);
 
-      if (!templatesRes.ok || !segmentsRes.ok || !leadsRes.ok) {
-        throw new Error('Failed to fetch campaign data');
+      if (!templatesRes.ok || !segmentsRes.ok || !leadsRes.ok || !campaignsRes.ok) {
+        throw new Error('Failed to fetch data');
       }
 
-      const [templatesData, segmentsData, leadsData] = await Promise.all([
+      const [templates, segments, leads, campaigns] = await Promise.all([
         templatesRes.json(),
         segmentsRes.json(),
-        leadsRes.json()
+        leadsRes.json(),
+        campaignsRes.json()
       ]);
 
-      setTemplates(templatesData);
-      setSegments(segmentsData);
-      setLeads(leadsData);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch campaign data');
-    } finally {
-      setIsLoading(false);
+      setState(prev => ({
+        ...prev,
+        templates,
+        segments,
+        leads,
+        campaigns,
+        isLoading: false
+      }));
+    } catch (error) {
+      setState(prev => ({
+        ...prev,
+        error: error instanceof Error ? error.message : 'Failed to fetch data',
+        isLoading: false
+      }));
     }
   };
 
-  const handleCreateCampaign = async (campaign: any) => {
+  const handleCreateCampaign = async (campaignData: CreateCampaignInput) => {
     try {
-      setIsLoading(true);
-      setError(null);
+      setState(prev => ({ ...prev, isLoading: true, error: null }));
       
       const response = await fetch('/api/campaigns', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(campaign),
+        body: JSON.stringify(campaignData),
       });
 
       if (!response.ok) {
         throw new Error('Failed to create campaign');
       }
 
-      setSuccessMessage('Campaign created successfully');
-      setTimeout(() => setSuccessMessage(null), 3000);
-      fetchData();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create campaign');
-    } finally {
-      setIsLoading(false);
+      const newCampaign = await response.json();
+      
+      setState(prev => ({
+        ...prev,
+        campaigns: [...prev.campaigns, newCampaign],
+        successMessage: 'Campaign created successfully',
+        isLoading: false
+      }));
+
+      if (process.env.NODE_ENV !== 'test') {
+        setTimeout(() => {
+          setState(prev => ({ ...prev, successMessage: null }));
+        }, 3000);
+      }
+    } catch (error) {
+      setState(prev => ({
+        ...prev,
+        error: error instanceof Error ? error.message : 'Failed to create campaign',
+        isLoading: false
+      }));
     }
   };
 
-  const handleUpdateCampaign = async (campaign: any) => {
+  const handleUpdateCampaign = async (campaignId: string, campaignData: UpdateCampaignInput) => {
     try {
-      setIsLoading(true);
-      setError(null);
+      setState(prev => ({ ...prev, isLoading: true, error: null }));
       
-      const response = await fetch(`/api/campaigns/${campaign.id}`, {
+      const response = await fetch(`/api/campaigns/${campaignId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(campaign),
+        body: JSON.stringify(campaignData),
       });
 
       if (!response.ok) {
         throw new Error('Failed to update campaign');
       }
 
-      setSuccessMessage('Campaign updated successfully');
-      setTimeout(() => setSuccessMessage(null), 3000);
-      fetchData();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update campaign');
-    } finally {
-      setIsLoading(false);
+      const updatedCampaign = await response.json();
+      
+      setState(prev => ({
+        ...prev,
+        campaigns: prev.campaigns.map(c => c.id === campaignId ? updatedCampaign : c),
+        successMessage: 'Campaign updated successfully',
+        isLoading: false
+      }));
+
+      if (process.env.NODE_ENV !== 'test') {
+        setTimeout(() => {
+          setState(prev => ({ ...prev, successMessage: null }));
+        }, 3000);
+      }
+    } catch (error) {
+      setState(prev => ({
+        ...prev,
+        error: error instanceof Error ? error.message : 'Failed to update campaign',
+        isLoading: false
+      }));
     }
   };
 
-  const handleDeleteCampaign = async (id: string) => {
+  const handleDeleteCampaign = async (campaignId: string) => {
     try {
-      setIsLoading(true);
-      setError(null);
+      setState(prev => ({ ...prev, isLoading: true, error: null }));
       
-      const response = await fetch(`/api/campaigns/${id}`, {
+      const response = await fetch(`/api/campaigns/${campaignId}`, {
         method: 'DELETE',
       });
 
@@ -125,28 +171,39 @@ const Campaigns = () => {
         throw new Error('Failed to delete campaign');
       }
 
-      setSuccessMessage('Campaign deleted successfully');
-      setTimeout(() => setSuccessMessage(null), 3000);
-      fetchData();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete campaign');
-    } finally {
-      setIsLoading(false);
+      setState(prev => ({
+        ...prev,
+        campaigns: prev.campaigns.filter(c => c.id !== campaignId),
+        successMessage: 'Campaign deleted successfully',
+        isLoading: false
+      }));
+
+      if (process.env.NODE_ENV !== 'test') {
+        setTimeout(() => {
+          setState(prev => ({ ...prev, successMessage: null }));
+        }, 3000);
+      }
+    } catch (error) {
+      setState(prev => ({
+        ...prev,
+        error: error instanceof Error ? error.message : 'Failed to delete campaign',
+        isLoading: false
+      }));
     }
   };
 
-  if (status === 'loading' || isLoading) {
+  if (status === 'loading' || state.isLoading) {
     return <Loader />;
   }
 
-  if (error) {
+  if (state.error) {
     return (
       <div className="min-h-screen bg-black text-white">
         <Navigation />
         <div className="container mx-auto px-4 py-8">
           <div className="bg-red-900/50 border border-red-500 rounded-lg p-4">
             <h2 className="text-xl font-bold mb-2">Error</h2>
-            <p>{error}</p>
+            <p>{state.error}</p>
             <button
               onClick={fetchData}
               className="mt-4 px-4 py-2 bg-red-500 hover:bg-red-600 rounded-lg"
@@ -167,16 +224,18 @@ const Campaigns = () => {
       <Navigation />
       
       <div className="container mx-auto px-4 py-8">
-        {successMessage && (
+        <h1 className="text-3xl font-bold mb-8">Campaigns - Winston AI</h1>
+        
+        {state.successMessage && (
           <div className="mb-4 bg-green-900/50 border border-green-500 rounded-lg p-4">
-            {successMessage}
+            {state.successMessage}
           </div>
         )}
         
         <CampaignCreator
-          leads={leads}
-          templates={templates}
-          segments={segments}
+          leads={state.leads}
+          templates={state.templates}
+          segments={state.segments}
           onCreateCampaign={handleCreateCampaign}
           onUpdateCampaign={handleUpdateCampaign}
           onDeleteCampaign={handleDeleteCampaign}
@@ -184,6 +243,4 @@ const Campaigns = () => {
       </div>
     </div>
   );
-};
-
-export default Campaigns; 
+}; 

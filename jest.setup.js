@@ -1,28 +1,40 @@
 import '@testing-library/jest-dom';
+import 'jest-environment-jsdom';
 
 // Mock next/router
 jest.mock('next/router', () => ({
   useRouter: () => ({
+    route: '/',
+    pathname: '',
+    query: {},
+    asPath: '',
     push: jest.fn(),
     replace: jest.fn(),
     reload: jest.fn(),
     back: jest.fn(),
-    pathname: '/',
-    query: {},
-    asPath: '/',
+    prefetch: jest.fn(),
+    beforePopState: jest.fn(),
     events: {
       on: jest.fn(),
       off: jest.fn(),
       emit: jest.fn(),
     },
+    isFallback: false,
   }),
 }));
 
 // Mock next-auth
 jest.mock('next-auth/react', () => ({
   useSession: jest.fn(() => ({
-    data: null,
-    status: 'unauthenticated',
+    data: {
+      user: {
+        id: 'test-user-id',
+        email: 'test@example.com',
+        name: 'Test User',
+      },
+      expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    },
+    status: 'authenticated',
   })),
   signIn: jest.fn(),
   signOut: jest.fn(),
@@ -78,4 +90,19 @@ beforeAll(() => {
 
 afterAll(() => {
   console.error = originalError;
-}); 
+});
+
+// Mock Chart.js
+jest.mock('chart.js', () => ({
+  Chart: {
+    register: jest.fn(),
+  },
+  registerables: [],
+}));
+
+// Mock react-chartjs-2
+jest.mock('react-chartjs-2', () => ({
+  Line: () => <div data-testid="line-chart">Line Chart</div>,
+  Bar: () => <div data-testid="bar-chart">Bar Chart</div>,
+  Pie: () => <div data-testid="pie-chart">Pie Chart</div>,
+})); 

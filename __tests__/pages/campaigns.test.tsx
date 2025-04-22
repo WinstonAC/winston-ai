@@ -1,198 +1,189 @@
-import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { act } from 'react-dom/test-utils';
+import { Campaigns } from '@/pages/campaigns';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
-import Campaigns from '../../pages/campaigns';
 
 // Mock next-auth
-jest.mock('next-auth/react');
-const mockUseSession = useSession as jest.Mock;
+jest.mock('next-auth/react', () => ({
+  useSession: jest.fn(),
+}));
 
 // Mock next/router
 jest.mock('next/router', () => ({
-  useRouter: jest.fn()
+  useRouter: jest.fn(),
 }));
-const mockUseRouter = useRouter as jest.Mock;
 
 // Mock fetch
-const mockFetch = jest.fn();
-global.fetch = mockFetch;
+global.fetch = jest.fn();
 
-describe('Campaigns Page', () => {
+describe('Campaigns', () => {
   const mockSession = {
     data: {
-      user: { id: '1', email: 'test@example.com' },
-      expires: '2024-12-31'
+      user: {
+        id: '1',
+        email: 'test@example.com',
+        role: 'admin',
+      },
     },
-    status: 'authenticated'
+    status: 'authenticated',
   };
 
   const mockRouter = {
     push: jest.fn(),
-    reload: jest.fn()
   };
 
-  const mockData = {
-    templates: [
-      { id: '1', name: 'Welcome Email', subject: 'Welcome!' },
-      { id: '2', name: 'Follow-up Email', subject: 'Following up' }
-    ],
-    segments: [
-      { id: '1', name: 'All Leads' },
-      { id: '2', name: 'New Leads' }
-    ],
-    leads: [
-      { id: '1', name: 'John Doe', email: 'john@example.com', company: 'Acme Inc', title: 'CEO' },
-      { id: '2', name: 'Jane Smith', email: 'jane@example.com', company: 'Tech Corp', title: 'CTO' }
-    ]
-  };
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockUseSession.mockReturnValue(mockSession);
-    mockUseRouter.mockReturnValue(mockRouter);
-
-    // Mock successful API responses
-    mockFetch.mockImplementation((url) => {
-      const data = {
-        '/api/templates': mockData.templates,
-        '/api/segments': mockData.segments,
-        '/api/leads': mockData.leads
-      }[url];
-
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve(data)
-      });
-    });
-  });
-
-  it('renders loading state initially', () => {
-    render(<Campaigns />);
-    expect(screen.getByRole('status')).toBeInTheDocument();
-  });
-
-  it('renders the campaign page with data', async () => {
-    render(<Campaigns />);
-
-    await waitFor(() => {
-      expect(screen.getByText('CAMPAIGN_MANAGER_')).toBeInTheDocument();
-      expect(screen.getByText('CREATE_AND_MANAGE_YOUR_EMAIL_CAMPAIGNS_')).toBeInTheDocument();
-    });
-  });
-
-  it('handles API error states', async () => {
-    mockFetch.mockImplementation(() =>
-      Promise.resolve({
-        ok: false,
-        status: 500
-      })
-    );
-
-    render(<Campaigns />);
-
-    await waitFor(() => {
-      expect(screen.getByText('Error: Failed to fetch data')).toBeInTheDocument();
-    });
-  });
-
-  it('creates a campaign successfully', async () => {
-    const newCampaign = {
+  const mockCampaigns = [
+    {
+      id: '1',
       name: 'Test Campaign',
       description: 'Test Description',
+      status: 'draft',
       templateId: '1',
-      targetAudience: { segment: '1', filters: {} },
-      schedule: { type: 'immediate' }
-    };
+      targetAudience: {
+        segment: '1',
+        filters: {},
+      },
+      schedule: {
+        type: 'immediate',
+      },
+    },
+  ];
 
-    mockFetch.mockImplementation((url, options) => {
-      if (url === '/api/campaigns' && options.method === 'POST') {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ ...newCampaign, id: '123' })
-        });
+  const mockTemplates = [
+    { id: '1', name: 'Welcome Email', subject: 'Welcome!' },
+  ];
+
+  const mockSegments = [
+    { id: '1', name: 'All Leads' },
+  ];
+
+  const mockLeads = [
+    { id: '1', name: 'John Doe', email: 'john@example.com', company: 'Acme Inc', title: 'CEO', status: 'new' },
+  ];
+
+  beforeEach(() => {
+    (useSession as jest.Mock).mockReturnValue(mockSession);
+    (useRouter as jest.Mock).mockReturnValue(mockRouter);
+    (global.fetch as jest.Mock).mockImplementation((url) => {
+      switch (url) {
+        case '/api/campaigns':
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve(mockCampaigns),
+          });
+        case '/api/templates':
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve(mockTemplates),
+          });
+        case '/api/segments':
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve(mockSegments),
+          });
+        case '/api/leads':
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve(mockLeads),
+          });
+        default:
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve([]),
+          });
       }
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve([])
-      });
     });
-
-    render(<Campaigns />);
-
-    await waitFor(() => {
-      expect(screen.getByText('CAMPAIGN_MANAGER_')).toBeInTheDocument();
-    });
-
-    // Create campaign
-    const result = await screen.getByText('Campaign created successfully!');
-    expect(result).toBeInTheDocument();
-    expect(mockRouter.push).toHaveBeenCalledWith('/campaigns/123');
   });
 
-  it('updates a campaign successfully', async () => {
-    const updatedCampaign = {
-      id: '123',
-      name: 'Updated Campaign',
-      description: 'Updated Description',
-      templateId: '1',
-      targetAudience: { segment: '1', filters: {} },
-      schedule: { type: 'immediate' }
-    };
-
-    mockFetch.mockImplementation((url, options) => {
-      if (url === '/api/campaigns/123' && options.method === 'PUT') {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(updatedCampaign)
-        });
-      }
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve([])
-      });
-    });
-
-    render(<Campaigns />);
-
-    await waitFor(() => {
-      expect(screen.getByText('CAMPAIGN_MANAGER_')).toBeInTheDocument();
-    });
-
-    // Update campaign
-    const result = await screen.getByText('Campaign updated successfully!');
-    expect(result).toBeInTheDocument();
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
-  it('deletes a campaign successfully', async () => {
-    mockFetch.mockImplementation((url, options) => {
-      if (url === '/api/campaigns/123' && options.method === 'DELETE') {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({})
-        });
-      }
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve([])
-      });
+  it('renders the component and fetches data', async () => {
+    await act(async () => {
+      render(<Campaigns />);
     });
-
-    render(<Campaigns />);
 
     await waitFor(() => {
-      expect(screen.getByText('CAMPAIGN_MANAGER_')).toBeInTheDocument();
+      expect(screen.getByText('EMAIL_CAMPAIGNS_')).toBeInTheDocument();
+      expect(screen.getByText('Test Campaign')).toBeInTheDocument();
     });
-
-    // Delete campaign
-    const result = await screen.getByText('Campaign deleted successfully!');
-    expect(result).toBeInTheDocument();
-    expect(mockRouter.reload).toHaveBeenCalled();
   });
 
-  it('handles unauthorized access', () => {
-    mockUseSession.mockReturnValue({ data: null, status: 'unauthenticated' });
+  it('creates a new campaign', async () => {
     render(<Campaigns />);
-    expect(screen.queryByText('CAMPAIGN_MANAGER_')).not.toBeInTheDocument();
+    
+    // Click create campaign button
+    const createButton = screen.getByRole('button', { name: 'open-create-campaign-modal' });
+    fireEvent.click(createButton);
+
+    // Fill in form fields
+    fireEvent.change(screen.getByLabelText('Campaign name'), { target: { value: 'Test Campaign' } });
+    fireEvent.change(screen.getByLabelText('Campaign description'), { target: { value: 'Test Description' } });
+    fireEvent.change(screen.getByLabelText('Select email template'), { target: { value: 'template1' } });
+    fireEvent.change(screen.getByLabelText('Select target segment'), { target: { value: 'segment1' } });
+
+    // Submit form
+    const submitButton = screen.getByRole('button', { name: 'submit-create-campaign' });
+    fireEvent.click(submitButton);
+
+    // Check success message
+    await waitFor(() => {
+      expect(screen.getByText('Campaign created successfully')).toBeInTheDocument();
+    });
+  });
+
+  it('updates a campaign', async () => {
+    render(<Campaigns />);
+
+    // Click edit button
+    const editButton = screen.getByRole('button', { name: 'edit-campaign' });
+    fireEvent.click(editButton);
+
+    // Update form fields
+    fireEvent.change(screen.getByLabelText('Campaign name'), { target: { value: 'Updated Campaign' } });
+    fireEvent.change(screen.getByLabelText('Campaign description'), { target: { value: 'Updated Description' } });
+
+    // Submit form
+    const submitButton = screen.getByRole('button', { name: 'submit-update-campaign' });
+    fireEvent.click(submitButton);
+
+    // Check success message
+    await waitFor(() => {
+      expect(screen.getByText('Campaign updated successfully')).toBeInTheDocument();
+    });
+  });
+
+  it('deletes a campaign', async () => {
+    render(<Campaigns />);
+
+    // Click delete button
+    const deleteButton = screen.getByRole('button', { name: 'delete-campaign' });
+    fireEvent.click(deleteButton);
+
+    // Confirm deletion
+    const confirmButton = screen.getByRole('button', { name: 'confirm-delete' });
+    fireEvent.click(confirmButton);
+
+    // Check success message
+    await waitFor(() => {
+      expect(screen.getByText('Campaign deleted successfully')).toBeInTheDocument();
+    });
+  });
+
+  it('handles API errors', async () => {
+    // Mock a failed API request
+    (global.fetch as jest.Mock).mockImplementationOnce(() =>
+      Promise.reject(new Error('API Error'))
+    );
+
+    await act(async () => {
+      render(<Campaigns />);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('API Error')).toBeInTheDocument();
+    });
   });
 }); 

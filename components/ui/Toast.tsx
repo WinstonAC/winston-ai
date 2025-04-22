@@ -1,74 +1,66 @@
 import React, { useEffect } from 'react';
-import { XMarkIcon, CheckCircleIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 
-interface ToastProps {
+export interface ToastProps {
   message: string;
-  type?: 'success' | 'error' | 'info';
+  variant?: 'success' | 'error' | 'warning' | 'info';
+  position?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
   duration?: number;
-  onClose: () => void;
+  onClose?: () => void;
+  className?: string;
+  icon?: React.ReactNode;
 }
 
 export const Toast: React.FC<ToastProps> = ({
   message,
-  type = 'info',
+  variant = 'info',
+  position = 'top-right',
   duration = 3000,
   onClose,
+  className = '',
+  icon,
 }) => {
   useEffect(() => {
-    const timer = setTimeout(() => {
-      onClose();
-    }, duration);
-
-    return () => clearTimeout(timer);
+    if (duration && onClose) {
+      const timer = setTimeout(onClose, duration);
+      return () => clearTimeout(timer);
+    }
   }, [duration, onClose]);
 
-  const getIcon = () => {
-    switch (type) {
-      case 'success':
-        return <CheckCircleIcon className="w-6 h-6" />;
-      case 'error':
-        return <ExclamationCircleIcon className="w-6 h-6" />;
-      default:
-        return null;
-    }
+  const variantClasses = {
+    success: 'bg-green-500',
+    error: 'bg-red-500',
+    warning: 'bg-yellow-500',
+    info: 'bg-blue-500',
   };
 
-  const getBorderColor = () => {
-    switch (type) {
-      case 'success':
-        return 'border-green-500';
-      case 'error':
-        return 'border-red-500';
-      default:
-        return 'border-black';
-    }
-  };
-
-  const getTextColor = () => {
-    switch (type) {
-      case 'success':
-        return 'text-green-500';
-      case 'error':
-        return 'text-red-500';
-      default:
-        return 'text-black';
-    }
+  const positionClasses = {
+    'top-right': 'top-4 right-4',
+    'top-left': 'top-4 left-4',
+    'bottom-right': 'bottom-4 right-4',
+    'bottom-left': 'bottom-4 left-4',
   };
 
   return (
     <div
-      className={`fixed bottom-4 right-4 bg-white border-2 ${getBorderColor()} p-4 flex items-center gap-2 animate-in slide-in-from-bottom`}
+      className={`fixed ${positionClasses[position]} z-50`}
       role="alert"
     >
-      {getIcon()}
-      <span className={`font-bold ${getTextColor()}`}>{message}</span>
-      <button
-        onClick={onClose}
-        className="ml-2 p-1 hover:bg-black hover:text-white transition-colors"
-        aria-label="Close notification"
+      <div
+        className={`flex items-center p-4 rounded-lg shadow-lg text-white ${variantClasses[variant]} ${className}`}
       >
-        <XMarkIcon className="w-5 h-5" />
-      </button>
+        {icon && <div className="mr-2">{icon}</div>}
+        <span className="flex-1">{message}</span>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="ml-2 text-white hover:text-gray-200 focus:outline-none"
+            aria-label="Close"
+          >
+            <XMarkIcon className="h-5 w-5" />
+          </button>
+        )}
+      </div>
     </div>
   );
 }; 

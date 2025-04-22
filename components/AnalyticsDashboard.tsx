@@ -40,6 +40,7 @@ import {
 import annotationPlugin from 'chartjs-plugin-annotation';
 import Chatbot from './Chatbot';
 import { User, AnalyticsPermissions, getAnalyticsPermissions } from '../types/auth';
+import DatePicker from 'react-datepicker';
 
 // Register ChartJS components
 ChartJS.register(
@@ -236,6 +237,13 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('30d');
   const permissions = getAnalyticsPermissions(user);
+  const [dateRange, setDateRange] = useState<{
+    startDate: Date | null;
+    endDate: Date | null;
+  }>({
+    startDate: null,
+    endDate: null,
+  });
 
   useEffect(() => {
     fetchAnalytics();
@@ -406,13 +414,8 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
     );
   };
 
-  const MetricCard = ({ title, value, change, icon: Icon }: {
-    title: string;
-    value: string | number;
-    change?: number;
-    icon: React.ElementType;
-  }) => (
-    <div className="bg-white rounded-lg shadow p-4">
+  const MetricCard = ({ title, value, change, icon: Icon, className, ...props }) => (
+    <div className={`bg-white rounded-lg shadow p-4 ${className || ''}`} {...props}>
       <div className="flex items-center">
         <div className="flex-shrink-0">
           <Icon className="h-6 w-6 text-gray-400" />
@@ -434,54 +437,54 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
     </div>
   );
 
-  const chartOptions: ChartOptions = useMemo(() => ({
+  const options = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
       legend: {
         position: 'top',
         labels: {
-          color: '#ffffff',
+          color: string;
           font: {
-            size: 12,
-            weight: 'bold',
-          },
-        },
-      },
-      title: {
-        display: true,
-        text: 'Campaign Performance',
-        color: '#ffffff',
-        font: {
-          size: 16,
-          weight: 'bold',
-        },
-      },
+            family: string;
+            size: number;
+          };
+        };
+      }
     },
     scales: {
       y: {
+        beginAtZero: true,
         ticks: {
-          color: '#ffffff',
+          color: '#32CD32',
+          font: {
+            family: 'monospace',
+            size: 12
+          }
         },
         grid: {
-          color: 'rgba(255, 255, 255, 0.1)',
-        },
+          color: 'rgba(50, 205, 50, 0.1)'
+        }
       },
       x: {
         ticks: {
-          color: '#ffffff',
+          color: '#32CD32',
+          font: {
+            family: 'monospace',
+            size: 12
+          }
         },
         grid: {
-          color: 'rgba(255, 255, 255, 0.1)',
-        },
-      },
-    },
-  }), []);
+          color: 'rgba(50, 205, 50, 0.1)'
+        }
+      }
+    }
+  } as const;
 
   const enhancedChartOptions: EnhancedChartOptions = useMemo(() => ({
-    ...chartOptions,
+    ...options,
     plugins: {
-      ...chartOptions.plugins,
+      ...options.plugins,
       annotation: showAnnotations ? {
         annotations: {
           threshold: {
@@ -513,7 +516,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
         },
       },
     },
-  }), [chartOptions, showAnnotations, campaigns, selectedMetrics]);
+  }), [options, showAnnotations, campaigns, selectedMetrics]);
 
   const chartData = useMemo(() => {
     if (!showComparison || selectedCampaigns.length < 2) return null;
@@ -598,298 +601,378 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
     }
   };
 
+  const handleDateChange = (date: Date | null, type: 'start' | 'end') => {
+    setDateRange(prev => ({
+      ...prev,
+      [type === 'start' ? 'startDate' : 'endDate']: date
+    }));
+  };
+
   if (loading) return <div className="animate-pulse">Loading analytics...</div>;
   if (error) return <div className="text-red-500">Error: {error}</div>;
   if (!data) return <div>No data available</div>;
 
-  return (
-    <div className="space-y-6 bg-black text-white p-6" data-testid="analytics-dashboard">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold">Campaign Analytics</h2>
-          <div className="flex items-center space-x-4">
-            <p className="text-sm text-gray-400">
-              Last updated: {lastUpdated.toLocaleTimeString()}
-            </p>
-            {isOffline && (
-              <span className="text-yellow-500 text-sm font-bold">
-                Offline Mode - Using cached data
-              </span>
-            )}
-            {!isOffline && !wsState.isConnected && (
-              <span className="text-red-500 text-sm font-bold">
-                Reconnecting... ({wsState.retryCount}/{MAX_RETRIES})
-              </span>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center space-x-4">
-          {permissions.canExportData && (
-            <button
-              onClick={() => setShowExportMenu(!showExportMenu)}
-              className="border-2 border-white px-4 py-2 text-white font-bold hover:bg-white hover:text-black transition-colors"
-              disabled={exportState.isExporting}
-            >
-              <ArrowDownTrayIcon className="h-5 w-5 inline-block mr-2" />
-              {exportState.isExporting ? 'Exporting...' : 'Export'}
-            </button>
-          )}
-          
-          {permissions.canCompareCampaigns && (
-            <button
-              onClick={handleCompare}
-              disabled={selectedCampaigns.length < 2}
-              className="border-2 border-white px-4 py-2 text-white font-bold hover:bg-white hover:text-black transition-colors disabled:opacity-50"
-            >
-              <ArrowsRightLeftIcon className="h-5 w-5 inline-block mr-2" />
-              Compare
-            </button>
-          )}
-
-          <button
-            onClick={() => setShowHelp(true)}
-            className="border-2 border-white px-4 py-2 text-white font-bold hover:bg-white hover:text-black transition-colors"
-          >
-            <QuestionMarkCircleIcon className="h-5 w-5 inline-block mr-2" />
-            Help
-          </button>
-          <div className="flex items-center space-x-2">
-            <CalendarIcon className="h-5 w-5 text-white" />
-            <select
-              value={timeRange}
-              onChange={(e) => setTimeRange(e.target.value as '7d' | '30d' | '90d')}
-              className="bg-black border-2 border-white text-white px-3 py-1 rounded-none"
-            >
-              <option value="7d">Last 7 days</option>
-              <option value="30d">Last 30 days</option>
-              <option value="90d">Last 90 days</option>
-            </select>
-          </div>
-        </div>
+  if (!campaigns || campaigns.length === 0) {
+    return (
+      <div data-testid="loading-spinner" className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white"></div>
       </div>
+    );
+  }
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+  return (
+    <div data-testid="analytics-dashboard" className="bg-black p-6 min-h-screen">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <MetricCard
+          data-testid="metric-card"
           title="Total Emails Sent"
           value={totals.sent}
-          change={5}
           icon={EnvelopeIcon}
+          className="border-2 border-white p-4 rounded-lg"
         />
         <MetricCard
+          data-testid="metric-card"
           title="Open Rate"
           value={`${rates.openRate.toFixed(1)}%`}
-          change={2.5}
           icon={ChartBarIcon}
+          change={2.5}
+          className="border-2 border-white p-4 rounded-lg"
         />
         <MetricCard
+          data-testid="metric-card"
           title="Reply Rate"
           value={`${rates.replyRate.toFixed(1)}%`}
-          change={-1.2}
           icon={UserGroupIcon}
+          change={-1.2}
+          className="border-2 border-white p-4 rounded-lg"
         />
         <MetricCard
+          data-testid="metric-card"
           title="Meeting Rate"
           value={`${rates.meetingRate.toFixed(1)}%`}
-          change={3.8}
           icon={ClockIcon}
+          change={3.8}
+          className="border-2 border-white p-4 rounded-lg"
         />
       </div>
 
-      <div className="border-2 border-white">
-        <div className="p-4">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold">Campaign Performance</h3>
-            <div className="flex space-x-2">
-              <button className="border-2 border-white px-3 py-1 text-white font-bold hover:bg-white hover:text-black transition-colors">
-                <ChartLineIcon className="h-5 w-5 inline-block mr-2" />
-                Trends
-              </button>
-            </div>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full">
-              <thead>
-                <tr className="border-b-2 border-white">
-                  <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
-                    Select
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
-                    Campaign
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
-                    Sent
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
-                    Open Rate
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
-                    Click Rate
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
-                    Reply Rate
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
-                    Meetings
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {campaigns.map((campaign) => (
-                  <tr key={campaign.id} className="border-b border-gray-800">
-                    <td className="px-6 py-4">
-                      <input
-                        type="checkbox"
-                        checked={selectedCampaigns.includes(campaign.id)}
-                        onChange={() => toggleCampaignSelection(campaign.id)}
-                        className="h-4 w-4 border-2 border-white bg-black"
-                      />
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-white">
-                      {campaign.name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
-                      {campaign.sent}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
-                      {((campaign.opened / campaign.delivered) * 100).toFixed(1)}%
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
-                      {((campaign.clicked / campaign.opened) * 100).toFixed(1)}%
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
-                      {((campaign.replies / campaign.delivered) * 100).toFixed(1)}%
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
-                      {campaign.meetings}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold text-white">Campaign Performance</h2>
+        <div className="flex space-x-4">
+          <DatePicker
+            selected={dateRange.startDate}
+            onChange={(date) => handleDateChange(date, 'start')}
+            selectsStart
+            startDate={dateRange.startDate}
+            endDate={dateRange.endDate}
+            maxDate={dateRange.endDate || new Date()}
+            className="font-mono text-[#32CD32] bg-black border-2 border-[#32CD32] px-4 py-2"
+            placeholderText="Start Date"
+            data-testid="date-picker"
+          />
+          <DatePicker
+            selected={dateRange.endDate}
+            onChange={(date) => handleDateChange(date, 'end')}
+            selectsEnd
+            startDate={dateRange.startDate}
+            endDate={dateRange.endDate}
+            minDate={dateRange.startDate}
+            maxDate={new Date()}
+            className="font-mono text-[#32CD32] bg-black border-2 border-[#32CD32] px-4 py-2"
+            placeholderText="End Date"
+            data-testid="date-picker"
+          />
         </div>
       </div>
 
-      {showComparison && selectedCampaigns.length >= 2 && comparisonView.type === 'chart' && (
-        <div className={`border-2 border-white p-4 ${isFullscreen ? 'fixed inset-0 z-50 bg-black' : ''}`}>
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex space-x-4">
-              <button
-                onClick={() => setChartType('line')}
-                className={`border-2 border-white px-3 py-1 ${
-                  chartType === 'line' ? 'bg-white text-black' : 'text-white'
-                }`}
-              >
-                <ChartLineIcon className="h-5 w-5 inline-block mr-2" />
-                Line
-              </button>
-              <button
-                onClick={() => setChartType('bar')}
-                className={`border-2 border-white px-3 py-1 ${
-                  chartType === 'bar' ? 'bg-white text-black' : 'text-white'
-                }`}
-              >
-                <ChartBarIcon className="h-5 w-5 inline-block mr-2" />
-                Bar
-              </button>
-              <button
-                onClick={() => setChartType('pie')}
-                className={`border-2 border-white px-3 py-1 ${
-                  chartType === 'pie' ? 'bg-white text-black' : 'text-white'
-                }`}
-              >
-                <ChartPieIcon className="h-5 w-5 inline-block mr-2" />
-                Pie
-              </button>
-              {permissions.canAccessAdvancedCharts && (
-                <>
-                  <button
-                    onClick={() => setChartType('scatter')}
-                    className={`border-2 border-white px-3 py-1 ${
-                      chartType === 'scatter' ? 'bg-white text-black' : 'text-white'
-                    }`}
-                  >
-                    <ChartScatterIcon className="h-5 w-5 inline-block mr-2" />
-                    Scatter
-                  </button>
-                  <button
-                    onClick={() => setChartType('area')}
-                    className={`border-2 border-white px-3 py-1 ${
-                      chartType === 'area' ? 'bg-white text-black' : 'text-white'
-                    }`}
-                  >
-                    <ChartAreaIcon className="h-5 w-5 inline-block mr-2" />
-                    Area
-                  </button>
-                  <button
-                    onClick={() => setChartType('heatmap')}
-                    className={`border-2 border-white px-3 py-1 ${
-                      chartType === 'heatmap' ? 'bg-white text-black' : 'text-white'
-                    }`}
-                  >
-                    <ChartHeatmapIcon className="h-5 w-5 inline-block mr-2" />
-                    Heatmap
-                  </button>
-                </>
+      <div className="overflow-x-auto">
+        <table className="w-full border-2 border-white">
+          <thead>
+            <tr className="bg-gray-800">
+              <th className="p-4 text-left text-white">Campaign</th>
+              <th className="p-4 text-left text-white">Sent</th>
+              <th className="p-4 text-left text-white">Open Rate</th>
+              <th className="p-4 text-left text-white">Click Rate</th>
+              <th className="p-4 text-left text-white">Reply Rate</th>
+              <th className="p-4 text-left text-white">Meetings</th>
+            </tr>
+          </thead>
+          <tbody>
+            {campaigns.map((campaign) => (
+              <tr key={campaign.id} className="border-t border-gray-700">
+                <td className="p-4 text-white">{campaign.name}</td>
+                <td className="p-4 text-white">{campaign.sent}</td>
+                <td className="p-4 text-white">{((campaign.opened / campaign.delivered) * 100).toFixed(1)}%</td>
+                <td className="p-4 text-white">{((campaign.clicked / campaign.opened) * 100).toFixed(1)}%</td>
+                <td className="p-4 text-white">{((campaign.replies / campaign.delivered) * 100).toFixed(1)}%</td>
+                <td className="p-4 text-white">{campaign.meetings}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="space-y-6 bg-black text-white p-6" data-testid="analytics-dashboard">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold">Campaign Analytics</h2>
+            <div className="flex items-center space-x-4">
+              <p className="text-sm text-gray-400">
+                Last updated: {lastUpdated.toLocaleTimeString()}
+              </p>
+              {isOffline && (
+                <span className="text-yellow-500 text-sm font-bold">
+                  Offline Mode - Using cached data
+                </span>
               )}
-            </div>
-            <div className="flex space-x-4">
-              {permissions.canManageAnnotations && (
-                <button
-                  onClick={() => setShowAnnotations(!showAnnotations)}
-                  className="border-2 border-white px-3 py-1 text-white hover:bg-white hover:text-black"
-                >
-                  <InformationCircleIcon className="h-5 w-5 inline-block mr-2" />
-                  {showAnnotations ? 'Hide Annotations' : 'Show Annotations'}
-                </button>
+              {!isOffline && !wsState.isConnected && (
+                <span className="text-red-500 text-sm font-bold">
+                  Reconnecting... ({wsState.retryCount}/{MAX_RETRIES})
+                </span>
               )}
-              <button
-                onClick={() => setIsFullscreen(!isFullscreen)}
-                className="border-2 border-white px-3 py-1 text-white hover:bg-white hover:text-black"
-              >
-                <ArrowsPointingOutIcon className="h-5 w-5" />
-              </button>
             </div>
           </div>
+          <div className="flex items-center space-x-4">
+            {permissions.canExportData && (
+              <button
+                onClick={() => setShowExportMenu(!showExportMenu)}
+                className="border-2 border-white px-4 py-2 text-white font-bold hover:bg-white hover:text-black transition-colors"
+                disabled={exportState.isExporting}
+              >
+                <ArrowDownTrayIcon className="h-5 w-5 inline-block mr-2" />
+                {exportState.isExporting ? 'Exporting...' : 'Export'}
+              </button>
+            )}
+            
+            {permissions.canCompareCampaigns && (
+              <button
+                onClick={handleCompare}
+                disabled={selectedCampaigns.length < 2}
+                className="border-2 border-white px-4 py-2 text-white font-bold hover:bg-white hover:text-black transition-colors disabled:opacity-50"
+              >
+                <ArrowsRightLeftIcon className="h-5 w-5 inline-block mr-2" />
+                Compare
+              </button>
+            )}
 
-          {chartType === 'scatter' && (
-            <div className="flex space-x-4 mb-4">
+            <button
+              onClick={() => setShowHelp(true)}
+              className="border-2 border-white px-4 py-2 text-white font-bold hover:bg-white hover:text-black transition-colors"
+            >
+              <QuestionMarkCircleIcon className="h-5 w-5 inline-block mr-2" />
+              Help
+            </button>
+            <div className="flex items-center space-x-2">
+              <CalendarIcon className="h-5 w-5 text-white" />
               <select
-                value={selectedMetrics.x}
-                onChange={(e) => setSelectedMetrics(prev => ({ ...prev, x: e.target.value as keyof CampaignMetrics }))}
-                className="bg-black border-2 border-white text-white px-3 py-1"
+                value={timeRange}
+                onChange={(e) => setTimeRange(e.target.value as '7d' | '30d' | '90d')}
+                className="bg-black border-2 border-white text-white px-3 py-1 rounded-none"
               >
-                {Object.keys(campaigns[0]).filter(key => 
-                  !['id', 'name', 'startDate', 'endDate'].includes(key)
-                ).map(metric => (
-                  <option key={metric} value={metric}>
-                    {metric.charAt(0).toUpperCase() + metric.slice(1)}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={selectedMetrics.y}
-                onChange={(e) => setSelectedMetrics(prev => ({ ...prev, y: e.target.value as keyof CampaignMetrics }))}
-                className="bg-black border-2 border-white text-white px-3 py-1"
-              >
-                {Object.keys(campaigns[0]).filter(key => 
-                  !['id', 'name', 'startDate', 'endDate'].includes(key)
-                ).map(metric => (
-                  <option key={metric} value={metric}>
-                    {metric.charAt(0).toUpperCase() + metric.slice(1)}
-                  </option>
-                ))}
+                <option value="7d">Last 7 days</option>
+                <option value="30d">Last 30 days</option>
+                <option value="90d">Last 90 days</option>
               </select>
             </div>
-          )}
-
-          <div className="h-96">
-            {renderChart()}
           </div>
         </div>
-      )}
 
-      {showHelp && <Chatbot initialContext="analytics" onClose={() => setShowHelp(false)} />}
+        <div className="border-2 border-white">
+          <div className="p-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold">Campaign Performance</h3>
+              <div className="flex space-x-2">
+                <button className="border-2 border-white px-3 py-1 text-white font-bold hover:bg-white hover:text-black transition-colors">
+                  <ChartLineIcon className="h-5 w-5 inline-block mr-2" />
+                  Trends
+                </button>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead>
+                  <tr className="border-b-2 border-white">
+                    <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
+                      Select
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
+                      Campaign
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
+                      Sent
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
+                      Open Rate
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
+                      Click Rate
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
+                      Reply Rate
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">
+                      Meetings
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {campaigns.map((campaign) => (
+                    <tr key={campaign.id} className="border-b border-gray-800">
+                      <td className="px-6 py-4">
+                        <input
+                          type="checkbox"
+                          checked={selectedCampaigns.includes(campaign.id)}
+                          onChange={() => toggleCampaignSelection(campaign.id)}
+                          className="h-4 w-4 border-2 border-white bg-black"
+                        />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-white">
+                        {campaign.name}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
+                        {campaign.sent}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
+                        {((campaign.opened / campaign.delivered) * 100).toFixed(1)}%
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
+                        {((campaign.clicked / campaign.opened) * 100).toFixed(1)}%
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
+                        {((campaign.replies / campaign.delivered) * 100).toFixed(1)}%
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
+                        {campaign.meetings}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        {showComparison && selectedCampaigns.length >= 2 && comparisonView.type === 'chart' && (
+          <div className={`border-2 border-white p-4 ${isFullscreen ? 'fixed inset-0 z-50 bg-black' : ''}`}>
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex space-x-4">
+                <button
+                  onClick={() => setChartType('line')}
+                  className={`border-2 border-white px-3 py-1 ${
+                    chartType === 'line' ? 'bg-white text-black' : 'text-white'
+                  }`}
+                >
+                  <ChartLineIcon className="h-5 w-5 inline-block mr-2" />
+                  Line
+                </button>
+                <button
+                  onClick={() => setChartType('bar')}
+                  className={`border-2 border-white px-3 py-1 ${
+                    chartType === 'bar' ? 'bg-white text-black' : 'text-white'
+                  }`}
+                >
+                  <ChartBarIcon className="h-5 w-5 inline-block mr-2" />
+                  Bar
+                </button>
+                <button
+                  onClick={() => setChartType('pie')}
+                  className={`border-2 border-white px-3 py-1 ${
+                    chartType === 'pie' ? 'bg-white text-black' : 'text-white'
+                  }`}
+                >
+                  <ChartPieIcon className="h-5 w-5 inline-block mr-2" />
+                  Pie
+                </button>
+                {permissions.canAccessAdvancedCharts && (
+                  <>
+                    <button
+                      onClick={() => setChartType('scatter')}
+                      className={`border-2 border-white px-3 py-1 ${
+                        chartType === 'scatter' ? 'bg-white text-black' : 'text-white'
+                      }`}
+                    >
+                      <ChartScatterIcon className="h-5 w-5 inline-block mr-2" />
+                      Scatter
+                    </button>
+                    <button
+                      onClick={() => setChartType('area')}
+                      className={`border-2 border-white px-3 py-1 ${
+                        chartType === 'area' ? 'bg-white text-black' : 'text-white'
+                      }`}
+                    >
+                      <ChartAreaIcon className="h-5 w-5 inline-block mr-2" />
+                      Area
+                    </button>
+                    <button
+                      onClick={() => setChartType('heatmap')}
+                      className={`border-2 border-white px-3 py-1 ${
+                        chartType === 'heatmap' ? 'bg-white text-black' : 'text-white'
+                      }`}
+                    >
+                      <ChartHeatmapIcon className="h-5 w-5 inline-block mr-2" />
+                      Heatmap
+                    </button>
+                  </>
+                )}
+              </div>
+              <div className="flex space-x-4">
+                {permissions.canManageAnnotations && (
+                  <button
+                    onClick={() => setShowAnnotations(!showAnnotations)}
+                    className="border-2 border-white px-3 py-1 text-white hover:bg-white hover:text-black"
+                  >
+                    <InformationCircleIcon className="h-5 w-5 inline-block mr-2" />
+                    {showAnnotations ? 'Hide Annotations' : 'Show Annotations'}
+                  </button>
+                )}
+                <button
+                  onClick={() => setIsFullscreen(!isFullscreen)}
+                  className="border-2 border-white px-3 py-1 text-white hover:bg-white hover:text-black"
+                >
+                  <ArrowsPointingOutIcon className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+
+            {chartType === 'scatter' && (
+              <div className="flex space-x-4 mb-4">
+                <select
+                  value={selectedMetrics.x}
+                  onChange={(e) => setSelectedMetrics(prev => ({ ...prev, x: e.target.value as keyof CampaignMetrics }))}
+                  className="bg-black border-2 border-white text-white px-3 py-1"
+                >
+                  {Object.keys(campaigns[0]).filter(key => 
+                    !['id', 'name', 'startDate', 'endDate'].includes(key)
+                  ).map(metric => (
+                    <option key={metric} value={metric}>
+                      {metric.charAt(0).toUpperCase() + metric.slice(1)}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={selectedMetrics.y}
+                  onChange={(e) => setSelectedMetrics(prev => ({ ...prev, y: e.target.value as keyof CampaignMetrics }))}
+                  className="bg-black border-2 border-white text-white px-3 py-1"
+                >
+                  {Object.keys(campaigns[0]).filter(key => 
+                    !['id', 'name', 'startDate', 'endDate'].includes(key)
+                  ).map(metric => (
+                    <option key={metric} value={metric}>
+                      {metric.charAt(0).toUpperCase() + metric.slice(1)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="h-96">
+              {renderChart()}
+            </div>
+          </div>
+        )}
+
+        {showHelp && <Chatbot initialContext="analytics" onClose={() => setShowHelp(false)} />}
+      </div>
     </div>
   );
 };

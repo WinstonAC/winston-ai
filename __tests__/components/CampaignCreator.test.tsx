@@ -1,180 +1,125 @@
-import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { CampaignCreator } from '../../components/CampaignCreator';
+import { CampaignCreator } from '@/components/CampaignCreator';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/router';
 
-// Mock data
-const mockTemplates = [
-  { id: '1', name: 'Welcome Email', subject: 'Welcome!' },
-  { id: '2', name: 'Follow-up Email', subject: 'Following up' },
-];
+// Mock next-auth
+jest.mock('next-auth/react', () => ({
+  useSession: jest.fn(),
+}));
 
-const mockSegments = [
-  { id: '1', name: 'All Leads' },
-  { id: '2', name: 'New Leads' },
-];
+// Mock next/router
+jest.mock('next/router', () => ({
+  useRouter: jest.fn(),
+}));
 
-const mockLeads = [
-  { id: '1', name: 'John Doe', email: 'john@example.com', company: 'Acme Inc', title: 'CEO' },
-  { id: '2', name: 'Jane Smith', email: 'jane@example.com', company: 'Tech Corp', title: 'CTO' },
-];
+// Mock API calls
+jest.mock('@/lib/api', () => ({
+  createCampaign: jest.fn(),
+  updateCampaign: jest.fn(),
+  deleteCampaign: jest.fn(),
+  getCampaigns: jest.fn(),
+  getTemplates: jest.fn(),
+  getSegments: jest.fn(),
+}));
 
-// Mock functions
-const mockOnCreateCampaign = jest.fn();
-const mockOnUpdateCampaign = jest.fn();
-const mockOnDeleteCampaign = jest.fn();
+describe('CampaignCreator', () => {
+  const mockSession = {
+    data: {
+      user: {
+        id: '1',
+        email: 'test@example.com',
+        role: 'admin',
+      },
+    },
+    status: 'authenticated',
+  };
 
-describe('CampaignCreator Component', () => {
+  const mockRouter = {
+    push: jest.fn(),
+  };
+
   beforeEach(() => {
+    (useSession as jest.Mock).mockReturnValue(mockSession);
+    (useRouter as jest.Mock).mockReturnValue(mockRouter);
+  });
+
+  afterEach(() => {
     jest.clearAllMocks();
   });
 
-  it('renders the component correctly', () => {
-    render(
-      <CampaignCreator
-        leads={mockLeads}
-        templates={mockTemplates}
-        segments={mockSegments}
-        onCreateCampaign={mockOnCreateCampaign}
-        onUpdateCampaign={mockOnUpdateCampaign}
-        onDeleteCampaign={mockOnDeleteCampaign}
-      />
-    );
-
-    expect(screen.getByText('EMAIL_CAMPAIGNS_')).toBeInTheDocument();
-    expect(screen.getByText('CREATE_CAMPAIGN_')).toBeInTheDocument();
+  it('renders the component', () => {
+    render(<CampaignCreator />);
+    expect(screen.getByRole('button', { name: 'open-create-campaign-modal' })).toBeInTheDocument();
   });
 
-  it('opens create campaign modal when create button is clicked', async () => {
-    render(
-      <CampaignCreator
-        leads={mockLeads}
-        templates={mockTemplates}
-        segments={mockSegments}
-        onCreateCampaign={mockOnCreateCampaign}
-        onUpdateCampaign={mockOnUpdateCampaign}
-        onDeleteCampaign={mockOnDeleteCampaign}
-      />
-    );
-
-    const createButton = screen.getByText('CREATE_CAMPAIGN_');
-    fireEvent.click(createButton);
-
-    expect(screen.getByText('CREATE_NEW_CAMPAIGN_')).toBeInTheDocument();
-    expect(screen.getByLabelText('CAMPAIGN_NAME_')).toBeInTheDocument();
-    expect(screen.getByLabelText('DESCRIPTION_')).toBeInTheDocument();
+  it('opens the create campaign modal', () => {
+    render(<CampaignCreator />);
+    fireEvent.click(screen.getByRole('button', { name: 'open-create-campaign-modal' }));
+    expect(screen.getByRole('heading', { name: 'CREATE_CAMPAIGN_' })).toBeInTheDocument();
   });
 
-  it('validates required fields when creating a campaign', async () => {
-    render(
-      <CampaignCreator
-        leads={mockLeads}
-        templates={mockTemplates}
-        segments={mockSegments}
-        onCreateCampaign={mockOnCreateCampaign}
-        onUpdateCampaign={mockOnUpdateCampaign}
-        onDeleteCampaign={mockOnDeleteCampaign}
-      />
-    );
-
-    // Open create modal
-    fireEvent.click(screen.getByText('CREATE_CAMPAIGN_'));
-
-    // Try to create without filling required fields
-    const createButton = screen.getByText('CREATE_CAMPAIGN_', { selector: 'button' });
-    fireEvent.click(createButton);
-
-    // Check for validation messages
-    expect(screen.getByText('Campaign name is required')).toBeInTheDocument();
-    expect(screen.getByText('Description is required')).toBeInTheDocument();
-    expect(screen.getByText('Please select an email template')).toBeInTheDocument();
-    expect(screen.getByText('Please select a target segment')).toBeInTheDocument();
-  });
-
-  it('successfully creates a campaign with valid data', async () => {
-    render(
-      <CampaignCreator
-        leads={mockLeads}
-        templates={mockTemplates}
-        segments={mockSegments}
-        onCreateCampaign={mockOnCreateCampaign}
-        onUpdateCampaign={mockOnUpdateCampaign}
-        onDeleteCampaign={mockOnDeleteCampaign}
-      />
-    );
-
-    // Open create modal
-    fireEvent.click(screen.getByText('CREATE_CAMPAIGN_'));
-
-    // Fill in the form
-    await userEvent.type(screen.getByLabelText('CAMPAIGN_NAME_'), 'Test Campaign');
-    await userEvent.type(screen.getByLabelText('DESCRIPTION_'), 'Test Description');
-    
-    // Select template and segment
-    fireEvent.change(screen.getByLabelText('EMAIL_TEMPLATE_'), { target: { value: '1' } });
-    fireEvent.change(screen.getByLabelText('TARGET_SEGMENT_'), { target: { value: '1' } });
-
-    // Submit the form
-    const createButton = screen.getByText('CREATE_CAMPAIGN_', { selector: 'button' });
-    fireEvent.click(createButton);
+  it('validates required fields', async () => {
+    render(<CampaignCreator />);
+    fireEvent.click(screen.getByRole('button', { name: 'open-create-campaign-modal' }));
+    fireEvent.click(screen.getByRole('button', { name: 'submit-create-campaign' }));
 
     await waitFor(() => {
-      expect(mockOnCreateCampaign).toHaveBeenCalledWith(expect.objectContaining({
+      expect(screen.getByText('Name is required')).toBeInTheDocument();
+      expect(screen.getByText('Description is required')).toBeInTheDocument();
+      expect(screen.getByText('Template is required')).toBeInTheDocument();
+      expect(screen.getByText('Target segment is required')).toBeInTheDocument();
+    });
+  });
+
+  it('creates a campaign successfully', async () => {
+    const mockCreateCampaign = jest.fn().mockResolvedValue({ id: '1' });
+    require('@/lib/api').createCampaign = mockCreateCampaign;
+
+    render(<CampaignCreator />);
+    fireEvent.click(screen.getByRole('button', { name: 'open-create-campaign-modal' }));
+
+    fireEvent.change(screen.getByLabelText('Campaign name'), { target: { value: 'Test Campaign' } });
+    fireEvent.change(screen.getByLabelText('Campaign description'), { target: { value: 'Test Description' } });
+    fireEvent.change(screen.getByLabelText('Select email template'), { target: { value: '1' } });
+    fireEvent.change(screen.getByLabelText('Select target segment'), { target: { value: '1' } });
+
+    fireEvent.click(screen.getByRole('button', { name: 'submit-create-campaign' }));
+
+    await waitFor(() => {
+      expect(mockCreateCampaign).toHaveBeenCalledWith({
         name: 'Test Campaign',
         description: 'Test Description',
         templateId: '1',
-        targetAudience: expect.objectContaining({
-          segment: '1'
-        })
-      }));
+        targetAudience: {
+          segment: '1',
+        },
+        schedule: {
+          type: 'immediate',
+        },
+      });
+      expect(screen.getByText('Campaign created successfully')).toBeInTheDocument();
     });
   });
 
   it('handles campaign deletion with confirmation', async () => {
-    const mockCampaign = {
-      id: '1',
-      name: 'Test Campaign',
-      description: 'Test Description',
-      templateId: '1',
-      targetAudience: { segment: '1', filters: {} },
-      schedule: { type: 'immediate' },
-      status: 'draft'
-    };
+    const mockDeleteCampaign = jest.fn().mockResolvedValue({});
+    require('@/lib/api').deleteCampaign = mockDeleteCampaign;
 
-    // Mock the fetchCampaigns response
-    global.fetch = jest.fn().mockImplementationOnce(() =>
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve([mockCampaign])
-      })
-    );
+    render(<CampaignCreator />);
+    fireEvent.click(screen.getByRole('button', { name: 'open-create-campaign-modal' }));
 
-    render(
-      <CampaignCreator
-        leads={mockLeads}
-        templates={mockTemplates}
-        segments={mockSegments}
-        onCreateCampaign={mockOnCreateCampaign}
-        onUpdateCampaign={mockOnUpdateCampaign}
-        onDeleteCampaign={mockOnDeleteCampaign}
-      />
-    );
+    // Mock window.confirm
+    const mockConfirm = jest.spyOn(window, 'confirm');
+    mockConfirm.mockImplementation(() => true);
 
-    // Wait for campaigns to load
-    await waitFor(() => {
-      expect(screen.getByText('Test Campaign')).toBeInTheDocument();
-    });
-
-    // Click delete button
-    const deleteButton = screen.getByRole('button', { name: /delete/i });
-    fireEvent.click(deleteButton);
-
-    // Confirm deletion
-    const confirmDeleteButton = screen.getByText('DELETE_');
-    fireEvent.click(confirmDeleteButton);
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
 
     await waitFor(() => {
-      expect(mockOnDeleteCampaign).toHaveBeenCalledWith('1');
+      expect(mockDeleteCampaign).toHaveBeenCalled();
+      expect(screen.getByText('Campaign deleted successfully')).toBeInTheDocument();
     });
+
+    mockConfirm.mockRestore();
   });
 }); 

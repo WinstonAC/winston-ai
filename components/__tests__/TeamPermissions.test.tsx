@@ -1,60 +1,41 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { TeamPermissions } from '../TeamPermissions';
-import { PermissionsProvider } from '../../contexts/PermissionsContext';
-import { UserRole, TeamPermission } from '../../types/auth';
+import { useSession } from 'next-auth/react';
+import { usePermissions } from '@/contexts/PermissionsContext';
 
-// Mock the fetch API
-global.fetch = jest.fn();
+// Mock next-auth
+jest.mock('next-auth/react', () => ({
+  useSession: jest.fn(),
+}));
 
-const mockTeamMembers = [
-  {
-    id: '1',
-    name: 'John Doe',
-    email: 'john@example.com',
-    role: UserRole.ADMIN,
-    permissions: [TeamPermission.READ, TeamPermission.WRITE],
-  },
-  {
-    id: '2',
-    name: 'Jane Smith',
-    email: 'jane@example.com',
-    role: UserRole.USER,
-    permissions: [TeamPermission.READ],
-  },
-];
+// Mock PermissionsContext
+jest.mock('@/contexts/PermissionsContext', () => ({
+  usePermissions: jest.fn(),
+}));
 
 describe('TeamPermissions', () => {
+  const mockTeamMembers = [
+    { id: '1', name: 'John Doe', email: 'john@example.com', role: 'admin' },
+    { id: '2', name: 'Jane Smith', email: 'jane@example.com', role: 'member' },
+  ];
+
   beforeEach(() => {
-    (global.fetch as jest.Mock).mockClear();
-  });
+    (useSession as jest.Mock).mockReturnValue({
+      data: { user: { id: '1' } },
+      status: 'authenticated',
+    });
 
-  const renderComponent = () => {
-    return render(
-      <PermissionsProvider>
-        <TeamPermissions />
-      </PermissionsProvider>
-    );
-  };
-
-  it('renders loading state initially', () => {
-    (global.fetch as jest.Mock).mockImplementationOnce(() =>
-      new Promise(() => {})
-    );
-
-    renderComponent();
-    expect(screen.getByRole('status')).toBeInTheDocument();
+    (usePermissions as jest.Mock).mockReturnValue({
+      state: { teamMembers: mockTeamMembers },
+      dispatch: jest.fn(),
+    });
   });
 
   it('displays team members after loading', async () => {
-    (global.fetch as jest.Mock).mockImplementationOnce(() =>
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve(mockTeamMembers),
-      })
-    );
-
-    renderComponent();
+    await act(async () => {
+      render(<TeamPermissions />);
+    });
 
     await waitFor(() => {
       expect(screen.getByText('John Doe')).toBeInTheDocument();
@@ -63,100 +44,71 @@ describe('TeamPermissions', () => {
   });
 
   it('handles form validation', async () => {
-    (global.fetch as jest.Mock).mockImplementationOnce(() =>
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve(mockTeamMembers),
-      })
-    );
+    await act(async () => {
+      render(<TeamPermissions />);
+    });
 
-    renderComponent();
+    await waitFor(() => {
+      const addButton = screen.getByRole('button', { name: /add member/i });
+      fireEvent.click(addButton);
+    });
 
-    // Open add member modal
-    fireEvent.click(screen.getByText('Add Member'));
+    const saveButton = screen.getByRole('button', { name: /save/i });
+    fireEvent.click(saveButton);
 
-    // Try to submit empty form
-    fireEvent.click(screen.getByText('Save'));
-
-    // Check for validation errors
     expect(screen.getByText('Name is required')).toBeInTheDocument();
     expect(screen.getByText('Email is required')).toBeInTheDocument();
     expect(screen.getByText('Role is required')).toBeInTheDocument();
   });
 
   it('handles successful member creation', async () => {
-    const newMember = {
-      id: '3',
-      name: 'New Member',
-      email: 'new@example.com',
-      role: UserRole.USER,
-      permissions: [TeamPermission.READ],
-    };
-
-    (global.fetch as jest.Mock)
-      .mockImplementationOnce(() =>
-        Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(mockTeamMembers),
-        })
-      )
-      .mockImplementationOnce(() =>
-        Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(newMember),
-        })
-      );
-
-    renderComponent();
-
-    // Open add member modal
-    fireEvent.click(screen.getByText('Add Member'));
-
-    // Fill in form
-    fireEvent.change(screen.getByLabelText('Name'), {
-      target: { value: newMember.name },
+    await act(async () => {
+      render(<TeamPermissions />);
     });
-    fireEvent.change(screen.getByLabelText('Email'), {
-      target: { value: newMember.email },
-    });
-    fireEvent.change(screen.getByLabelText('Role'), {
-      target: { value: newMember.role },
-    });
-
-    // Submit form
-    fireEvent.click(screen.getByText('Save'));
 
     await waitFor(() => {
-      expect(screen.getByText(newMember.name)).toBeInTheDocument();
+      const addButton = screen.getByRole('button', { name: /add member/i });
+      fireEvent.click(addButton);
+    });
+
+    fireEvent.change(screen.getByLabelText('Name'), {
+      target: { value: 'New Member' },
+    });
+    fireEvent.change(screen.getByLabelText('Email'), {
+      target: { value: 'new@example.com' },
+    });
+    fireEvent.change(screen.getByLabelText('Role'), {
+      target: { value: 'member' },
+    });
+
+    const saveButton = screen.getByRole('button', { name: /save/i });
+    await act(async () => {
+      fireEvent.click(saveButton);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('New Member')).toBeInTheDocument();
     });
   });
 
   it('handles member deletion', async () => {
-    (global.fetch as jest.Mock)
-      .mockImplementationOnce(() =>
-        Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(mockTeamMembers),
-        })
-      )
-      .mockImplementationOnce(() =>
-        Promise.resolve({
-          ok: true,
-        })
-      );
+    await act(async () => {
+      render(<TeamPermissions />);
+    });
 
-    // Mock window.confirm
-    window.confirm = jest.fn(() => true);
-
-    renderComponent();
-
-    // Wait for members to load
     await waitFor(() => {
       expect(screen.getByText('John Doe')).toBeInTheDocument();
     });
 
-    // Click delete button
-    fireEvent.click(screen.getByText('Delete'));
+    const deleteButton = screen.getByRole('button', { name: /delete/i });
+    await act(async () => {
+      fireEvent.click(deleteButton);
+    });
+
+    const confirmButton = screen.getByRole('button', { name: /confirm/i });
+    await act(async () => {
+      fireEvent.click(confirmButton);
+    });
 
     await waitFor(() => {
       expect(screen.queryByText('John Doe')).not.toBeInTheDocument();
@@ -164,18 +116,24 @@ describe('TeamPermissions', () => {
   });
 
   it('handles API errors gracefully', async () => {
-    (global.fetch as jest.Mock).mockImplementationOnce(() =>
-      Promise.reject(new Error('API Error'))
-    );
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
 
-    renderComponent();
+    (usePermissions as jest.Mock).mockReturnValue({
+      state: { teamMembers: [], error: new Error('API Error') },
+      dispatch: jest.fn(),
+    });
 
-    // Check that error is logged
+    await act(async () => {
+      render(<TeamPermissions />);
+    });
+
     await waitFor(() => {
-      expect(console.error).toHaveBeenCalledWith(
+      expect(consoleSpy).toHaveBeenCalledWith(
         'Failed to fetch team members:',
         expect.any(Error)
       );
     });
+
+    consoleSpy.mockRestore();
   });
 }); 

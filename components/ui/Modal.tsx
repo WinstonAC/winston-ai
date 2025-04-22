@@ -1,79 +1,82 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import { cn } from '../../lib/utils';
 
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
   children: React.ReactNode;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+  footer?: React.ReactNode;
+  className?: string;
 }
 
 const sizeClasses = {
   sm: 'max-w-sm',
   md: 'max-w-md',
-  lg: 'max-w-lg',
+  lg: 'max-w-2xl',
+  xl: 'max-w-4xl',
 };
 
-export const Modal: React.FC<ModalProps> = ({
+const Modal: React.FC<ModalProps> = ({
   isOpen,
   onClose,
   title,
   children,
   size = 'md',
+  footer,
+  className,
 }) => {
-  const modalRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'hidden';
-    }
-
-    return () => {
-      document.removeEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'unset';
-    };
-  }, [isOpen, onClose]);
-
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          onClose();
-        }
-      }}
-    >
-      <div
-        ref={modalRef}
-        className={`bg-white border-2 border-black w-full ${sizeClasses[size]} animate-in fade-in zoom-in`}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="modal-title"
-      >
-        <div className="border-b-2 border-black p-4 flex justify-between items-center">
-          <h2 id="modal-title" className="text-xl font-bold">
-            {title}
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-black hover:text-white transition-colors"
-            aria-label="Close modal"
-          >
-            <XMarkIcon className="w-6 h-6" />
-          </button>
+    <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div className="flex min-h-screen items-center justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div
+          data-testid="modal-backdrop"
+          className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+          onClick={onClose}
+        />
+
+        <span
+          className="hidden sm:inline-block sm:h-screen sm:align-middle"
+          aria-hidden="true"
+        >
+          &#8203;
+        </span>
+
+        <div
+          data-testid="modal-content"
+          className={cn(
+            'inline-block transform overflow-hidden rounded-lg bg-white text-left align-bottom shadow-xl transition-all sm:my-8 sm:w-full sm:align-middle',
+            sizeClasses[size],
+            className
+          )}
+        >
+          <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-medium leading-6 text-gray-900">
+                {title}
+              </h3>
+              <button
+                onClick={onClose}
+                className="text-gray-400 hover:text-gray-500 focus:outline-none"
+              >
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="mt-4">{children}</div>
+          </div>
+          {footer && (
+            <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+              {footer}
+            </div>
+          )}
         </div>
-        <div className="p-4">{children}</div>
       </div>
     </div>
   );
-}; 
+};
+
+export default Modal; 

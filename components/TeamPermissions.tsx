@@ -55,13 +55,14 @@ export const TeamPermissions: React.FC = () => {
   const fetchTeam = async () => {
     try {
       const response = await fetch('/api/team');
-      if (!response.ok) throw new Error('Failed to fetch team');
+      if (!response.ok) {
+        throw new Error('Failed to fetch team members');
+      }
       const data = await response.json();
       setTeam(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch team');
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      console.error('Failed to fetch team members:', error);
+      setError('Failed to fetch team members');
     }
   };
 
@@ -229,11 +230,32 @@ export const TeamPermissions: React.FC = () => {
     }
   };
 
-  if (loading) return <div className="animate-pulse">Loading team...</div>;
-  if (error) return <div className="text-red-500">Error: {error}</div>;
-  if (!team) return <div>No team found</div>;
+  if (loading) {
+    return (
+      <div className="animate-pulse" role="status">
+        Loading team...
+      </div>
+    );
+  }
 
-  const isAdmin = team.members.find(m => m.id === session?.user?.id)?.role === 'admin';
+  if (error) {
+    return (
+      <div className="text-red-500">
+        Error: {error}
+      </div>
+    );
+  }
+
+  if (!team) {
+    return (
+      <div>
+        No team found
+      </div>
+    );
+  }
+
+  const members = team.members || [];
+  const isAdmin = members.find(m => m.id === session?.user?.id)?.role === 'admin';
 
   const handleRoleChange = (memberId: string, newRole: UserRole) => {
     updateMemberRole(memberId, newRole as TeamMember['role']);
@@ -267,21 +289,21 @@ export const TeamPermissions: React.FC = () => {
         {isAdmin && (
           <button
             onClick={() => {
-              const email = prompt('Enter email to invite:');
-              const role = prompt('Enter role (admin/member/viewer):') as TeamMember['role'];
-              if (email && role) inviteMember(email, role);
+              setFormData({});
+              setSelectedMember(null);
+              setShowEditModal(true);
             }}
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
           >
             <PlusIcon className="h-5 w-5 mr-2" />
-            Invite Member
+            Add Member
           </button>
         )}
       </div>
 
       <div className="bg-white shadow overflow-hidden sm:rounded-md">
         <ul className="divide-y divide-gray-200">
-          {team.members.map((member) => (
+          {members.map((member) => (
             <li key={member.id} className="px-6 py-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
@@ -312,7 +334,7 @@ export const TeamPermissions: React.FC = () => {
                       disabled={isUpdating}
                       className="text-red-600 hover:text-red-900"
                     >
-                      <TrashIcon className="h-5 w-5" />
+                      Delete
                     </button>
                   )}
                 </div>
