@@ -499,18 +499,18 @@ What specific feature would you like to know more about?`;
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="fixed bottom-16 right-4 z-50 w-80 bg-black border-2 border-[#32CD32]
+          className="fixed bottom-16 right-4 z-50 w-80 bg-[#0A0A0A] border-2 border-[#32CD32]
                     font-mono text-white rounded-lg shadow-xl max-h-[60vh] flex flex-col overflow-hidden"
         >
           {/* Chat Header */}
-          <div className="p-3 border-b-2 border-[#32CD32] bg-black/50 relative">
+          <div className="p-3 border-b-2 border-[#32CD32] bg-black/80 relative">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <div>
                   <h3 className="text-sm font-mono font-bold tracking-wider text-[#32CD32]">
                     {context === 'analytics' ? 'ANALYTICS HELP' : 'WINSTON CHAT'}
                   </h3>
-                  <p className="text-xs text-gray-400 tracking-wider">
+                  <p className="text-xs text-gray-300 tracking-wider">
                     {context === 'analytics' 
                       ? 'ASK ABOUT CHARTS, METRICS & DATA'
                       : 'HOW CAN I HELP YOU TODAY'}
@@ -542,7 +542,7 @@ What specific feature would you like to know more about?`;
 
           {/* Quick Actions */}
           {showQuickActions && (
-            <div className="p-4 border-b-2 border-[#32CD32] bg-black/50">
+            <div className="p-4 border-b-2 border-[#32CD32] bg-black/70">
               <div className="grid grid-cols-2 gap-3">
                 {QUICK_ACTIONS[context].map((action) => (
                   <motion.button
@@ -552,7 +552,7 @@ What specific feature would you like to know more about?`;
                     onClick={() => handleQuickAction(action.command)}
                     className="border-2 border-[#32CD32] p-3 font-mono text-xs tracking-widest
                              text-[#32CD32] hover:bg-[#32CD32] hover:text-black transition-colors
-                             rounded-lg uppercase"
+                             rounded-lg uppercase bg-black/40"
                   >
                     {action.label}
                   </motion.button>
@@ -562,7 +562,7 @@ What specific feature would you like to know more about?`;
           )}
 
           {/* Chat Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-black/50">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-black/60 to-black/40">
             {messages.map((message) => (
               <motion.div
                 key={message.id}
@@ -573,11 +573,11 @@ What specific feature would you like to know more about?`;
                 <div
                   className={`max-w-[85%] border-2 ${
                     message.sender === 'user'
-                      ? 'border-[#32CD32] bg-black/50'
-                      : 'border-gray-700 bg-black'
+                      ? 'border-[#32CD32] bg-black/70'
+                      : 'border-gray-700 bg-black/60'
                   } rounded-lg`}
                 >
-                  <div className="p-3 text-xs font-mono tracking-widest text-gray-300 break-words whitespace-pre-line">
+                  <div className="p-3 text-xs font-mono tracking-widest text-gray-200 break-words whitespace-pre-line">
                     {message.text.replace(/_/g, ' ')}
                   </div>
                 </div>
@@ -589,7 +589,7 @@ What specific feature would you like to know more about?`;
                 animate={{ opacity: 1 }}
                 className="flex justify-start"
               >
-                <div className="border-2 border-[#32CD32] p-3 rounded-lg">
+                <div className="border-2 border-[#32CD32] p-3 rounded-lg bg-black/60">
                   <div className="flex space-x-2">
                     <div className="w-2 h-2 bg-[#32CD32] rounded-full animate-bounce" />
                     <div className="w-2 h-2 bg-[#32CD32] rounded-full animate-bounce delay-100" />
@@ -602,15 +602,15 @@ What specific feature would you like to know more about?`;
           </div>
 
           {/* Chat Input */}
-          <div className="border-t-2 border-[#32CD32] p-4 bg-black">
+          <div className="border-t-2 border-[#32CD32] p-4 bg-black/80">
             <form onSubmit={handleSubmit} className="flex space-x-3">
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="TYPE MESSAGE"
-                className="flex-1 bg-black border-2 border-[#32CD32] p-3 rounded-lg
-                         font-mono text-xs tracking-widest text-gray-300
+                className="flex-1 bg-black/60 border-2 border-[#32CD32] p-3 rounded-lg
+                         font-mono text-xs tracking-widest text-gray-200
                          placeholder-gray-500 focus:outline-none focus:border-[#32CD32]"
               />
               <motion.button
