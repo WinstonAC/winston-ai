@@ -139,14 +139,14 @@ const Chatbot: React.FC<ChatbotProps> = ({ initialContext = 'general', onClose }
     if (isLandingPage) {
       setMessages([{
         id: '1',
-        text: 'WELCOME_TO_WINSTON_AI_\n\nI_CAN_HELP_YOU_WITH:\n1. UNDERSTANDING_OUR_FEATURES_\n2. EXPLORING_USE_CASES_\n3. GETTING_STARTED_\n\nWHAT_WOULD_YOU_LIKE_TO_KNOW_',
+        text: 'WELCOME TO WINSTON AI\n\nI CAN HELP YOU WITH:\n1. UNDERSTANDING OUR FEATURES\n2. EXPLORING USE CASES\n3. GETTING STARTED\n\nWHAT WOULD YOU LIKE TO KNOW',
         sender: 'bot',
         timestamp: new Date(),
       }]);
     } else {
       const initialMessage = context === 'analytics' 
-        ? 'HELLO_I_CAN_HELP_YOU_WITH_THE_ANALYTICS_DASHBOARD_WHAT_WOULD_YOU_LIKE_TO_KNOW_'
-        : 'HELLO_I_CAN_HELP_YOU_NAVIGATE_AND_MANAGE_YOUR_LEADS_AND_CAMPAIGNS_WHAT_WOULD_YOU_LIKE_TO_DO_';
+        ? 'HELLO! I CAN HELP YOU WITH THE ANALYTICS DASHBOARD. WHAT WOULD YOU LIKE TO KNOW?'
+        : 'HELLO! I CAN HELP YOU NAVIGATE AND MANAGE YOUR LEADS AND CAMPAIGNS. WHAT WOULD YOU LIKE TO DO?';
       
       setMessages([{
         id: '1',
@@ -155,11 +155,13 @@ const Chatbot: React.FC<ChatbotProps> = ({ initialContext = 'general', onClose }
         timestamp: new Date(),
       }]);
     }
-  }, [context, isLandingPage]);
+  }, [context, isLandingPage, setMessages]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages]);
 
   // Handle keyboard events
@@ -172,7 +174,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ initialContext = 'general', onClose }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, setIsOpen]);
 
   useEffect(() => {
     // Show welcome notification for 5 seconds
@@ -181,7 +183,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ initialContext = 'general', onClose }
     }, 5000);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [setShowWelcomeNotification]);
 
   // Handle route changes
   useEffect(() => {
@@ -201,7 +203,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ initialContext = 'general', onClose }
     return () => {
       router.events.off('routeChangeComplete', handleRouteChange);
     };
-  }, [router, isOpen, showHelpBubble]);
+  }, [router.events, setCurrentPage, setShowHelpBubble, setShowPageHelp, isOpen, showHelpBubble]);
 
   // Enhanced context-aware responses
   const getContextResponses = () => {
@@ -314,14 +316,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ initialContext = 'general', onClose }
 What specific feature would you like to know more about?`;
     }
 
-    return `I'm not sure I understand. Could you try rephrasing your question? 
-You can ask about:
-- Chart types and visualizations
-- Metrics and data interpretation
-- Exporting data
-- Comparing campaigns
-- Real-time updates
-- Dashboard customization`;
+    return 'I AM NOT SURE I UNDERSTAND. COULD YOU TRY REPHRASING YOUR QUESTION?\nYOU CAN ASK ABOUT:\n- CHART TYPES AND VISUALIZATIONS\n- METRICS AND DATA INTERPRETATION\n- EXPORTING DATA\n- COMPARING CAMPAIGNS\n- REAL TIME UPDATES\n- DASHBOARD CUSTOMIZATION';
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -404,8 +399,8 @@ You can ask about:
   const clearChat = () => {
     setMessages([]);
     const initialMessage = context === 'analytics' 
-      ? 'Hello! I can help you with the analytics dashboard. What would you like to know about?'
-      : 'Hello! I can help you navigate and manage your leads and campaigns. What would you like to do?';
+      ? 'HELLO! I CAN HELP YOU WITH THE ANALYTICS DASHBOARD. WHAT WOULD YOU LIKE TO KNOW?'
+      : 'HELLO! I CAN HELP YOU NAVIGATE AND MANAGE YOUR LEADS AND CAMPAIGNS. WHAT WOULD YOU LIKE TO DO?';
     
     setMessages([{
       id: '1',
@@ -487,7 +482,7 @@ You can ask about:
                     font-mono text-white rounded-lg shadow-lg"
         >
           <div className="flex items-center justify-between">
-            <p className="text-sm text-[#32CD32] tracking-wider">WINSTON_AI_ASSISTANT_IS_READY_TO_HELP_</p>
+            <p className="text-sm text-[#32CD32] tracking-wider">WINSTON AI ASSISTANT IS READY TO HELP</p>
             <button 
               onClick={() => setShowWelcomeNotification(false)}
               className="text-[#32CD32] hover:text-white transition-colors"
@@ -505,23 +500,20 @@ You can ask about:
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
           className="fixed bottom-16 right-4 z-50 w-80 bg-black border-2 border-[#32CD32]
-                    font-mono text-white rounded-lg shadow-xl max-h-[60vh] flex flex-col"
+                    font-mono text-white rounded-lg shadow-xl max-h-[60vh] flex flex-col overflow-hidden"
         >
           {/* Chat Header */}
-          <div className="p-3 border-b-2 border-[#32CD32] bg-black/50">
+          <div className="p-3 border-b-2 border-[#32CD32] bg-black/50 relative">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <div className="p-2 border-2 border-[#32CD32] text-[#32CD32] rounded-full">
-                  <QuestionMarkCircleIcon className="h-5 w-5" />
-                </div>
                 <div>
                   <h3 className="text-sm font-mono font-bold tracking-wider text-[#32CD32]">
-                    {context === 'analytics' ? 'ANALYTICS_HELP_' : 'WINSTON_CHAT_'}
+                    {context === 'analytics' ? 'ANALYTICS HELP' : 'WINSTON CHAT'}
                   </h3>
                   <p className="text-xs text-gray-400 tracking-wider">
                     {context === 'analytics' 
-                      ? 'ASK_ABOUT_CHARTS_METRICS_DATA_'
-                      : 'HOW_CAN_I_HELP_YOU_TODAY_'}
+                      ? 'ASK ABOUT CHARTS, METRICS & DATA'
+                      : 'HOW CAN I HELP YOU TODAY'}
                   </p>
                 </div>
               </div>
@@ -530,7 +522,7 @@ You can ask about:
                   onClick={toggleContext}
                   className="p-2 border-2 border-[#32CD32] text-[#32CD32] rounded-full
                            hover:bg-[#32CD32] hover:text-black transition-colors"
-                  title={`SWITCH_TO_${context === 'analytics' ? 'GENERAL' : 'ANALYTICS'}_MODE_`}
+                  title={`SWITCH TO ${context === 'analytics' ? 'GENERAL' : 'ANALYTICS'} MODE`}
                 >
                   <ArrowPathIcon className="h-4 w-4" />
                 </button>
@@ -585,8 +577,8 @@ You can ask about:
                       : 'border-gray-700 bg-black'
                   } rounded-lg`}
                 >
-                  <div className="p-3 text-xs font-mono tracking-widest text-gray-300 break-words">
-                    {message.text}
+                  <div className="p-3 text-xs font-mono tracking-widest text-gray-300 break-words whitespace-pre-line">
+                    {message.text.replace(/_/g, ' ')}
                   </div>
                 </div>
               </motion.div>
@@ -610,8 +602,8 @@ You can ask about:
           </div>
 
           {/* Chat Input */}
-          <form onSubmit={handleSubmit} className="border-t-2 border-[#32CD32] p-4 bg-black/50">
-            <div className="flex space-x-3">
+          <div className="border-t-2 border-[#32CD32] p-4 bg-black">
+            <form onSubmit={handleSubmit} className="flex space-x-3">
               <input
                 type="text"
                 value={input}
@@ -631,8 +623,8 @@ You can ask about:
               >
                 SEND
               </motion.button>
-            </div>
-          </form>
+            </form>
+          </div>
         </motion.div>
       )}
 
@@ -646,7 +638,7 @@ You can ask about:
                     font-mono text-white rounded-lg shadow-xl"
         >
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs text-[#32CD32] tracking-wider">NEED_HELP_WITH_THIS_PAGE_</p>
+            <p className="text-xs text-[#32CD32] tracking-wider">NEED HELP WITH THIS PAGE</p>
             <button 
               onClick={() => setShowHelpBubble(false)}
               className="text-[#32CD32] hover:text-white transition-colors"
@@ -665,7 +657,7 @@ You can ask about:
               className="px-4 py-2 border-2 border-[#32CD32] text-[#32CD32] text-xs tracking-wider
                        hover:bg-[#32CD32] hover:text-black rounded-lg transition-colors"
             >
-              YES_
+              YES
             </motion.button>
             <motion.button
               whileHover={{ scale: 1.02 }}
@@ -674,7 +666,7 @@ You can ask about:
               className="px-4 py-2 border-2 border-gray-500 text-gray-500 text-xs tracking-wider
                        hover:bg-gray-500 hover:text-black rounded-lg transition-colors"
             >
-              NO_
+              NO
             </motion.button>
           </div>
         </motion.div>
