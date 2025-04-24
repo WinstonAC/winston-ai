@@ -33,6 +33,8 @@ model User {
   teamId        String?
   teamRole      String?   @default("MEMBER") // OWNER, ADMIN, MEMBER
   sentInvites   TeamInvite[] @relation("SentInvites")
+  segments      Segment[]
+  campaigns     Campaign[]
 }
 
 model UserSettings {
@@ -88,6 +90,7 @@ model Lead {
   userId        String
   activities    Activity[]
   emailHistory  EmailHistory[]
+  segments      Segment[]
 }
 
 model EmailHistory {
@@ -117,6 +120,7 @@ model Template {
   user          User      @relation(fields: [createdBy], references: [id])
   sharedWith    TemplateShare[]
   assets        TemplateAsset[]
+  campaigns     Campaign[]
 }
 
 model TemplateShare {
@@ -153,6 +157,8 @@ model Team {
   invites     TeamInvite[]
   activities  Activity[]
   leads       Lead[]
+  segments    Segment[]
+  campaigns   Campaign[]
 }
 
 model TeamSettings {
@@ -211,4 +217,83 @@ model ChatbotInteraction {
   @@index([userId])
   @@index([sessionId])
   @@index([timestamp])
+}
+
+model Segment {
+  id          String    @id @default(cuid())
+  name        String
+  description String
+  filters     Json
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id])
+  userId      String
+  team        Team?     @relation(fields: [teamId], references: [id])
+  teamId      String?
+  leads       Lead[]
+  campaigns   Campaign[]
+
+  @@index([userId])
+  @@index([teamId])
+}
+
+model Campaign {
+  id            String    @id @default(cuid())
+  name          String
+  description   String
+  templateId    String
+  template      Template  @relation(fields: [templateId], references: [id])
+  segmentId     String
+  segment       Segment   @relation(fields: [segmentId], references: [id])
+  status        String    @default("draft")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  user          User      @relation(fields: [userId], references: [id])
+  userId        String
+  team          Team?     @relation(fields: [teamId], references: [id])
+  teamId        String?
+  schedule      CampaignSchedule?
+  metrics       CampaignMetrics?
+  targetAudience TargetAudience?
+
+  @@index([userId])
+  @@index([teamId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([segmentId])
+}
+
+model TargetAudience {
+  id          String    @id @default(cuid())
+  filters     Json
+  campaign    Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  campaignId  String    @unique
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model CampaignSchedule {
+  id          String    @id @default(cuid())
+  type        String    // 'immediate' | 'scheduled'
+  date        DateTime?
+  time        String?
+  campaign    Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  campaignId  String    @unique
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model CampaignMetrics {
+  id          String    @id @default(cuid())
+  sent        Int       @default(0)
+  delivered   Int       @default(0)
+  opened      Int       @default(0)
+  clicked     Int       @default(0)
+  bounced     Int       @default(0)
+  replied     Int       @default(0)
+  meetings    Int       @default(0)
+  campaign    Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  campaignId  String    @unique
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }

@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import Login from '../Login';
-import { useAuth } from '@/hooks/useAuth';
+import { AuthProvider } from '@/contexts/AuthContext';
 
 // Mock the useAuth hook
 jest.mock('@/hooks/useAuth', () => ({
@@ -22,12 +22,18 @@ describe('Login Component', () => {
     jest.clearAllMocks();
   });
 
-  it('renders login form', () => {
-    render(
+  const renderLogin = () => {
+    return render(
       <BrowserRouter>
-        <Login />
+        <AuthProvider>
+          <Login />
+        </AuthProvider>
       </BrowserRouter>
     );
+  };
+
+  it('renders login form', () => {
+    renderLogin();
     
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
@@ -37,11 +43,7 @@ describe('Login Component', () => {
   it('handles successful login', async () => {
     mockLogin.mockResolvedValueOnce({ success: true });
     
-    render(
-      <BrowserRouter>
-        <Login />
-      </BrowserRouter>
-    );
+    renderLogin();
     
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: 'test@example.com' },
@@ -60,11 +62,7 @@ describe('Login Component', () => {
   it('displays error message on login failure', async () => {
     mockLogin.mockRejectedValueOnce(new Error('Invalid credentials'));
     
-    render(
-      <BrowserRouter>
-        <Login />
-      </BrowserRouter>
-    );
+    renderLogin();
     
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: 'test@example.com' },
@@ -86,11 +84,7 @@ describe('Login Component', () => {
       loading: true,
     });
     
-    render(
-      <BrowserRouter>
-        <Login />
-      </BrowserRouter>
-    );
+    renderLogin();
     
     expect(screen.getByRole('button', { name: /login/i })).toBeDisabled();
   });

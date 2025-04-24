@@ -17,7 +17,7 @@ interface CampaignState {
   successMessage: string | null;
 }
 
-export const Campaigns: React.FC = () => {
+export default function Campaigns() {
   const { data: session, status } = useSession();
   const router = useRouter();
   
@@ -124,12 +124,12 @@ export const Campaigns: React.FC = () => {
     try {
       setState(prev => ({ ...prev, isLoading: true, error: null }));
       
-      const response = await fetch(`/api/campaigns/${campaignId}`, {
+      const response = await fetch('/api/campaigns', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(campaignData),
+        body: JSON.stringify({ id: campaignId, ...campaignData }),
       });
 
       if (!response.ok) {
@@ -243,4 +243,4 @@ export const Campaigns: React.FC = () => {
       </div>
     </div>
   );
-}; 
+} 

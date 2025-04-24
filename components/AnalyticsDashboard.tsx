@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { usePermissions } from '../contexts/PermissionsContext';
 import {
   ChartBarIcon,
   EnvelopeIcon,
@@ -7,9 +8,8 @@ import {
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
   CalendarIcon,
-  FilterIcon,
+  FunnelIcon,
   ArrowDownTrayIcon,
-  ChartLineIcon,
   ArrowsRightLeftIcon,
   DocumentTextIcon,
   DocumentChartBarIcon,
@@ -17,11 +17,7 @@ import {
   TableCellsIcon,
   ChartPieIcon,
   ArrowsPointingOutIcon,
-  ChartScatterIcon,
-  ChartAreaIcon,
-  ChartHeatmapIcon,
   InformationCircleIcon,
-  QuestionMarkCircleIcon,
 } from '@heroicons/react/24/outline';
 import { Line, Bar, Pie, Scatter } from 'react-chartjs-2';
 import {
@@ -35,12 +31,17 @@ import {
   Title,
   Tooltip,
   Legend,
-  Annotation,
+  ChartOptions,
+  ChartTypeRegistry,
+  TooltipItem,
 } from 'chart.js';
 import annotationPlugin from 'chartjs-plugin-annotation';
 import Chatbot from './Chatbot';
-import { User, AnalyticsPermissions, getAnalyticsPermissions } from '../types/auth';
+import { User } from '@/types/auth';
+import { CampaignMetrics, AnalyticsData } from '@/types/analytics';
 import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import { AnnotationOptions } from 'chartjs-plugin-annotation';
 
 // Register ChartJS components
 ChartJS.register(
@@ -56,46 +57,15 @@ ChartJS.register(
   annotationPlugin
 );
 
-interface CampaignMetrics {
-  id: string;
-  name: string;
-  sent: number;
-  delivered: number;
-  opened: number;
-  clicked: number;
-  bounced: number;
-  replies: number;
-  meetings: number;
-  startDate: string;
-  endDate: string;
-}
-
-interface AnalyticsData {
-  totalLeads: number;
-  openRate: number;
-  responseRate: number;
-  meetings: number;
-  recentActivity: {
-    id: string;
-    type: string;
-    leadName: string;
-    createdAt: string;
-  }[];
-  trends: {
-    date: string;
-    opens: number;
-    clicks: number;
-    responses: number;
-  }[];
-}
+type DataAccessLevel = 'own' | 'team' | 'department' | 'organization';
 
 interface AnalyticsDashboardProps {
   campaigns: CampaignMetrics[];
-  dateRange: {
-    start: string;
-    end: string;
+  initialDateRange?: {
+    start: Date;
+    end: Date;
   };
-  onDateRangeChange: (start: string, end: string) => void;
+  onDateRangeChange: (start: Date, end: Date) => void;
   onExport?: (format: 'csv' | 'pdf' | 'excel' | 'json') => void;
   onCompare?: (campaignIds: string[]) => void;
   user: User;
@@ -133,54 +103,80 @@ interface ChartAnnotation {
   };
 }
 
-interface ChartOptions {
-  responsive: boolean;
-  maintainAspectRatio: boolean;
-  plugins: {
-    legend: {
-      position: 'top' as const;
-      labels: {
-        color: string;
-        font: {
-          size: number;
-          weight: string;
-        };
-      };
-    };
-    title: {
-      display: boolean;
-      text: string;
-      color: string;
-      font: {
-        size: number;
-        weight: string;
-      };
-    };
-  };
-  scales?: {
-    y?: {
-      ticks: {
-        color: string;
-      };
-      grid: {
-        color: string;
-      };
-    };
-    x?: {
-      ticks: {
-        color: string;
-      };
-      grid: {
-        color: string;
-      };
-    };
-  };
+interface ChartLabelFont {
+  family: string;
+  size: number;
 }
 
-interface EnhancedChartOptions extends ChartOptions {
-  plugins: ChartOptions['plugins'] & {
+interface ChartTicks {
+  color: string;
+  font: ChartLabelFont;
+}
+
+interface ChartGrid {
+  color: string;
+}
+
+interface ChartScale {
+  beginAtZero?: boolean;
+  ticks: ChartTicks;
+  grid: ChartGrid;
+}
+
+interface ChartScales {
+  y: ChartScale;
+  x: ChartScale;
+}
+
+interface ChartDataset {
+  label: string;
+  data: number[];
+  borderColor: string;
+  backgroundColor: string;
+  borderWidth: number;
+  fill?: boolean;
+}
+
+interface ScatterDataPoint {
+  x: number;
+  y: number;
+  id: string;
+  name: string;
+}
+
+interface ScatterDataset {
+  label: string;
+  data: ScatterDataPoint[];
+  backgroundColor: string;
+  borderColor: string;
+  borderWidth: number;
+  pointRadius: number;
+  pointHoverRadius: number;
+}
+
+interface ChartData {
+  labels: string[];
+  datasets: ChartDataset[];
+}
+
+interface ScatterData {
+  datasets: ScatterDataset[];
+}
+
+interface MetricCardProps {
+  title: string;
+  value: number | string;
+  change?: number;
+  icon: React.ComponentType<{ className?: string }>;
+  className?: string;
+}
+
+type ChartType = keyof ChartTypeRegistry;
+
+type EnhancedChartOptions = ChartOptions & {
+  plugins: {
     annotation?: {
-      annotations: Record<string, ChartAnnotation>;
+      annotations: Record<string, AnnotationOptions>;
     };
     tooltip?: {
       callbacks: {
@@ -189,20 +185,21 @@ interface EnhancedChartOptions extends ChartOptions {
       };
     };
   };
-}
+};
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 5000;
 
 const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
   campaigns,
-  dateRange,
+  initialDateRange,
   onDateRangeChange,
   onExport,
   onCompare,
   user,
 }) => {
-  const [selectedMetric, setSelectedMetric] = useState<string>('overview');
+  const { checkPermission } = usePermissions();
+  const [selectedMetric, setSelectedMetric] = useState<keyof CampaignMetrics>('opened');
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCampaigns, setSelectedCampaigns] = useState<string[]>([]);
   const [showExportMenu, setShowExportMenu] = useState(false);
@@ -221,7 +218,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
   });
   const [comparisonView, setComparisonView] = useState<ComparisonView>({
     type: 'chart',
-    metric: 'openRate'
+    metric: 'opened',
   });
   const [showComparison, setShowComparison] = useState(false);
   const [chartType, setChartType] = useState<'line' | 'bar' | 'pie' | 'scatter' | 'area' | 'heatmap'>('line');
@@ -233,132 +230,30 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
   }>({ x: 'sent', y: 'opened' });
   const [showHelp, setShowHelp] = useState(false);
   const [data, setData] = useState<AnalyticsData | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('30d');
-  const permissions = getAnalyticsPermissions(user);
   const [dateRange, setDateRange] = useState<{
     startDate: Date | null;
     endDate: Date | null;
-  }>({
+  }>(initialDateRange ? {
+    startDate: initialDateRange.start,
+    endDate: initialDateRange.end,
+  } : {
     startDate: null,
     endDate: null,
   });
 
-  useEffect(() => {
-    fetchAnalytics();
-  }, [timeRange]);
-
-  const fetchAnalytics = async () => {
-    try {
-      const response = await fetch(`/api/analytics?range=${timeRange}`);
-      if (!response.ok) throw new Error('Failed to fetch analytics');
-      const data = await response.json();
-      setData(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch analytics');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const connectWebSocket = useCallback(() => {
-    try {
-      const ws = new WebSocket('wss://api.winston-ai.com/ws/analytics');
-      
-      ws.onopen = () => {
-        setWsState(prev => ({
-          ...prev,
-          isConnected: true,
-          lastError: null,
-          retryCount: 0,
-        }));
-        setIsOffline(false);
-      };
-
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.type === 'metrics_update') {
-            setLastUpdated(new Date());
-            setData(prev => ({
-              ...prev,
-              recentActivity: [
-                {
-                  id: data.data.id,
-                  type: data.data.type,
-                  leadName: data.data.leadName,
-                  createdAt: new Date().toISOString(),
-                },
-                ...(prev?.recentActivity || []).slice(0, 9),
-              ],
-            }));
-          }
-        } catch (error) {
-          console.error('Error processing WebSocket message:', error);
-        }
-      };
-
-      ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
-        setWsState(prev => ({
-          ...prev,
-          isConnected: false,
-          lastError: 'WebSocket connection error',
-        }));
-        handleConnectionError();
-      };
-
-      ws.onclose = () => {
-        setWsState(prev => ({
-          ...prev,
-          isConnected: false,
-        }));
-        handleConnectionError();
-      };
-
-      return ws;
-    } catch (error) {
-      console.error('Error creating WebSocket:', error);
-      handleConnectionError();
-      return null;
-    }
-  }, []);
-
-  const handleConnectionError = useCallback(() => {
-    if (wsState.retryCount < MAX_RETRIES) {
-      setTimeout(() => {
-        setWsState(prev => ({
-          ...prev,
-          retryCount: prev.retryCount + 1,
-        }));
-        connectWebSocket();
-      }, RETRY_DELAY);
-    } else {
-      setIsOffline(true);
-      setOfflineData(campaigns);
-    }
-  }, [wsState.retryCount, campaigns, connectWebSocket]);
-
-  useEffect(() => {
-    const ws = connectWebSocket();
-    return () => {
-      if (ws) {
-        ws.close();
-      }
-    };
-  }, [connectWebSocket]);
-
-  const calculateTotals = () => {
-    return campaigns.reduce((acc, campaign) => ({
-      sent: acc.sent + campaign.sent,
-      delivered: acc.delivered + campaign.delivered,
-      opened: acc.opened + campaign.opened,
-      clicked: acc.clicked + campaign.clicked,
-      bounced: acc.bounced + campaign.bounced,
-      replies: acc.replies + campaign.replies,
-      meetings: acc.meetings + campaign.meetings,
-    }), {
+  const calculateTotals = useCallback(() => {
+    return campaigns.reduce((acc, campaign) => {
+      acc.sent += campaign.sent;
+      acc.delivered += campaign.delivered;
+      acc.opened += campaign.opened;
+      acc.clicked += campaign.clicked;
+      acc.bounced += campaign.bounced;
+      acc.replies += campaign.replies;
+      acc.meetings += campaign.meetings;
+      return acc;
+    }, {
       sent: 0,
       delivered: 0,
       opened: 0,
@@ -367,158 +262,134 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
       replies: 0,
       meetings: 0,
     });
-  };
+  }, [campaigns]);
 
-  const totals = calculateTotals();
-
-  const calculateRates = () => {
+  const calculateRates = useCallback(() => {
+    const totals = calculateTotals();
     return {
       deliveryRate: totals.sent > 0 ? (totals.delivered / totals.sent) * 100 : 0,
       openRate: totals.delivered > 0 ? (totals.opened / totals.delivered) * 100 : 0,
       clickRate: totals.opened > 0 ? (totals.clicked / totals.opened) * 100 : 0,
       bounceRate: totals.sent > 0 ? (totals.bounced / totals.sent) * 100 : 0,
       replyRate: totals.delivered > 0 ? (totals.replies / totals.delivered) * 100 : 0,
-      meetingRate: totals.replies > 0 ? (totals.meetings / totals.replies) * 100 : 0,
+      meetingRate: totals.clicked > 0 ? (totals.meetings / totals.clicked) * 100 : 0,
     };
-  };
+  }, [calculateTotals]);
 
-  const rates = calculateRates();
+  const totals = useMemo(() => calculateTotals(), [calculateTotals]);
+  const rates = useMemo(() => calculateRates(), [calculateRates]);
+
+  const canExportData = checkPermission('canExportData');
+  const canCompareCampaigns = checkPermission('canCompareCampaigns');
+  const canManageAnnotations = checkPermission('canManageAnnotations');
+  const canAccessAdvancedCharts = checkPermission('canAccessAdvancedCharts');
+
+  useEffect(() => {
+    const fetchAnalyticsData = async () => {
+      try {
+        const response = await fetch('/api/analytics', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            startDate: dateRange.startDate?.toISOString() || '',
+            endDate: dateRange.endDate?.toISOString() || '',
+            campaignIds: selectedCampaigns,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch analytics data');
+        }
+
+        const data = await response.json();
+        setData(data);
+        setError(null);
+      } catch (error) {
+        console.error('Error fetching analytics data:', error);
+        setError('Failed to load analytics data');
+        setData(null);
+      }
+    };
+
+    fetchAnalyticsData();
+  }, [dateRange, selectedCampaigns]);
 
   const handleExport = async (format: 'csv' | 'pdf' | 'excel' | 'json') => {
+    if (!onExport) return;
+    
     setExportState({ isExporting: true, error: null, success: false });
     try {
-      if (onExport) {
-        await onExport(format);
-        setExportState({ isExporting: false, error: null, success: true });
-      }
-    } catch (error) {
-      setExportState({ 
-        isExporting: false, 
-        error: error instanceof Error ? error.message : 'Export failed', 
-        success: false 
+      await onExport(format);
+      setExportState({ isExporting: false, error: null, success: true });
+    } catch (err) {
+      setExportState({
+        isExporting: false,
+        error: err instanceof Error ? err.message : 'Export failed',
+        success: false,
       });
     }
   };
 
   const handleCompare = () => {
-    if (onCompare && selectedCampaigns.length >= 2) {
-      onCompare(selectedCampaigns);
-    }
+    if (!onCompare || selectedCampaigns.length < 2) return;
+    onCompare(selectedCampaigns);
+    setShowComparison(true);
   };
 
   const toggleCampaignSelection = (campaignId: string) => {
-    setSelectedCampaigns(prev => 
+    setSelectedCampaigns(prev =>
       prev.includes(campaignId)
         ? prev.filter(id => id !== campaignId)
         : [...prev, campaignId]
     );
   };
 
-  const MetricCard = ({ title, value, change, icon: Icon, className, ...props }) => (
-    <div className={`bg-white rounded-lg shadow p-4 ${className || ''}`} {...props}>
-      <div className="flex items-center">
-        <div className="flex-shrink-0">
-          <Icon className="h-6 w-6 text-gray-400" />
+  const MetricCard: React.FC<MetricCardProps> = ({ title, value, change, icon: Icon, className }) => (
+    <div className={`bg-white rounded-lg shadow p-6 ${className}`}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center">
+          <Icon className="h-8 w-8 text-gray-500" />
+          <h3 className="ml-3 text-lg font-semibold text-gray-900">{title}</h3>
         </div>
-        <div className="ml-4">
-          <p className="text-sm font-medium text-gray-500">{title}</p>
-          <div className="flex items-baseline">
-            <p className="text-2xl font-semibold text-gray-900">{value}</p>
-            {change !== undefined && (
-              <span className={`ml-2 flex items-baseline text-sm font-semibold ${
-                change >= 0 ? 'text-green-600' : 'text-red-600'
-              }`}>
-                {change >= 0 ? '+' : ''}{change}%
-              </span>
-            )}
+        {change !== undefined && (
+          <div className={`flex items-center ${change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+            {change >= 0 ? <ArrowTrendingUpIcon className="h-5 w-5" /> : <ArrowTrendingDownIcon className="h-5 w-5" />}
+            <span className="ml-1">{Math.abs(change)}%</span>
           </div>
-        </div>
+        )}
       </div>
+      <p className="mt-4 text-3xl font-bold text-gray-900">{value}</p>
     </div>
   );
 
-  const options = {
+  const chartOptions: ChartOptions = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
       legend: {
         position: 'top',
-        labels: {
-          color: string;
-          font: {
-            family: string;
-            size: number;
-          };
-        };
-      }
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        ticks: {
-          color: '#32CD32',
-          font: {
-            family: 'monospace',
-            size: 12
-          }
-        },
-        grid: {
-          color: 'rgba(50, 205, 50, 0.1)'
-        }
       },
-      x: {
-        ticks: {
-          color: '#32CD32',
-          font: {
-            family: 'monospace',
-            size: 12
-          }
-        },
-        grid: {
-          color: 'rgba(50, 205, 50, 0.1)'
-        }
-      }
-    }
-  } as const;
-
-  const enhancedChartOptions: EnhancedChartOptions = useMemo(() => ({
-    ...options,
-    plugins: {
-      ...options.plugins,
-      annotation: showAnnotations ? {
-        annotations: {
-          threshold: {
-            type: 'line',
-            yMin: 0.5,
-            yMax: 0.5,
-            borderColor: 'rgba(255, 255, 255, 0.5)',
-            borderWidth: 2,
-            label: {
-              content: '50% Threshold',
-              enabled: true,
-              position: 'right',
-            },
-          },
-        },
-      } : undefined,
       tooltip: {
         callbacks: {
-          label: (context) => {
-            const campaign = campaigns.find(c => c.id === context.raw.id);
+          label: (context: TooltipItem<'line'>) => {
+            const raw = context.raw as { id: string; x: number; y: number };
+            const campaign = campaigns.find(c => c.id === raw.id);
             return [
               `Campaign: ${campaign?.name}`,
-              `${selectedMetrics.x}: ${context.raw.x}`,
-              `${selectedMetrics.y}: ${context.raw.y}`,
+              `${selectedMetrics.x}: ${raw.x}`,
+              `${selectedMetrics.y}: ${raw.y}`,
               `Open Rate: ${((campaign?.opened || 0) / (campaign?.sent || 1) * 100).toFixed(1)}%`,
             ];
           },
-          title: (context) => `Campaign Performance`,
+          title: () => 'Campaign Performance',
         },
       },
     },
-  }), [options, showAnnotations, campaigns, selectedMetrics]);
+  }), [campaigns, selectedMetrics]);
 
-  const chartData = useMemo(() => {
+  const chartData = useMemo((): ChartData | null => {
     if (!showComparison || selectedCampaigns.length < 2) return null;
 
     const selectedCampaignsData = campaigns.filter(campaign => 
@@ -527,7 +398,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
 
     const labels = selectedCampaignsData.map(campaign => campaign.name);
     const metricData = selectedCampaignsData.map(campaign => 
-      campaign[comparisonView.metric as keyof CampaignMetrics]
+      Number(campaign[comparisonView.metric])
     );
 
     return {
@@ -544,7 +415,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
     };
   }, [showComparison, selectedCampaigns, campaigns, comparisonView.metric]);
 
-  const scatterData = useMemo(() => {
+  const scatterData = useMemo((): ScatterData | null => {
     if (!showComparison || selectedCampaigns.length < 2) return null;
 
     const selectedCampaignsData = campaigns.filter(campaign => 
@@ -555,8 +426,8 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
       datasets: [{
         label: 'Campaign Performance',
         data: selectedCampaignsData.map(campaign => ({
-          x: campaign[selectedMetrics.x],
-          y: campaign[selectedMetrics.y],
+          x: Number(campaign[selectedMetrics.x]),
+          y: Number(campaign[selectedMetrics.y]),
           id: campaign.id,
           name: campaign.name,
         })),
@@ -574,13 +445,13 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
 
     switch (chartType) {
       case 'line':
-        return <Line data={chartData} options={enhancedChartOptions} />;
+        return <Line data={chartData} options={chartOptions} />;
       case 'bar':
-        return <Bar data={chartData} options={enhancedChartOptions} />;
+        return <Bar data={chartData} options={chartOptions} />;
       case 'pie':
-        return <Pie data={chartData} options={enhancedChartOptions} />;
+        return <Pie data={chartData} options={chartOptions} />;
       case 'scatter':
-        return <Scatter data={scatterData} options={enhancedChartOptions} />;
+        return <Scatter data={scatterData} options={chartOptions} />;
       case 'area':
         return <Line 
           data={{
@@ -590,7 +461,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               fill: true,
             })),
           }} 
-          options={enhancedChartOptions} 
+          options={chartOptions} 
         />;
       case 'heatmap':
         return <div className="h-full flex items-center justify-center">
@@ -608,7 +479,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
     }));
   };
 
-  if (loading) return <div className="animate-pulse">Loading analytics...</div>;
+  if (isLoading) return <div className="animate-pulse">Loading analytics...</div>;
   if (error) return <div className="text-red-500">Error: {error}</div>;
   if (!data) return <div>No data available</div>;
 
@@ -733,7 +604,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
             </div>
           </div>
           <div className="flex items-center space-x-4">
-            {permissions.canExportData && (
+            {canExportData && (
               <button
                 onClick={() => setShowExportMenu(!showExportMenu)}
                 className="border-2 border-white px-4 py-2 text-white font-bold hover:bg-white hover:text-black transition-colors"
@@ -744,7 +615,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               </button>
             )}
             
-            {permissions.canCompareCampaigns && (
+            {canCompareCampaigns && (
               <button
                 onClick={handleCompare}
                 disabled={selectedCampaigns.length < 2}
@@ -759,7 +630,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               onClick={() => setShowHelp(true)}
               className="border-2 border-white px-4 py-2 text-white font-bold hover:bg-white hover:text-black transition-colors"
             >
-              <QuestionMarkCircleIcon className="h-5 w-5 inline-block mr-2" />
+              <InformationCircleIcon className="h-5 w-5 inline-block mr-2" />
               Help
             </button>
             <div className="flex items-center space-x-2">
@@ -782,8 +653,8 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold">Campaign Performance</h3>
               <div className="flex space-x-2">
-                <button className="border-2 border-white px-3 py-1 text-white font-bold hover:bg-white hover:text-black transition-colors">
-                  <ChartLineIcon className="h-5 w-5 inline-block mr-2" />
+                <button className="border-2 border-white px-3 py-1 text-white font-bold hover:bg-white hover:text-black">
+                  <ChartBarIcon className="h-5 w-5" />
                   Trends
                 </button>
               </div>
@@ -862,7 +733,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                     chartType === 'line' ? 'bg-white text-black' : 'text-white'
                   }`}
                 >
-                  <ChartLineIcon className="h-5 w-5 inline-block mr-2" />
+                  <ChartBarIcon className="h-5 w-5" />
                   Line
                 </button>
                 <button
@@ -871,7 +742,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                     chartType === 'bar' ? 'bg-white text-black' : 'text-white'
                   }`}
                 >
-                  <ChartBarIcon className="h-5 w-5 inline-block mr-2" />
+                  <ChartBarIcon className="h-5 w-5" />
                   Bar
                 </button>
                 <button
@@ -880,10 +751,10 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                     chartType === 'pie' ? 'bg-white text-black' : 'text-white'
                   }`}
                 >
-                  <ChartPieIcon className="h-5 w-5 inline-block mr-2" />
+                  <ChartPieIcon className="h-5 w-5" />
                   Pie
                 </button>
-                {permissions.canAccessAdvancedCharts && (
+                {canAccessAdvancedCharts && (
                   <>
                     <button
                       onClick={() => setChartType('scatter')}
@@ -891,7 +762,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                         chartType === 'scatter' ? 'bg-white text-black' : 'text-white'
                       }`}
                     >
-                      <ChartScatterIcon className="h-5 w-5 inline-block mr-2" />
+                      <ArrowsPointingOutIcon className="h-5 w-5" />
                       Scatter
                     </button>
                     <button
@@ -900,7 +771,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                         chartType === 'area' ? 'bg-white text-black' : 'text-white'
                       }`}
                     >
-                      <ChartAreaIcon className="h-5 w-5 inline-block mr-2" />
+                      <ChartBarIcon className="h-5 w-5" />
                       Area
                     </button>
                     <button
@@ -909,19 +780,19 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                         chartType === 'heatmap' ? 'bg-white text-black' : 'text-white'
                       }`}
                     >
-                      <ChartHeatmapIcon className="h-5 w-5 inline-block mr-2" />
+                      <TableCellsIcon className="h-5 w-5" />
                       Heatmap
                     </button>
                   </>
                 )}
               </div>
               <div className="flex space-x-4">
-                {permissions.canManageAnnotations && (
+                {canManageAnnotations && (
                   <button
                     onClick={() => setShowAnnotations(!showAnnotations)}
                     className="border-2 border-white px-3 py-1 text-white hover:bg-white hover:text-black"
                   >
-                    <InformationCircleIcon className="h-5 w-5 inline-block mr-2" />
+                    <InformationCircleIcon className="h-5 w-5" />
                     {showAnnotations ? 'Hide Annotations' : 'Show Annotations'}
                   </button>
                 )}

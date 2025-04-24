@@ -43,28 +43,48 @@ export const TeamPermissions: React.FC = () => {
   const firstInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    fetchTeam();
-  }, []);
+    let isMounted = true;
+
+    const fetchTeam = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/team/members');
+        if (!response.ok) {
+          throw new Error('Failed to fetch team members');
+        }
+        const data = await response.json();
+        if (isMounted) {
+          setTeam({
+            id: '',
+            name: '',
+            members: data,
+          });
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : 'Failed to fetch team members');
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    if (session?.user) {
+      fetchTeam();
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [session, setLoading, setTeam, setError]);
 
   useEffect(() => {
     if (showEditModal && firstInputRef.current) {
       firstInputRef.current.focus();
     }
   }, [showEditModal]);
-
-  const fetchTeam = async () => {
-    try {
-      const response = await fetch('/api/team');
-      if (!response.ok) {
-        throw new Error('Failed to fetch team members');
-      }
-      const data = await response.json();
-      setTeam(data);
-    } catch (error) {
-      console.error('Failed to fetch team members:', error);
-      setError('Failed to fetch team members');
-    }
-  };
 
   const updateMemberRole = async (memberId: string, newRole: TeamMember['role']) => {
     setIsUpdating(true);
@@ -240,8 +260,8 @@ export const TeamPermissions: React.FC = () => {
 
   if (error) {
     return (
-      <div className="text-red-500">
-        Error: {error}
+      <div className="text-red-500" role="alert">
+        {error}
       </div>
     );
   }
@@ -380,6 +400,7 @@ export const TeamPermissions: React.FC = () => {
                   className={`w-full p-2 border-2 ${errors.name ? 'border-red-500' : 'border-black'}`}
                   aria-invalid={!!errors.name}
                   aria-describedby={errors.name ? 'name-error' : undefined}
+                  autoComplete="name"
                 />
                 {errors.name && (
                   <p id="name-error" className="text-red-500 text-sm mt-1 flex items-center">
@@ -402,6 +423,7 @@ export const TeamPermissions: React.FC = () => {
                   className={`w-full p-2 border-2 ${errors.email ? 'border-red-500' : 'border-black'}`}
                   aria-invalid={!!errors.email}
                   aria-describedby={errors.email ? 'email-error' : undefined}
+                  autoComplete="email"
                 />
                 {errors.email && (
                   <p id="email-error" className="text-red-500 text-sm mt-1 flex items-center">
@@ -423,6 +445,7 @@ export const TeamPermissions: React.FC = () => {
                   className={`w-full p-2 border-2 ${errors.role ? 'border-red-500' : 'border-black'}`}
                   aria-invalid={!!errors.role}
                   aria-describedby={errors.role ? 'role-error' : undefined}
+                  autoComplete="off"
                 >
                   <option value="">Select a role</option>
                   {Object.values(UserRole).map(role => (

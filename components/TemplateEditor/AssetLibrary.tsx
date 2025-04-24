@@ -3,6 +3,7 @@ import { useDropzone } from 'react-dropzone';
 import { toast } from 'react-hot-toast';
 import { FiUpload, FiImage, FiVideo, FiTrash2, FiX } from 'react-icons/fi';
 import Image from 'next/image';
+import { AppError, handleError, showErrorToast } from '../../lib/error';
 
 interface Asset {
   id: string;
@@ -31,12 +32,12 @@ const AssetLibrary: React.FC<AssetLibraryProps> = ({ onSelectAsset, templateId, 
   const fetchAssets = async () => {
     try {
       const response = await fetch('/api/assets');
-      if (!response.ok) throw new Error('Failed to fetch assets');
+      if (!response.ok) throw new AppError('Failed to fetch assets', 'network');
       const data = await response.json();
       setAssets(data);
     } catch (error) {
-      console.error('Error fetching assets:', error);
-      toast.error('Failed to load assets');
+      const appError = handleError(error);
+      showErrorToast(appError);
     } finally {
       setLoading(false);
     }
@@ -48,13 +49,13 @@ const AssetLibrary: React.FC<AssetLibraryProps> = ({ onSelectAsset, templateId, 
         method: 'DELETE',
       });
 
-      if (!response.ok) throw new Error('Failed to delete asset');
+      if (!response.ok) throw new AppError('Failed to delete asset', 'server');
       
       setAssets(prev => prev.filter(asset => asset.id !== assetId));
       toast.success('Asset deleted successfully');
     } catch (error) {
-      console.error('Error deleting asset:', error);
-      toast.error('Failed to delete asset');
+      const appError = handleError(error);
+      showErrorToast(appError);
     }
   };
 
@@ -74,14 +75,14 @@ const AssetLibrary: React.FC<AssetLibraryProps> = ({ onSelectAsset, templateId, 
           body: formData,
         });
 
-        if (!response.ok) throw new Error('Upload failed');
+        if (!response.ok) throw new AppError('Upload failed', 'server');
         
         const newAsset = await response.json();
         setAssets(prev => [...prev, newAsset]);
         toast.success('Asset uploaded successfully');
       } catch (error) {
-        console.error('Error uploading file:', error);
-        toast.error('Failed to upload asset');
+        const appError = handleError(error);
+        showErrorToast(appError);
       }
     }
     setUploading(false);

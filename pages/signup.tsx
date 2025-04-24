@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import { AppError, handleError, showErrorToast } from '../lib/error';
 
 export default function Signup() {
   const router = useRouter();
@@ -33,7 +34,9 @@ export default function Signup() {
     setLoading(true);
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      const appError = new AppError('Passwords do not match', 'validation');
+      setError(appError.message);
+      showErrorToast(appError);
       setLoading(false);
       return;
     }
@@ -53,13 +56,15 @@ export default function Signup() {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Registration failed');
+        throw new AppError(data.error || 'Registration failed', 'authentication');
       }
 
       // Redirect to login page with success message
       router.push('/login?registered=true');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Registration failed');
+      const appError = handleError(err);
+      setError(appError.message);
+      showErrorToast(appError);
     } finally {
       setLoading(false);
     }

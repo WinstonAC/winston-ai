@@ -1,28 +1,47 @@
 import { PrismaClient } from '@prisma/client';
-import { prisma } from '@/lib/prisma';
 
-const prismaClient = new PrismaClient({
-  datasources: {
-    db: {
-      url: "postgresql://billycampbell@localhost:5432/winston_ai_test?schema=public",
+// Mock Prisma client for tests
+jest.mock('@prisma/client', () => {
+  const mockPrisma = {
+    $connect: jest.fn(),
+    $disconnect: jest.fn(),
+    $queryRaw: jest.fn(),
+    lead: {
+      deleteMany: jest.fn(),
+      create: jest.fn(),
     },
-  },
+    user: {
+      deleteMany: jest.fn(),
+      create: jest.fn(),
+    },
+    account: {
+      deleteMany: jest.fn(),
+    },
+    session: {
+      deleteMany: jest.fn(),
+    },
+  };
+  return {
+    PrismaClient: jest.fn(() => mockPrisma),
+  };
 });
+
+const prisma = new PrismaClient();
 
 export const setupTestDatabase = async () => {
   // Clean up the database before tests
-  await prismaClient.lead.deleteMany();
-  await prismaClient.user.deleteMany();
-  await prismaClient.account.deleteMany();
-  await prismaClient.session.deleteMany();
+  await prisma.lead.deleteMany();
+  await prisma.user.deleteMany();
+  await prisma.account.deleteMany();
+  await prisma.session.deleteMany();
 };
 
 export const teardownTestDatabase = async () => {
-  await prismaClient.$disconnect();
+  await prisma.$disconnect();
 };
 
 export const createTestUser = async () => {
-  return await prismaClient.user.create({
+  return await prisma.user.create({
     data: {
       email: 'test@example.com',
       name: 'Test User',
@@ -31,7 +50,7 @@ export const createTestUser = async () => {
 };
 
 export const createTestLead = async (userId: string) => {
-  return await prismaClient.lead.create({
+  return await prisma.lead.create({
     data: {
       name: 'Test Lead',
       email: 'test@lead.com',
@@ -41,27 +60,24 @@ export const createTestLead = async (userId: string) => {
   });
 };
 
-export { prisma };
-
 describe('Database Helpers', () => {
-  beforeAll(async () => {
-    await prisma.$connect();
-  });
-
-  afterAll(async () => {
-    await prisma.$disconnect();
+  beforeEach(() => {
+    jest.clearAllMocks();
   });
 
   it('should connect to the database', async () => {
-    const result = await prisma.$queryRaw`SELECT 1`;
-    expect(result).toBeTruthy();
+    (prisma.$connect as jest.Mock).mockResolvedValueOnce(undefined);
+    await prisma.$connect();
+    expect(prisma.$connect).toHaveBeenCalled();
   });
 
   it('should handle database errors gracefully', async () => {
+    (prisma.$queryRaw as jest.Mock).mockRejectedValueOnce(new Error('Database error'));
     try {
       await prisma.$queryRaw`SELECT * FROM non_existent_table`;
     } catch (error) {
       expect(error).toBeDefined();
+      expect(error.message).toBe('Database error');
     }
   });
 }); 

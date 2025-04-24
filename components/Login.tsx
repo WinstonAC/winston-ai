@@ -7,6 +7,7 @@ import {
   ArrowRightIcon,
   ExclamationCircleIcon
 } from '@heroicons/react/24/outline';
+import { AppError, handleError, showErrorToast } from '../lib/error';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -23,7 +24,9 @@ const Login: React.FC = () => {
       await login(email, password);
       navigate('/dashboard');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred during login');
+      const appError = handleError(err);
+      setError(appError.message);
+      showErrorToast(appError);
     }
   };
 

@@ -5,8 +5,8 @@ import dynamic from 'next/dynamic';
 import { useSession } from 'next-auth/react';
 import Navigation from '@/components/Navigation';
 import LeadTable from '@/components/LeadTable';
+import Loader from '@/components/Loader';
 import Link from 'next/link';
-import { Loader } from '@/components/Loader';
 
 // Dynamically import the Dashboard component to avoid SSR issues
 const DashboardComponent = dynamic(() => import('@/components/Dashboard'), {

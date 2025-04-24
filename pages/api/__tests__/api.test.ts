@@ -4,11 +4,11 @@ import analytics from '../analytics';
 import campaigns from '../campaigns';
 import leads from '../leads';
 import team from '../team';
-
-// Mock next-auth
-jest.mock('next-auth/react', () => ({
-  getSession: jest.fn(),
-}));
+import { 
+  mockGetServerSession, 
+  createAuthenticatedRequest, 
+  isUnauthorizedResponse 
+} from '@/tests/utils/auth';
 
 // Mock Prisma
 jest.mock('@prisma/client', () => ({
@@ -49,9 +49,9 @@ describe('API Endpoints', () => {
         query: { range: '30d' },
       });
 
-      // Mock session
-      (require('next-auth/react').getSession as jest.Mock).mockResolvedValue({
-        user: { id: 'test-user-id' },
+      // Mock authenticated session
+      mockGetServerSession({
+        user: { id: 'test-user-id', teamId: 'test-team-id' }
       });
 
       // Mock Prisma responses
@@ -88,6 +88,20 @@ describe('API Endpoints', () => {
       expect(res._getJSONData()).toHaveProperty('recentActivity');
       expect(res._getJSONData()).toHaveProperty('trends');
     });
+
+    it('should return 401 for unauthenticated user', async () => {
+      const { req, res } = createMocks<NextApiRequest, NextApiResponse>({
+        method: 'GET',
+        query: { range: '30d' },
+      });
+
+      // Mock no session
+      mockGetServerSession(null);
+
+      await analytics(req, res);
+
+      expect(isUnauthorizedResponse(res)).toBe(true);
+    });
   });
 
   describe('Campaigns API', () => {
@@ -103,9 +117,9 @@ describe('API Endpoints', () => {
         },
       });
 
-      // Mock session
-      (require('next-auth/react').getSession as jest.Mock).mockResolvedValue({
-        user: { id: 'test-user-id' },
+      // Mock authenticated session with team
+      mockGetServerSession({
+        user: { id: 'test-user-id', teamId: 'test-team-id' }
       });
 
       // Mock Prisma response
@@ -124,6 +138,22 @@ describe('API Endpoints', () => {
       expect(res._getJSONData()).toHaveProperty('id');
       expect(res._getJSONData()).toHaveProperty('name', 'Test Campaign');
     });
+
+    it('should return 401 for unauthenticated campaign creation', async () => {
+      const { req, res } = createMocks<NextApiRequest, NextApiResponse>({
+        method: 'POST',
+        body: {
+          name: 'Test Campaign',
+        },
+      });
+
+      // Mock no session
+      mockGetServerSession(null);
+
+      await campaigns(req, res);
+
+      expect(isUnauthorizedResponse(res)).toBe(true);
+    });
   });
 
   describe('Leads API', () => {
@@ -138,9 +168,9 @@ describe('API Endpoints', () => {
         },
       });
 
-      // Mock session
-      (require('next-auth/react').getSession as jest.Mock).mockResolvedValue({
-        user: { id: 'test-user-id' },
+      // Mock authenticated session with team
+      mockGetServerSession({
+        user: { id: 'test-user-id', teamId: 'test-team-id' }
       });
 
       // Mock Prisma response
@@ -160,6 +190,23 @@ describe('API Endpoints', () => {
       expect(res._getJSONData()).toHaveProperty('name', 'Test Lead');
       expect(res._getJSONData()).toHaveProperty('email', 'test@example.com');
     });
+
+    it('should return 401 for unauthenticated lead creation', async () => {
+      const { req, res } = createMocks<NextApiRequest, NextApiResponse>({
+        method: 'POST',
+        body: {
+          name: 'Test Lead',
+          email: 'test@example.com',
+        },
+      });
+
+      // Mock no session
+      mockGetServerSession(null);
+
+      await leads(req, res);
+
+      expect(isUnauthorizedResponse(res)).toBe(true);
+    });
   });
 
   describe('Team API', () => {
@@ -174,9 +221,9 @@ describe('API Endpoints', () => {
         },
       });
 
-      // Mock session
-      (require('next-auth/react').getSession as jest.Mock).mockResolvedValue({
-        user: { id: 'test-user-id' },
+      // Mock authenticated session
+      mockGetServerSession({
+        user: { id: 'test-user-id' }
       });
 
       // Mock Prisma response
@@ -198,6 +245,22 @@ describe('API Endpoints', () => {
       expect(res._getJSONData()).toHaveProperty('id');
       expect(res._getJSONData()).toHaveProperty('name', 'Test Team');
       expect(res._getJSONData().members).toHaveLength(2);
+    });
+
+    it('should return 401 for unauthenticated team creation', async () => {
+      const { req, res } = createMocks<NextApiRequest, NextApiResponse>({
+        method: 'POST',
+        body: {
+          name: 'Test Team',
+        },
+      });
+
+      // Mock no session
+      mockGetServerSession(null);
+
+      await team(req, res);
+
+      expect(isUnauthorizedResponse(res)).toBe(true);
     });
   });
 }); 

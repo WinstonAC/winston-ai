@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom';
 import 'jest-environment-jsdom';
+import { TextEncoder, TextDecoder } from 'util';
 
 // Mock next/router
 jest.mock('next/router', () => ({
@@ -23,16 +24,59 @@ jest.mock('next/router', () => ({
   }),
 }));
 
+// Mock fetch
+global.fetch = jest.fn();
+
+// Mock Prisma
+jest.mock('@prisma/client', () => {
+  const mockPrisma = {
+    user: {
+      findUnique: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    },
+    lead: {
+      findMany: jest.fn(),
+      findUnique: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    },
+    team: {
+      findUnique: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    },
+    activity: {
+      findMany: jest.fn(),
+      create: jest.fn(),
+    },
+  };
+  return {
+    PrismaClient: jest.fn(() => mockPrisma),
+  };
+});
+
 // Mock next-auth
+jest.mock('next-auth/next', () => ({
+  getServerSession: jest.fn(() => ({
+    user: {
+      id: 'test-user-id',
+      email: 'test@example.com',
+    },
+  })),
+}));
+
+// Mock next-auth/react
 jest.mock('next-auth/react', () => ({
   useSession: jest.fn(() => ({
     data: {
       user: {
         id: 'test-user-id',
         email: 'test@example.com',
-        name: 'Test User',
       },
-      expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
     },
     status: 'authenticated',
   })),
@@ -74,23 +118,22 @@ mockResizeObserver.mockReturnValue({
 });
 window.ResizeObserver = mockResizeObserver;
 
-// Suppress console errors during tests
-const originalError = console.error;
-beforeAll(() => {
-  console.error = (...args) => {
-    if (
-      typeof args[0] === 'string' &&
-      args[0].includes('Warning: ReactDOM.render is no longer supported')
-    ) {
-      return;
-    }
-    originalError.call(console, ...args);
-  };
-});
+// Add TextEncoder/TextDecoder for tests
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder;
 
-afterAll(() => {
-  console.error = originalError;
-});
+// Suppress console errors in tests
+const originalError = console.error;
+console.error = (...args) => {
+  if (
+    typeof args[0] === 'string' &&
+    (args[0].includes('Warning: ReactDOM.render is no longer supported') ||
+      args[0].includes('Warning: ReactDOM.hydrate is no longer supported'))
+  ) {
+    return;
+  }
+  originalError.call(console, ...args);
+};
 
 // Mock Chart.js
 jest.mock('chart.js', () => ({

@@ -21,6 +21,8 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 import Loader from '@/components/Loader';
+import { api } from '@/lib/api';
+import { useAuth } from '@/hooks/useAuth';
 import { 
   Campaign, 
   CampaignCreatorProps, 
@@ -28,11 +30,13 @@ import {
   UpdateCampaignInput
 } from '@/types/campaign';
 import { toast } from 'react-hot-toast';
+import { AppError, handleError, showErrorToast } from '../lib/error';
 
 interface ValidationErrors {
   name?: string;
   description?: string;
   templateId?: string;
+  segmentId?: string;
   targetAudience?: {
     segment?: string;
   };
@@ -59,17 +63,23 @@ const CampaignCreator: React.FC<CampaignCreatorProps> = ({
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
 
   const defaultCampaignInput: CreateCampaignInput = {
     name: '',
     description: '',
     templateId: '',
+    segmentId: '',
     targetAudience: {
       segment: '',
       filters: {},
     },
     schedule: {
       type: 'immediate',
+      date: undefined,
+      time: undefined,
     }
   };
 
@@ -94,6 +104,7 @@ const CampaignCreator: React.FC<CampaignCreatorProps> = ({
                     name: campaign.name,
                     description: campaign.description,
                     templateId: campaign.templateId,
+                    segmentId: campaign.segmentId,
                     targetAudience: campaign.targetAudience || { segment: '', filters: {} },
                     schedule: campaign.schedule,
                   });
@@ -125,6 +136,12 @@ const CampaignCreator: React.FC<CampaignCreatorProps> = ({
               </dd>
             </div>
             <div>
+              <dt className="text-gray-400">SEGMENT_</dt>
+              <dd className="text-[#32CD32]">
+                {segments.find((s) => s.id === campaign.segmentId)?.name || 'No segment'}
+              </dd>
+            </div>
+            <div>
               <dt className="text-gray-400">TARGET_</dt>
               <dd className="text-[#32CD32]">
                 {campaign.targetAudience?.segment || 'No target segment'}
@@ -150,34 +167,50 @@ const CampaignCreator: React.FC<CampaignCreatorProps> = ({
         </div>
       ))}
     </div>
-  ), [campaigns, templates]);
+  ), [campaigns, templates, segments]);
 
   // Memoize the fetch function to prevent unnecessary re-renders
   const fetchCampaigns = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await fetch('/api/campaigns');
-      if (!response.ok) {
-        throw new Error('Failed to fetch campaigns');
-      }
-      const data = await response.json();
+      const { data, error, pagination } = await api.get<Campaign[]>('campaigns', {
+        cache: true,
+        cacheKey: `campaigns-${currentPage}-${pageSize}`,
+        pagination: {
+          page: currentPage,
+          pageSize
+        }
+      });
+      
+      if (error) throw error;
+      
       setCampaigns(data || []);
+      if (pagination) {
+        setTotalPages(pagination.totalPages);
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch campaigns');
+      const appError = handleError(err);
+      setError(appError.message);
+      showErrorToast(appError);
       setCampaigns([]);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [currentPage, pageSize]);
 
   useEffect(() => {
     fetchCampaigns();
-    // Cleanup function
-    return () => {
-      // Cleanup any subscriptions or event listeners if needed
-    };
   }, [fetchCampaigns]);
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+  };
+
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
+    setCurrentPage(1); // Reset to first page when changing page size
+  };
 
   const validateCampaign = (input: CreateCampaignInput): boolean => {
     const errors: ValidationErrors = {};
@@ -192,6 +225,10 @@ const CampaignCreator: React.FC<CampaignCreatorProps> = ({
     
     if (!input.templateId) {
       errors.templateId = 'Please select an email template';
+    }
+    
+    if (!input.segmentId) {
+      errors.segmentId = 'Please select a segment';
     }
     
     if (!input.targetAudience.segment) {
@@ -220,10 +257,18 @@ const CampaignCreator: React.FC<CampaignCreatorProps> = ({
     
     try {
       if (selectedCampaign) {
-        await onUpdateCampaign(selectedCampaign.id, campaignInput);
+        const { error } = await api.put(`campaigns/${selectedCampaign.id}`, {
+          ...campaignInput,
+          segmentId: campaignInput.segmentId || undefined
+        });
+        if (error) throw error;
         toast.success('Campaign updated successfully');
       } else {
-        await onCreateCampaign(campaignInput);
+        const { error } = await api.post('campaigns', {
+          ...campaignInput,
+          segmentId: campaignInput.segmentId || undefined
+        });
+        if (error) throw error;
         toast.success('Campaign created successfully');
       }
       
@@ -231,7 +276,9 @@ const CampaignCreator: React.FC<CampaignCreatorProps> = ({
       resetForm();
       await fetchCampaigns();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      const appError = handleError(err);
+      setError(appError.message);
+      showErrorToast(appError);
     } finally {
       setIsCreating(false);
     }
@@ -241,12 +288,15 @@ const CampaignCreator: React.FC<CampaignCreatorProps> = ({
     try {
       setIsLoading(true);
       setError(null);
-      await onDeleteCampaign(id);
+      const { error } = await api.delete(`campaigns/${id}`);
+      if (error) throw error;
       toast.success('Campaign deleted successfully');
       setShowDeleteConfirm(null);
       await fetchCampaigns();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete campaign');
+      const appError = handleError(err);
+      setError(appError.message);
+      showErrorToast(appError);
     } finally {
       setIsLoading(false);
     }
@@ -273,8 +323,9 @@ const CampaignCreator: React.FC<CampaignCreatorProps> = ({
           role="button"
           name="open-create-campaign-modal"
           aria-label="Create new campaign"
+          disabled={isLoading}
         >
-          Create Campaign
+          {isLoading ? <Loader size="sm" /> : 'Create Campaign'}
         </Button>
       </div>
 
@@ -298,6 +349,44 @@ const CampaignCreator: React.FC<CampaignCreatorProps> = ({
         </div>
       )}
 
+      {!isLoading && campaigns.length > 0 && (
+        <div className="flex items-center justify-between mt-4">
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-gray-600">Show</span>
+            <select
+              value={pageSize}
+              onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+              className="border rounded px-2 py-1 text-sm"
+            >
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </select>
+            <span className="text-sm text-gray-600">per page</span>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="px-3 py-1 border rounded disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <span className="text-sm">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1 border rounded disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
+
       <Modal
         isOpen={isModalOpen}
         onClose={() => {
@@ -307,69 +396,186 @@ const CampaignCreator: React.FC<CampaignCreatorProps> = ({
         title={selectedCampaign ? 'Update Campaign' : 'Create Campaign'}
       >
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            label="Campaign name"
-            name="name"
-            value={campaignInput.name}
-            onChange={(e) => setCampaignInput({ ...campaignInput, name: e.target.value })}
-            error={validationErrors.name}
-          />
+          <div className="space-y-1">
+            <label htmlFor="campaign-name" className="block text-sm font-bold">
+              Campaign name
+            </label>
+            <div className="relative">
+              <input
+                id="campaign-name"
+                name="name"
+                value={campaignInput.name}
+                onChange={(e) => setCampaignInput({ ...campaignInput, name: e.target.value })}
+                className="w-full p-2 border-2 bg-white text-black focus:outline-none focus:ring-2 focus:ring-black border-black text-base px-3 py-2"
+              />
+            </div>
+          </div>
+          <div className="w-full">
+            <label htmlFor="campaign-description" className="block text-sm font-medium text-gray-200 mb-1">
+              Campaign description
+            </label>
+            <textarea
+              id="campaign-description"
+              name="description"
+              value={campaignInput.description}
+              onChange={(e) => setCampaignInput({ ...campaignInput, description: e.target.value })}
+              className="block w-full rounded-lg border bg-black text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y min-h-[100px] border-gray-700 hover:border-gray-600"
+            />
+          </div>
           
-          <Textarea
-            label="Campaign description"
-            name="description"
-            value={campaignInput.description}
-            onChange={(e) => setCampaignInput({ ...campaignInput, description: e.target.value })}
-            error={validationErrors.description}
-          />
-          
-          <Select
-            label="Select email template"
-            name="templateId"
-            value={campaignInput.templateId}
-            onChange={(e) => setCampaignInput({ ...campaignInput, templateId: e.target.value })}
-            error={validationErrors.templateId}
-          >
-            <option value="">Select a template</option>
-            {templates.map((template) => (
-              <option key={template.id} value={template.id}>
-                {template.name}
-              </option>
-            ))}
-          </Select>
-          
-          <Select
-            label="Select target segment"
-            name="targetSegment"
-            value={campaignInput.targetAudience.segment}
-            onChange={(e) => setCampaignInput({
-              ...campaignInput,
-              targetAudience: { ...campaignInput.targetAudience, segment: e.target.value }
-            })}
-            error={validationErrors.targetAudience?.segment}
-          >
-            <option value="">Select a segment</option>
-            {segments.map((segment) => (
-              <option key={segment.id} value={segment.id}>
-                {segment.name}
-              </option>
-            ))}
-          </Select>
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="template" className="block text-sm font-medium text-gray-200">
+                Email Template
+              </label>
+              <div className="w-full">
+                <select
+                  id="template"
+                  name="templateId"
+                  value={campaignInput.templateId}
+                  onChange={(e) => setCampaignInput({ ...campaignInput, templateId: e.target.value })}
+                  className="block w-full rounded-lg border bg-black text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 border-gray-700 hover:border-gray-600"
+                >
+                  <option value="">Select an option</option>
+                  {templates.map((template) => (
+                    <option key={template.id} value={template.id}>
+                      {template.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
 
-          <Button
-            type="submit"
-            disabled={isCreating}
-            aria-label={selectedCampaign ? 'submit-update-campaign' : 'submit-create-campaign'}
-            className="w-full"
-          >
-            {isCreating ? (
-              <Loader className="w-5 h-5" />
-            ) : selectedCampaign ? (
-              'Update Campaign'
-            ) : (
-              'Create Campaign'
-            )}
-          </Button>
+            <div>
+              <label htmlFor="segment" className="block text-sm font-medium text-gray-200">
+                Segment
+              </label>
+              <div className="w-full">
+                <select
+                  id="segment"
+                  name="segmentId"
+                  value={campaignInput.segmentId}
+                  onChange={(e) => setCampaignInput({ ...campaignInput, segmentId: e.target.value })}
+                  className="block w-full rounded-lg border bg-black text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 border-gray-700 hover:border-gray-600"
+                >
+                  <option value="">Select an option</option>
+                  {segments.map((segment) => (
+                    <option key={segment.id} value={segment.id}>
+                      {segment.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="target-segment" className="block text-sm font-medium text-gray-200">
+                Target Audience
+              </label>
+              <div className="w-full">
+                <select
+                  id="target-segment"
+                  name="targetAudience.segment"
+                  value={campaignInput.targetAudience?.segment}
+                  onChange={(e) => setCampaignInput({
+                    ...campaignInput,
+                    targetAudience: {
+                      ...campaignInput.targetAudience,
+                      segment: e.target.value
+                    }
+                  })}
+                  className="block w-full rounded-lg border bg-black text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 border-gray-700 hover:border-gray-600"
+                >
+                  <option value="">Select an option</option>
+                  {segments.map((segment) => (
+                    <option key={segment.id} value={segment.id}>
+                      {segment.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div className="w-full">
+            <label htmlFor="schedule-type" className="block text-sm font-medium text-gray-200 mb-1">
+              Schedule type
+            </label>
+            <select
+              id="schedule-type"
+              name="schedule.type"
+              value={campaignInput.schedule?.type}
+              onChange={(e) => setCampaignInput({
+                ...campaignInput,
+                schedule: {
+                  ...campaignInput.schedule,
+                  type: e.target.value as 'immediate' | 'scheduled'
+                }
+              })}
+              className="block w-full rounded-lg border bg-black text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 border-gray-700 hover:border-gray-600"
+            >
+              <option value="">Select an option</option>
+              <option value="SEND_NOW">Send Now</option>
+              <option value="SCHEDULE">Schedule</option>
+            </select>
+          </div>
+
+          {campaignInput.schedule.type === 'scheduled' && (
+            <>
+              <Input
+                type="date"
+                label="Schedule date"
+                name="schedule.date"
+                value={campaignInput.schedule.date}
+                onChange={(e) => setCampaignInput({
+                  ...campaignInput,
+                  schedule: {
+                    ...campaignInput.schedule,
+                    date: e.target.value
+                  }
+                })}
+                error={validationErrors.schedule?.date}
+                disabled={isCreating}
+              />
+
+              <Input
+                type="time"
+                label="Schedule time"
+                name="schedule.time"
+                value={campaignInput.schedule.time}
+                onChange={(e) => setCampaignInput({
+                  ...campaignInput,
+                  schedule: {
+                    ...campaignInput.schedule,
+                    time: e.target.value
+                  }
+                })}
+                error={validationErrors.schedule?.time}
+                disabled={isCreating}
+              />
+            </>
+          )}
+
+          <div className="flex justify-end space-x-4">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setIsModalOpen(false);
+                resetForm();
+              }}
+              disabled={isCreating}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={isCreating}
+            >
+              {isCreating ? <Loader size="sm" /> : (selectedCampaign ? 'Update' : 'Create')}
+            </Button>
+          </div>
         </form>
       </Modal>
 
@@ -380,21 +586,25 @@ const CampaignCreator: React.FC<CampaignCreatorProps> = ({
           title="Confirm Delete"
         >
           <div className="space-y-4">
-            <p className="text-gray-400">Are you sure you want to delete this campaign?</p>
-            <div className="flex justify-end space-x-3">
+            <p className="text-gray-400">
+              Are you sure you want to delete this campaign? This action cannot be undone.
+            </p>
+            <div className="flex justify-end space-x-4">
               <Button
-                variant="outline"
+                type="button"
+                variant="secondary"
                 onClick={() => setShowDeleteConfirm(null)}
+                disabled={isLoading}
               >
                 Cancel
               </Button>
               <Button
-                variant="destructive"
+                type="button"
+                variant="danger"
                 onClick={() => handleDelete(showDeleteConfirm)}
-                aria-label="confirm-delete"
-                className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
+                disabled={isLoading}
               >
-                Confirm Delete
+                {isLoading ? <Loader size="sm" /> : 'Delete'}
               </Button>
             </div>
           </div>
