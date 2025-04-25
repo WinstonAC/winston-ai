@@ -8,7 +8,7 @@ import { SessionProvider } from 'next-auth/react';
 import { Session } from 'next-auth';
 import { useRouter } from 'next/router';
 import { Toaster } from 'react-hot-toast';
-import ErrorBoundary from '../components/ErrorBoundary';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 function AppContent({ Component, pageProps }: AppProps) {
   const router = useRouter();

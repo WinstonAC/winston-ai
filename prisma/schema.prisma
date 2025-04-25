@@ -297,3 +297,61 @@ model CampaignMetrics {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
+
+model PerformanceMetrics {
+  id                Int      @id @default(autoincrement())
+  pageLoadTime      Float
+  apiResponseTime   Float
+  databaseQueryTime Float
+  memoryUsage       Float
+  cpuUsage          Float?
+  networkLatency    Float?
+  userId            String?
+  user              User?    @relation(fields: [userId], references: [id])
+  path              String?
+  timestamp         DateTime @default(now())
+
+  @@index([timestamp])
+  @@index([userId])
+}
+
+model ErrorLog {
+  id          Int      @id @default(autoincrement())
+  message     String
+  stack       String?
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  path        String?
+  method      String?
+  statusCode  Int?
+  userAgent   String?
+  browser     String?
+  os          String?
+  severity    String   @default("error") // error, warning, info
+  environment String?  // development, staging, production
+  timestamp   DateTime @default(now())
+
+  @@index([timestamp])
+  @@index([userId])
+  @@index([severity])
+  @@index([environment])
+}
+
+model ApiMetrics {
+  id            Int      @id @default(autoincrement())
+  endpoint      String
+  method        String
+  responseTime  Float
+  statusCode    Int
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id])
+  requestSize   Int?
+  responseSize  Int?
+  error         String?
+  timestamp     DateTime @default(now())
+
+  @@index([timestamp])
+  @@index([userId])
+  @@index([endpoint])
+  @@index([statusCode])
+}
