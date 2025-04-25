@@ -1,14 +1,15 @@
 import React from 'react';
-import "@/styles/globals.css";
+import "../styles/globals.css";
 import type { AppProps } from "next/app";
 import Head from 'next/head';
-import Layout from '@/components/Layout';
-import Chatbot from '@/components/Chatbot';
+import Layout from '../components/Layout';
+import Chatbot from '../components/Chatbot';
 import { SessionProvider } from 'next-auth/react';
 import { Session } from 'next-auth';
 import { useRouter } from 'next/router';
 import { Toaster } from 'react-hot-toast';
-import ErrorBoundary from '@/components/ErrorBoundary';
+import ErrorBoundary from '../components/ErrorBoundary';
+import { AuthProvider } from '../contexts/AuthContext';
 
 function AppContent({ Component, pageProps }: AppProps) {
   const router = useRouter();
@@ -41,7 +42,9 @@ export default function App({
 }: AppProps<{ session: Session }>) {
   return (
     <SessionProvider session={session}>
-      <AppContent Component={Component} pageProps={pageProps} />
+      <AuthProvider>
+        <AppContent Component={Component} pageProps={pageProps} />
+      </AuthProvider>
     </SessionProvider>
   );
 }

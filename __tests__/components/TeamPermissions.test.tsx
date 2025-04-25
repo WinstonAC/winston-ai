@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { TeamPermissions } from '../components/TeamPermissions';
+import { TeamPermissions } from '@/components/TeamPermissions';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 

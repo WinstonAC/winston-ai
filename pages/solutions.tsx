@@ -1,7 +1,7 @@
 import React from 'react';
 import Head from 'next/head';
 import Navigation from '@/components/Navigation';
-import ExpandableDocs from '../components/ExpandableDocs';
+import ExpandableDocs from '@/components/ExpandableDocs';
 
 export default function SolutionsPage() {
   return (

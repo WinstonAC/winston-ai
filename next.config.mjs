@@ -12,7 +12,7 @@ const config = {
     return config;
   },
   experimental: {
-    appDir: true,
+    // Removed appDir as it's no longer needed in Next.js 14
   },
   compiler: {
     styledComponents: true,

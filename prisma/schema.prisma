@@ -35,6 +35,9 @@ model User {
   sentInvites   TeamInvite[] @relation("SentInvites")
   segments      Segment[]
   campaigns     Campaign[]
+  performanceMetrics PerformanceMetrics[]
+  errorLogs     ErrorLog[]
+  apiMetrics    ApiMetrics[]
 }
 
 model UserSettings {
