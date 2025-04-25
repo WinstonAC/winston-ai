@@ -2,13 +2,41 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: 'Neue Haas Grotesk';
+  src: url('/fonts/NeueHaasGrotesk-Roman.woff2') format('woff2'),
+       url('/fonts/NeueHaasGrotesk-Roman.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Neue Haas Grotesk';
+  src: url('/fonts/NeueHaasGrotesk-Medium.woff2') format('woff2'),
+       url('/fonts/NeueHaasGrotesk-Medium.woff') format('woff');
+  font-weight: 500;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Neue Haas Grotesk';
+  src: url('/fonts/NeueHaasGrotesk-Bold.woff2') format('woff2'),
+       url('/fonts/NeueHaasGrotesk-Bold.woff') format('woff');
+  font-weight: bold;
+  font-style: normal;
+}
+
 :root {
+  --font-neue-haas: 'Neue Haas Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 214, 219, 220;
   --background-end-rgb: 255, 255, 255;
 }
 
 body {
+  font-family: var(--font-neue-haas);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   color: rgb(var(--foreground-rgb));
   background: linear-gradient(
       to bottom,
@@ -16,4 +44,23 @@ body {
       rgb(var(--background-end-rgb))
     )
     rgb(var(--background-start-rgb));
+}
+
+/* Brutalist Design System */
+.brutalist-input {
+  @apply bg-[#1C2333] border-0 rounded-none px-4 py-3 text-white placeholder-gray-500 w-full;
+  font-family: var(--font-neue-haas);
+}
+
+.brutalist-button {
+  @apply bg-[#2B63F3] text-white rounded-none px-4 py-3 w-full flex items-center justify-center transition-colors;
+  font-family: var(--font-neue-haas);
+}
+
+.brutalist-button:hover {
+  @apply bg-[#1E4CD8];
+}
+
+.brutalist-container {
+  @apply bg-[#171C28] min-h-screen;
 } 

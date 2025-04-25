@@ -1,148 +1,145 @@
 import React, { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/router';
-import { 
-  EnvelopeIcon, 
-  LockClosedIcon,
-  ArrowRightIcon,
-  ExclamationCircleIcon
-} from '@heroicons/react/24/outline';
-import { AppError, handleError, showErrorToast } from '../lib/error';
+import { ArrowRightIcon } from '@heroicons/react/24/outline';
+import { showErrorToast } from '../lib/error';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const { login, loading } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    setIsLoading(true);
     
     try {
-      await login(email, password);
-      router.push('/dashboard');
+      const result = await signIn('email', {
+        email,
+        redirect: false,
+        callbackUrl: '/sandbox'
+      });
+
+      if (result?.url) {
+        router.push(result.url);
+      } else {
+        showErrorToast({ message: 'Login failed. Please try again.' });
+      }
     } catch (err) {
-      const appError = handleError(err);
-      setError(appError.message);
-      showErrorToast(appError);
+      showErrorToast({ message: 'An unexpected error occurred' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      await signIn('google', { callbackUrl: '/sandbox' });
+    } catch (err) {
+      showErrorToast({ message: 'Google login failed. Please try again.' });
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-white">
-          Sign in to your account
-        </h2>
-      </div>
+    <div className="brutalist-container flex flex-col items-center justify-center px-4 py-12">
+      <div className="w-full max-w-[440px] mx-auto">
+        {/* Logo */}
+        <div className="flex justify-center mb-8">
+          <img
+            src="/assets/winston-logo.svg"
+            alt="Winston AI Logo"
+            width={40}
+            height={40}
+            className="w-10 h-10"
+          />
+        </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-gray-800 py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            {error && (
-              <div className="rounded-md bg-red-900/50 p-4">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <ExclamationCircleIcon className="h-5 w-5 text-red-400" aria-hidden="true" />
-                  </div>
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-red-400">{error}</h3>
-                  </div>
-                </div>
-              </div>
-            )}
+        {/* Header */}
+        <h1 className="text-[32px] font-medium text-white text-center mb-2">
+          Welcome back
+        </h1>
+        <p className="text-[15px] text-gray-400 text-center mb-8">
+          Sign in to your Winston AI account
+        </p>
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300">
-                Email address
-              </label>
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <EnvelopeIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
-                </div>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="bg-gray-700 block w-full pl-10 pr-3 py-2 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="you@example.com"
-                />
-              </div>
+        {/* Login Form */}
+        <div className="w-full space-y-6">
+          {/* Google Login */}
+          <button
+            onClick={handleGoogleLogin}
+            className="w-full bg-white hover:bg-gray-50 text-[15px] text-gray-900 px-4 py-3 flex items-center justify-center space-x-3 transition-colors"
+          >
+            <img
+              src="/assets/google-logo.svg"
+              alt="Google"
+              width={20}
+              height={20}
+              className="w-5 h-5"
+            />
+            <span>Continue with Google</span>
+          </button>
+
+          {/* Divider */}
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-[#2B3548]"></div>
             </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300">
-                Password
-              </label>
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <LockClosedIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
-                </div>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="bg-gray-700 block w-full pl-10 pr-3 py-2 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="••••••••"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="text-sm">
-                <a href="/forgot-password" className="font-medium text-blue-400 hover:text-blue-300">
-                  Forgot your password?
-                </a>
-              </div>
-            </div>
-
-            <div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? (
-                  'Signing in...'
-                ) : (
-                  <>
-                    Sign in
-                    <ArrowRightIcon className="ml-2 h-5 w-5" />
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
-
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-600" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-gray-800 text-gray-400">Or</span>
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <p className="text-center text-sm text-gray-400">
-                Don&apos;t have an account?{' '}
-                <a href="/register" className="font-medium text-blue-400 hover:text-blue-300">
-                  Sign up
-                </a>
-              </p>
+            <div className="relative flex justify-center">
+              <span className="px-4 text-[13px] text-gray-500 bg-[#171C28]">
+                Or continue with
+              </span>
             </div>
           </div>
+
+          {/* Email Form */}
+          <form onSubmit={handleEmailLogin} className="space-y-4">
+            <div>
+              <label className="block text-[13px] text-gray-400 mb-2">
+                Email address
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                className="brutalist-input text-[15px]"
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="brutalist-button text-[15px]"
+            >
+              {isLoading ? (
+                <div className="flex items-center space-x-2">
+                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  <span>Signing in...</span>
+                </div>
+              ) : (
+                <div className="flex items-center">
+                  <span>Continue with Email</span>
+                  <ArrowRightIcon className="ml-2 h-5 w-5" />
+                </div>
+              )}
+            </button>
+          </form>
+
+          {/* Terms */}
+          <p className="text-[13px] text-gray-500 text-center">
+            By signing in, you agree to our{' '}
+            <a href="/terms" className="text-[#2B63F3] hover:text-[#1E4CD8]">
+              Terms of Service
+            </a>{' '}
+            and{' '}
+            <a href="/privacy" className="text-[#2B63F3] hover:text-[#1E4CD8]">
+              Privacy Policy
+            </a>
+          </p>
         </div>
       </div>
     </div>

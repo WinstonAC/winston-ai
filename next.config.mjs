@@ -17,6 +17,9 @@ const config = {
   compiler: {
     styledComponents: true,
   },
+  env: {
+    NEXTAUTH_URL: process.env.NEXTAUTH_URL || 'http://localhost:3001'
+  }
 };
 
 export default config; 

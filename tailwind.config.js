@@ -3,21 +3,26 @@ const { COLORS, FONTS, SPACING, FONT_SIZES, BORDERS } = require('./lib/theme');
 /** @type {import('tailwindcss').Config} */
 module.exports = {
     content: [
-      './pages/**/*.{js,ts,jsx,tsx,mdx}',
-      './components/**/*.{js,ts,jsx,tsx,mdx}',
-      './app/**/*.{js,ts,jsx,tsx,mdx}',
+      './pages/**/*.{js,ts,jsx,tsx}',
+      './components/**/*.{js,ts,jsx,tsx}',
+      './app/**/*.{js,ts,jsx,tsx}',
     ],
     theme: {
       extend: {
-        colors: COLORS,
-        fontFamily: {
-          mono: FONTS.mono.split(', '),
-          sans: FONTS.sans.split(', '),
+        fontFamily: FONTS,
+        colors: {
+          background: '#171C28',
+          input: '#1C2333',
+          divider: '#2B3548',
+          primary: {
+            DEFAULT: '#2B63F3',
+            hover: '#1E4CD8',
+          },
         },
         fontSize: {
-          'heading': FONT_SIZES.heading,
-          'mega': FONT_SIZES.mega,
-          'shouty': FONT_SIZES.shouty,
+          '13': '13px',
+          '15': '15px',
+          '32': '32px',
         },
         borderWidth: {
           'thicc': BORDERS.thicc,

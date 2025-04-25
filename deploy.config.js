@@ -16,7 +16,11 @@ module.exports = {
       auth: {
         secret: process.env.DEV_NEXTAUTH_SECRET,
         jwtSecret: process.env.DEV_JWT_SECRET,
-        sessionTimeout: 24 * 60 * 60 // 24 hours
+        sessionTimeout: 24 * 60 * 60, // 24 hours
+        google: {
+          clientId: process.env.DEV_GOOGLE_CLIENT_ID,
+          clientSecret: process.env.DEV_GOOGLE_CLIENT_SECRET
+        }
       },
       email: {
         host: 'smtp.sendgrid.net',
@@ -64,7 +68,11 @@ module.exports = {
       auth: {
         secret: process.env.STAGING_NEXTAUTH_SECRET,
         jwtSecret: process.env.STAGING_JWT_SECRET,
-        sessionTimeout: 12 * 60 * 60 // 12 hours
+        sessionTimeout: 12 * 60 * 60, // 12 hours
+        google: {
+          clientId: process.env.STAGING_GOOGLE_CLIENT_ID,
+          clientSecret: process.env.STAGING_GOOGLE_CLIENT_SECRET
+        }
       },
       email: {
         host: 'smtp.sendgrid.net',
@@ -112,7 +120,11 @@ module.exports = {
       auth: {
         secret: process.env.PROD_NEXTAUTH_SECRET,
         jwtSecret: process.env.PROD_JWT_SECRET,
-        sessionTimeout: 8 * 60 * 60 // 8 hours
+        sessionTimeout: 8 * 60 * 60, // 8 hours
+        google: {
+          clientId: process.env.PROD_GOOGLE_CLIENT_ID,
+          clientSecret: process.env.PROD_GOOGLE_CLIENT_SECRET
+        }
       },
       email: {
         host: 'smtp.sendgrid.net',
