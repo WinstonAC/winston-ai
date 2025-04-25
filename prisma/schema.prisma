@@ -358,3 +358,6 @@ model ApiMetrics {
   @@index([endpoint])
   @@index([statusCode])
 }
+model Dummy {
+  id Int @id @default(autoincrement())
+}

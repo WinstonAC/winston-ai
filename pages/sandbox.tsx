@@ -81,7 +81,21 @@ export default function Sandbox() {
       
       <div className="min-h-screen bg-gray-900">
         <Suspense fallback={<div className="h-16 bg-gray-800 animate-pulse" />}>
-          <SandboxHeader />
+          <SandboxHeader 
+            currentUser={{
+              name: session?.user?.name || 'User',
+              email: session?.user?.email || '',
+              role: 'USER'
+            }}
+            onReset={() => {
+              setLogs([]);
+              setAgentState({
+                isProcessing: false,
+                currentTask: undefined,
+                progress: 0,
+              });
+            }}
+          />
         </Suspense>
         <main className="container mx-auto px-4 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

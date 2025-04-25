@@ -3,14 +3,17 @@ import { AuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import { prisma } from '@/lib/prisma';
+import { env } from '@/lib/env-loader';
 
 const NEXTAUTH_URL = process.env.NEXTAUTH_URL || 'http://localhost:3001';
 
-// Debug: Log environment setup
+// Enhanced debug logging
 console.log('Environment setup:', {
   baseUrl: NEXTAUTH_URL,
   clientId: process.env.GOOGLE_CLIENT_ID,
   hasSecret: !!process.env.GOOGLE_CLIENT_SECRET,
+  hasDatabaseUrl: !!process.env.DATABASE_URL,
+  nodeEnv: process.env.NODE_ENV,
 });
 
 export const authOptions: AuthOptions = {
@@ -18,8 +21,8 @@ export const authOptions: AuthOptions = {
   debug: true,
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID ?? '',
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
+      clientId: env.GOOGLE_CLIENT_ID,
+      clientSecret: env.GOOGLE_CLIENT_SECRET,
       authorization: {
         params: {
           prompt: "consent",
@@ -36,6 +39,7 @@ export const authOptions: AuthOptions = {
   },
   callbacks: {
     async session({ session, user }) {
+      console.log('Session callback:', { session, user });
       return {
         ...session,
         user: {
@@ -45,13 +49,22 @@ export const authOptions: AuthOptions = {
       };
     },
     async jwt({ token, user }) {
+      console.log('JWT callback:', { token, user });
       if (user) {
         token.id = user.id;
       }
       return token;
     },
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  events: {
+    async signIn({ user, account, profile }) {
+      console.log('Sign in event:', { user, account, profile });
+    },
+    async signOut({ token, session }) {
+      console.log('Sign out event:', { token, session });
+    },
+  },
+  secret: env.NEXTAUTH_SECRET,
   session: {
     strategy: 'database',
     maxAge: 30 * 24 * 60 * 60, // 30 days

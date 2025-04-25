@@ -2,6 +2,7 @@
   "name": "winston-ai",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -24,7 +25,8 @@
     "build-storybook": "storybook build",
     "test:email": "tsx scripts/email-test.ts",
     "test:responsive": "tsx scripts/test-responsive.ts",
-    "test:all": "npm run test && npm run test:email && npm run test:responsive"
+    "test:all": "npm run test && npm run test:email && npm run test:responsive",
+    "prisma:seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
@@ -42,6 +44,7 @@
     "chart.js": "^4.4.9",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dotenv": "^16.5.0",
     "framer-motion": "^10.16.4",
     "jose": "^6.0.10",
     "next": "14.1.0",
@@ -58,6 +61,7 @@
     "react-markdown": "^8.0.7",
     "react-syntax-highlighter": "^15.5.0",
     "tailwind-merge": "^3.2.0",
+    "zod": "^3.24.3",
     "zustand": "^4.5.2"
   },
   "devDependencies": {
