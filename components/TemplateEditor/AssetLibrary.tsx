@@ -31,7 +31,7 @@ const AssetLibrary: React.FC<AssetLibraryProps> = ({ onClose, onSelect }) => {
   const fetchAssets = async () => {
     try {
       const response = await fetch('/api/assets');
-      if (!response.ok) throw new AppError('Failed to fetch assets', 'network');
+      if (!response.ok) throw new AppError('Failed to fetch assets', 'network_error');
       const data = await response.json();
       setAssets(data);
     } catch (error) {
@@ -48,7 +48,7 @@ const AssetLibrary: React.FC<AssetLibraryProps> = ({ onClose, onSelect }) => {
         method: 'DELETE',
       });
 
-      if (!response.ok) throw new AppError('Failed to delete asset', 'server');
+      if (!response.ok) throw new AppError('Failed to delete asset', 'api_error');
       
       setAssets(prev => prev.filter(asset => asset.id !== assetId));
       toast.success('Asset deleted successfully');
@@ -71,7 +71,7 @@ const AssetLibrary: React.FC<AssetLibraryProps> = ({ onClose, onSelect }) => {
           body: formData,
         });
 
-        if (!response.ok) throw new AppError('Upload failed', 'server');
+        if (!response.ok) throw new AppError('Upload failed', 'api_error');
         
         const newAsset = await response.json();
         setAssets(prev => [...prev, newAsset]);

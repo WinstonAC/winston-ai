@@ -1,82 +1,99 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getSession } from 'next-auth/react';
-import { PrismaClient, PerformanceMetrics, ErrorLog, ApiMetrics } from '@prisma/client';
+import { PrismaClient, PerformanceMetrics as PrismaPerformanceMetrics, ErrorLog as PrismaErrorLog, ApiMetrics as PrismaApiMetrics } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 // Performance metrics
-interface PerformanceMetrics {
+interface PerformanceMetricsData {
   pageLoadTime: number;
   apiResponseTime: number;
   databaseQueryTime: number;
   memoryUsage: number;
+  userId: string;
 }
 
 // Error tracking
-interface ErrorLog {
+interface ErrorLogData {
+  message: string;
   error: Error;
+  severity?: string;
   context: {
-    userId?: string;
+    userId: string;
     path?: string;
     method?: string;
     timestamp: Date;
   };
+  userId: string;
 }
 
 // API monitoring
-interface ApiMetrics {
+interface ApiMetricsData {
   endpoint: string;
   method: string;
   responseTime: number;
   statusCode: number;
-  userId?: string;
+  userId: string;
 }
 
 export class MonitoringService {
   constructor(private prisma: PrismaClient) {}
 
-  async trackPerformance(data: Omit<PerformanceMetrics, 'id' | 'timestamp'>) {
+  async trackPerformance(data: Omit<PerformanceMetricsData, 'id' | 'createdAt'>) {
     // Validate required fields
-    if (!data.pageLoadTime || !data.apiResponseTime || !data.databaseQueryTime || !data.memoryUsage) {
+    if (!data.pageLoadTime || !data.apiResponseTime || !data.databaseQueryTime || !data.memoryUsage || !data.userId) {
       throw new Error('Missing required performance metrics');
     }
 
     return this.prisma.performanceMetrics.create({
       data: {
-        ...data,
-        timestamp: new Date(),
+        pageLoadTime: data.pageLoadTime,
+        apiResponseTime: data.apiResponseTime,
+        databaseQueryTime: data.databaseQueryTime,
+        memoryUsage: data.memoryUsage,
+        user: {
+          connect: { id: data.userId }
+        },
+        createdAt: new Date(),
       },
     });
   }
 
-  async trackError(data: Omit<ErrorLog, 'id' | 'timestamp'>) {
-    // Validate required fields
-    if (!data.message) {
-      throw new Error('Error message is required');
+  async trackError(data: ErrorLogData) {
+    try {
+      const log = await this.prisma.errorLog.create({
+        data: {
+          message: data.message,
+          error: data.error instanceof Error ? data.error.toString() : String(data.error),
+          severity: data.severity || 'error',
+          context: data.context || {},
+          userId: data.userId,
+          createdAt: new Date()
+        }
+      });
+      return log;
+    } catch (error) {
+      console.error('Error tracking error:', error);
+      throw error;
     }
-
-    // Set default severity if not provided
-    const severity = data.severity || 'error';
-
-    return this.prisma.errorLog.create({
-      data: {
-        ...data,
-        severity,
-        timestamp: new Date(),
-      },
-    });
   }
 
-  async trackApiCall(data: Omit<ApiMetrics, 'id' | 'timestamp'>) {
+  async trackApiCall(data: Omit<ApiMetricsData, 'id' | 'createdAt'>) {
     // Validate required fields
-    if (!data.endpoint || !data.method || !data.responseTime || !data.statusCode) {
+    if (!data.endpoint || !data.method || !data.responseTime || !data.statusCode || !data.userId) {
       throw new Error('Missing required API metrics');
     }
 
     return this.prisma.apiMetrics.create({
       data: {
-        ...data,
-        timestamp: new Date(),
+        endpoint: data.endpoint,
+        method: data.method,
+        responseTime: data.responseTime,
+        statusCode: data.statusCode,
+        user: {
+          connect: { id: data.userId }
+        },
+        createdAt: new Date(),
       },
     });
   }
@@ -91,7 +108,7 @@ export class MonitoringService {
       environment?: string;
       statusCode?: number;
     }
-  ): Promise<PerformanceMetrics[] | ErrorLog[] | ApiMetrics[]> {
+  ): Promise<PrismaPerformanceMetrics[] | PrismaErrorLog[] | PrismaApiMetrics[]> {
     const where: any = {
       timestamp: {
         gte: startDate,
@@ -118,19 +135,19 @@ export class MonitoringService {
       case 'performance':
         return this.prisma.performanceMetrics.findMany({ 
           where,
-          orderBy: { timestamp: 'desc' },
+          orderBy: { createdAt: 'desc' },
           take: 1000 // Limit results to prevent memory issues
         });
       case 'error':
         return this.prisma.errorLog.findMany({ 
           where,
-          orderBy: { timestamp: 'desc' },
+          orderBy: { createdAt: 'desc' },
           take: 1000
         });
       case 'api':
         return this.prisma.apiMetrics.findMany({ 
           where,
-          orderBy: { timestamp: 'desc' },
+          orderBy: { createdAt: 'desc' },
           take: 1000
         });
       default:
@@ -140,9 +157,9 @@ export class MonitoringService {
 
   async getErrorStats(startDate: Date, endDate: Date) {
     return this.prisma.errorLog.groupBy({
-      by: ['severity', 'environment'],
+      by: ['severity'],
       where: {
-        timestamp: {
+        createdAt: {
           gte: startDate,
           lte: endDate,
         },
@@ -157,7 +174,7 @@ export class MonitoringService {
     return this.prisma.apiMetrics.groupBy({
       by: ['endpoint', 'statusCode'],
       where: {
-        timestamp: {
+        createdAt: {
           gte: startDate,
           lte: endDate,
         },
@@ -185,9 +202,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         await monitoring.trackPerformance(data);
         break;
       case 'error':
-        await monitoring.trackError(data.error, {
-          ...data.context,
-          userId: session?.user?.id,
+        await monitoring.trackError({
+          ...data.error,
+          context: {
+            ...data.context,
+            userId: session?.user?.id,
+          }
         });
         break;
       case 'api':

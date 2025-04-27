@@ -15,7 +15,10 @@ export function useTemplateEditor() {
       order: index,
     }));
 
-    store.setVariables(updatedVariables);
+    // Update each variable using addVariable
+    updatedVariables.forEach(variable => {
+      store.addVariable(variable);
+    });
   }, [store]);
 
   const addVariable = useCallback((name: string) => {

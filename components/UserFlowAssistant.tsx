@@ -18,23 +18,20 @@ const UserFlowAssistant: React.FC = () => {
   const router = useRouter();
   const { data: session, status } = useSession();
 
-  const messages = useMemo(() => [
-    {
-      id: 'welcome',
-      text: 'Welcome to Winston AI! How can I help you today?',
-      type: 'system' as const,
+  const messages = useMemo<Record<string, AssistantMessage>>(() => ({
+    '/': {
+      title: 'Welcome',
+      content: 'Welcome to Winston AI! How can I help you today?'
     },
-    {
-      id: 'dashboard',
-      text: 'Here you can manage your leads and campaigns.',
-      type: 'system' as const,
+    '/dashboard': {
+      title: 'Dashboard',
+      content: 'Here you can manage your leads and campaigns.'
     },
-    {
-      id: 'analytics',
-      text: 'View your campaign performance and metrics here.',
-      type: 'system' as const,
+    '/analytics': {
+      title: 'Analytics',
+      content: 'View your campaign performance and metrics here.'
     }
-  ], []);
+  }), []);
 
   useEffect(() => {
     const path = router.pathname;

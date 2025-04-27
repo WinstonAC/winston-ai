@@ -61,7 +61,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 where: { id: campaign.id },
                 include: {
                   template: true,
-                  segment: true,
+                  segments: true,
                   targetAudience: true,
                   schedule: true,
                   metrics: true
@@ -87,7 +87,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     case 'POST': {
       try {
-        const { name, description, templateId, segmentId, targetAudience, schedule } = req.body;
+        const { name, description, type = 'email', templateId, segmentId, targetAudience, schedule } = req.body;
 
         // Validate required fields
         if (!name || !templateId || !targetAudience || !schedule) {
@@ -104,12 +104,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         // If segmentId is provided, verify it exists and user has access
         if (segmentId) {
+          const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { teamId: true }
+          });
+
           const segment = await prisma.segment.findFirst({
             where: {
               id: segmentId,
               OR: [
                 { userId },
-                { team: { users: { some: { id: userId } } } }
+                { teamId: user?.teamId }
               ]
             }
           });
@@ -123,41 +128,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           data: {
             name,
             description,
+            type,
             status: 'draft',
-            userId,
-            templateId,
-            segmentId,
-            targetAudience: {
-              create: {
-                segment: targetAudience.segment,
-                filters: targetAudience.filters
-              }
+            schedule: JSON.parse(schedule),
+            user: {
+              connect: { id: session.user.id }
             },
-            schedule: {
-              create: {
-                type: schedule.type,
-                date: schedule.date ? new Date(schedule.date) : null,
-                time: schedule.time
-              }
-            },
-            metrics: {
-              create: {
-                sent: 0,
-                delivered: 0,
-                opened: 0,
-                clicked: 0,
-                bounced: 0,
-                replied: 0,
-                meetings: 0
-              }
-            }
+            segments: segmentId ? {
+              connect: { id: segmentId }
+            } : undefined,
+            createdAt: new Date(),
+            updatedAt: new Date()
           },
           include: {
-            targetAudience: true,
-            schedule: true,
-            metrics: true,
-            template: true,
-            segment: true
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            },
+            segments: true
           }
         });
 
@@ -180,12 +171,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         // If segmentId is provided, verify it exists and user has access
         if (segmentId) {
+          const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { teamId: true }
+          });
+
           const segment = await prisma.segment.findFirst({
             where: {
               id: segmentId,
               OR: [
                 { userId },
-                { team: { users: { some: { id: userId } } } }
+                { teamId: user?.teamId }
               ]
             }
           });
@@ -219,7 +215,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             schedule: true,
             metrics: true,
             template: true,
-            segment: true
+            segments: true
           }
         });
 

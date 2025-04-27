@@ -25,18 +25,18 @@ const inputVariants = cva(
 );
 
 export interface InputProps
-  extends React.InputHTMLAttributes<HTMLInputElement>,
+  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'>,
     VariantProps<typeof inputVariants> {
   label?: string;
   error?: string;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
-  prefix?: React.ReactNode;
-  suffix?: React.ReactNode;
+  startAdornment?: React.ReactNode;
+  endAdornment?: React.ReactNode;
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, variant, size, label, error, leftIcon, rightIcon, prefix, suffix, ...props }, ref) => {
+  ({ className, variant, size, label, error, leftIcon, rightIcon, startAdornment, endAdornment, ...props }, ref) => {
     return (
       <div className="space-y-1">
         {label && (
@@ -50,24 +50,24 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
               {leftIcon}
             </div>
           )}
-          {prefix && (
+          {startAdornment && (
             <div className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500">
-              {prefix}
+              {startAdornment}
             </div>
           )}
           <input
             className={cn(
               inputVariants({ variant, size }),
-              prefix && 'pl-6',
-              suffix && 'pr-6',
+              startAdornment && 'pl-6',
+              endAdornment && 'pr-6',
               className
             )}
             ref={ref}
             {...props}
           />
-          {suffix && (
+          {endAdornment && (
             <div className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500">
-              {suffix}
+              {endAdornment}
             </div>
           )}
           {rightIcon && (

@@ -133,13 +133,7 @@ export default function Toolbar({ editor, onOpenAssetLibrary }: ToolbarProps) {
           className={buttonClass(false)}
           title="INSERT MEDIA"
         >
-          <Image
-            src={icon}
-            alt=""
-            width={16}
-            height={16}
-            className="w-4 h-4"
-          />
+          <ImageIcon size={20} />
         </button>
         <button
           onClick={onOpenAssetLibrary}

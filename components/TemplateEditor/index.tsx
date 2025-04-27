@@ -61,9 +61,9 @@ export default function TemplateEditor({ onSave }: TemplateEditorProps) {
         types: ['heading', 'paragraph'],
       }),
     ],
-    content: template?.body || '',
+    content: template?.content || '',
     onUpdate: ({ editor }: { editor: Editor }) => {
-      updateTemplate({ body: editor.getHTML() });
+      updateTemplate({ content: editor.getHTML() });
     },
   });
 

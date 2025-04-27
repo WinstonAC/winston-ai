@@ -7,43 +7,37 @@ import Chatbot from '../components/Chatbot';
 import { SessionProvider } from 'next-auth/react';
 import { Session } from 'next-auth';
 import { useRouter } from 'next/router';
-import { Toaster } from 'react-hot-toast';
+import { Toast } from '../components/Toast';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { AuthProvider } from '../contexts/AuthContext';
-
-function AppContent({ Component, pageProps }: AppProps) {
-  const router = useRouter();
-  const isAuthPage = ['/login', '/register', '/forgot-password'].includes(router.pathname);
-
-  return (
-    <>
-      <Head>
-        <link rel="icon" href="/assets/winston-favicon.ico" sizes="32x32" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-      </Head>
-      {!isAuthPage ? (
-        <Layout>
-          <ErrorBoundary>
-            <Component {...pageProps} />
-          </ErrorBoundary>
-        </Layout>
-      ) : (
-        <Component {...pageProps} />
-      )}
-      <Chatbot initialContext={router.pathname.includes('analytics') ? 'analytics' : 'general'} />
-      <Toaster position="top-right" />
-    </>
-  );
-}
 
 export default function App({ 
   Component, 
   pageProps: { session, ...pageProps } 
 }: AppProps<{ session: Session }>) {
+  const router = useRouter();
+  const isAuthPage = ['/login', '/register', '/forgot-password'].includes(router.pathname);
+
   return (
     <SessionProvider session={session}>
       <AuthProvider>
-        <AppContent Component={Component} pageProps={pageProps} />
+        <>
+          <Head>
+            <link rel="icon" href="/assets/winston-favicon.ico" sizes="32x32" />
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+          </Head>
+          {!isAuthPage ? (
+            <Layout>
+              <ErrorBoundary>
+                <Component {...pageProps} />
+              </ErrorBoundary>
+            </Layout>
+          ) : (
+            <Component {...pageProps} />
+          )}
+          <Chatbot initialContext={router.pathname.includes('analytics') ? 'analytics' : 'general'} />
+          <Toast position="top-right" />
+        </>
       </AuthProvider>
     </SessionProvider>
   );

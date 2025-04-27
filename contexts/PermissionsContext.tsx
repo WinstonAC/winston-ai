@@ -1,5 +1,11 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { User, AnalyticsPermissions, getAnalyticsPermissions } from '../types/auth';
+import { User, AnalyticsPermissions, UsageLimits, getAnalyticsPermissions } from '../types/auth';
+import { api } from '@/lib/api';
+
+interface ApiResponse<T> {
+  data: T;
+  error?: Error;
+}
 
 interface PermissionsState {
   user: User | null;
@@ -21,13 +27,15 @@ const initialState: PermissionsState = {
   error: null,
 };
 
-const PermissionsContext = createContext<{
+interface PermissionsContextType {
   state: PermissionsState;
   dispatch: React.Dispatch<PermissionsAction>;
   checkPermission: (permission: keyof AnalyticsPermissions) => boolean;
   checkDataAccess: (requiredLevel: string) => boolean;
   checkUsageLimit: (feature: keyof UsageLimits) => boolean;
-} | null>(null);
+}
+
+const PermissionsContext = createContext<PermissionsContextType | null>(null);
 
 const permissionsReducer = (state: PermissionsState, action: PermissionsAction): PermissionsState => {
   switch (action.type) {
@@ -59,6 +67,17 @@ const permissionsReducer = (state: PermissionsState, action: PermissionsAction):
   }
 };
 
+const fetchUserData = async (): Promise<User> => {
+  try {
+    const response = await api.get<ApiResponse<User>>('/api/user');
+    if (response.error) throw response.error;
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching user data:', error);
+    throw error;
+  }
+};
+
 export const PermissionsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(permissionsReducer, initialState);
 
@@ -83,15 +102,14 @@ export const PermissionsProvider: React.FC<{ children: React.ReactNode }> = ({ c
   };
 
   useEffect(() => {
-    // Load user data from your auth system
     const loadUser = async () => {
       try {
         dispatch({ type: 'SET_LOADING', payload: true });
-        // Replace this with your actual user loading logic
         const user = await fetchUserData();
         dispatch({ type: 'SET_USER', payload: user });
       } catch (error) {
-        dispatch({ type: 'SET_ERROR', payload: error.message });
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+        dispatch({ type: 'SET_ERROR', payload: errorMessage });
       } finally {
         dispatch({ type: 'SET_LOADING', payload: false });
       }

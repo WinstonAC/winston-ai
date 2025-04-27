@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from './auth/[...nextauth]';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -15,10 +15,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const segments = await prisma.segment.findMany({
         where: {
           OR: [
-            { createdBy: session.user.id },
+            { userId: session.user.id },
             {
               team: {
-                users: {
+                members: {
                   some: {
                     id: session.user.id,
                   },
@@ -41,7 +41,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'POST') {
     try {
-      const { name, description, filters } = req.body;
+      const { name, description, criteria } = req.body;
 
       if (!name) {
         return res.status(400).json({ error: 'Missing required fields' });
@@ -51,9 +51,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         data: {
           name,
           description,
-          filters: filters || {},
-          createdBy: session.user.id,
+          criteria: JSON.parse(criteria),
+          user: {
+            connect: { id: session.user.id }
+          },
+          createdAt: new Date(),
+          updatedAt: new Date()
         },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
+          }
+        }
       });
 
       return res.status(201).json(segment);

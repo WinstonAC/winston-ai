@@ -1,6 +1,8 @@
-import { toast } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 import { AppError, handleError, showErrorToast } from './error';
 import { getCsrfToken, withSecurity } from './security';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 interface ApiResponse<T = any> {
   data?: T;
@@ -17,7 +19,7 @@ interface ApiOptions {
   method?: string;
   body?: any;
   headers?: Record<string, string>;
-  cache?: boolean;
+  enableCache?: boolean;
   cacheKey?: string;
   cacheDuration?: number; // in milliseconds
   pagination?: {
@@ -29,6 +31,7 @@ interface ApiOptions {
   retryDelay?: number;
   requireCsrf?: boolean;
   rateLimit?: boolean;
+  userId?: string;
 }
 
 // Simple in-memory cache
@@ -42,14 +45,15 @@ export async function fetchApi<T>(
     method = 'GET',
     body,
     headers = {},
-    cache = true,
+    enableCache = true,
     cacheKey,
     pagination,
     retry = true,
     maxRetries = 3,
     retryDelay = 1000,
     requireCsrf = true,
-    rateLimit = true
+    rateLimit = true,
+    userId
   } = options;
 
   // Add CSRF token to headers if required
@@ -58,53 +62,53 @@ export async function fetchApi<T>(
   }
 
   // Create rate limit key based on endpoint and user
-  const rateLimitKey = rateLimit ? `${endpoint}:${getCurrentUser()?.id || 'anonymous'}` : undefined;
+  const rateLimitKey = rateLimit ? `${endpoint}:${userId || 'anonymous'}` : undefined;
 
-  // Wrap the fetch operation with security middleware
-  const fetchWithSecurity = withSecurity(
-    async () => {
-      // Check cache for GET requests
-      if (method === 'GET' && cache) {
-        const key = cacheKey || endpoint;
-        const cached = cache.get(key);
-        if (cached && Date.now() - cached.timestamp < 5 * 60 * 1000) { // 5 minutes default
-          return cached.data as T;
-        }
+  // Create the handler function
+  const handler = async () => {
+    // Check cache for GET requests
+    if (method === 'GET' && enableCache) {
+      const key = cacheKey || endpoint;
+      const cached = cache.get(key);
+      if (cached && Date.now() - cached.timestamp < 5 * 60 * 1000) { // 5 minutes default
+        return cached.data as T;
       }
+    }
 
-      const response = await fetchWithRetry(
-        `${API_BASE_URL}${endpoint}`,
-        {
-          method,
-          headers: {
-            'Content-Type': 'application/json',
-            ...headers
-          },
-          body: body ? JSON.stringify(body) : undefined
+    const response = await fetchWithRetry(
+      endpoint,
+      {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          ...headers
         },
-        retry,
-        maxRetries,
-        retryDelay
-      );
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new AppError(error.message || 'API request failed', error.code || 'api_error');
+        body: body ? JSON.stringify(body) : undefined
       }
+    );
 
-      const data = await response.json();
+    if (!response.ok) {
+      const error = await response.json();
+      throw new AppError(error.message || 'API request failed', error.code || 'api_error');
+    }
 
-      // Cache GET responses
-      if (method === 'GET' && cache) {
-        const key = cacheKey || endpoint;
-        cache.set(key, {
-          data,
-          timestamp: Date.now()
-        });
-      }
+    const data = await response.json();
 
-      return data as T;
-    },
+    // Cache GET responses
+    if (method === 'GET' && enableCache) {
+      const key = cacheKey || endpoint;
+      cache.set(key, {
+        data,
+        timestamp: Date.now()
+      });
+    }
+
+    return data as T;
+  };
+
+  // Wrap the handler with security middleware
+  const secureHandler = await withSecurity(
+    handler,
     {
       requireCsrf,
       rateLimit: rateLimitKey ? {
@@ -115,7 +119,7 @@ export async function fetchApi<T>(
     }
   );
 
-  return fetchWithSecurity();
+  return secureHandler();
 }
 
 // Clear cache for a specific key or all cache
@@ -128,19 +132,19 @@ export function clearCache(key?: string) {
 }
 
 // Retry mechanism for failed requests
-export async function fetchWithRetry<T>(
+async function fetchWithRetry(
   endpoint: string,
-  options: ApiOptions = {},
-  maxRetries = 3,
-  retryDelay = 1000
-): Promise<ApiResponse<T>> {
+  options: RequestInit
+): Promise<Response> {
   let lastError;
+  const maxRetries = 3;
+  const retryDelay = 1000;
   
   for (let i = 0; i < maxRetries; i++) {
     try {
-      const result = await fetchApi<T>(endpoint, options);
-      if (!result.error) return result;
-      lastError = result.error;
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
+      if (response.ok) return response;
+      lastError = await response.json();
     } catch (error) {
       lastError = error;
     }
@@ -150,7 +154,10 @@ export async function fetchWithRetry<T>(
     }
   }
   
-  return { error: handleError(lastError) };
+  throw new AppError(
+    lastError?.message || 'Request failed after retries',
+    lastError?.code || 'api_error'
+  );
 }
 
 export const api = {

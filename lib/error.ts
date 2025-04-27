@@ -1,11 +1,14 @@
-import { toast } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 
 export type ErrorType = 
   | 'validation'
   | 'authentication'
   | 'authorization'
-  | 'network'
-  | 'server'
+  | 'not_found'
+  | 'rate_limit'
+  | 'api_error'
+  | 'database_error'
+  | 'network_error'
   | 'unknown';
 
 export interface AppError {
@@ -27,7 +30,7 @@ export class AppError extends Error {
   }
 }
 
-export const handleError = (error: unknown): AppError => {
+export function handleError(error: unknown): AppError {
   if (error instanceof AppError) {
     return error;
   }
@@ -44,29 +47,20 @@ export const handleError = (error: unknown): AppError => {
       return new AppError(error.message, 'authorization');
     }
     if (error.name === 'NetworkError') {
-      return new AppError(error.message, 'network');
+      return new AppError(error.message, 'network_error');
     }
     return new AppError(error.message);
   }
 
-  return new AppError('An unexpected error occurred');
-};
+  return new AppError('An unknown error occurred');
+}
 
-export const showErrorToast = (error: AppError) => {
-  const messages = {
-    validation: 'Please check your input and try again',
-    authentication: 'Authentication failed. Please try again',
-    authorization: 'You do not have permission to perform this action',
-    network: 'Network error. Please check your connection',
-    server: 'Server error. Please try again later',
-    unknown: 'An unexpected error occurred'
-  };
-
-  toast.error(error.message || messages[error.type]);
-};
+export function showErrorToast(error: AppError) {
+  toast.error(error.message);
+}
 
 export const logError = (error: AppError) => {
-  console.error(`[${error.type}] ${error.message}`, error.details);
+  console.error(`[${error.type}] ${error.message}`);
   // Here you would typically send the error to your error tracking service
   // Example: sendToErrorTrackingService(error);
-}; 
+};

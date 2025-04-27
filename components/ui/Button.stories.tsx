@@ -19,13 +19,13 @@ const meta = {
   argTypes: {
     variant: {
       control: 'select',
-      options: ['primary', 'secondary', 'danger', 'success'],
+      options: ['default', 'outline', 'ghost', 'danger'],
     },
     size: {
       control: 'select',
       options: ['sm', 'md', 'lg'],
     },
-    isLoading: {
+    loading: {
       control: 'boolean',
     },
     disabled: {
@@ -42,22 +42,32 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /**
- * Primary button variant
+ * Default button variant
  */
-export const Primary: Story = {
+export const Default: Story = {
   args: {
     children: 'Button',
-    variant: 'primary',
+    variant: 'default',
   },
 };
 
 /**
- * Secondary button variant
+ * Outline button variant
  */
-export const Secondary: Story = {
+export const Outline: Story = {
   args: {
     children: 'Button',
-    variant: 'secondary',
+    variant: 'outline',
+  },
+};
+
+/**
+ * Ghost button variant
+ */
+export const Ghost: Story = {
+  args: {
+    children: 'Button',
+    variant: 'ghost',
   },
 };
 
@@ -72,22 +82,12 @@ export const Danger: Story = {
 };
 
 /**
- * Success button variant
- */
-export const Success: Story = {
-  args: {
-    children: 'Button',
-    variant: 'success',
-  },
-};
-
-/**
  * Small size button
  */
 export const Small: Story = {
   args: {
     children: 'Small Button',
-    variant: 'primary',
+    variant: 'default',
     size: 'sm',
   },
 };
@@ -98,7 +98,7 @@ export const Small: Story = {
 export const Large: Story = {
   args: {
     children: 'Large Button',
-    variant: 'primary',
+    variant: 'default',
     size: 'lg',
   },
 };
@@ -109,7 +109,7 @@ export const Large: Story = {
 export const Loading: Story = {
   args: {
     children: 'Button',
-    isLoading: true,
+    loading: true,
   },
 };
 
@@ -129,7 +129,7 @@ export const Disabled: Story = {
 export const WithIcon: Story = {
   args: {
     children: 'Button with Icon',
-    variant: 'primary',
+    variant: 'default',
     leftIcon: (
       <svg
         className="w-5 h-5"

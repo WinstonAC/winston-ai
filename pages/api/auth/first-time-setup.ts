@@ -52,14 +52,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         role: 'ADMIN',
         teamId: team.id,
         teamRole: 'OWNER',
-        settings: {
+        userSettings: {
           create: {
-            emailNotifications: true,
-            theme: 'dark',
+            emailSignature: '',
+            defaultTemplate: undefined,
+            templates: undefined,
           },
         },
-        verificationToken,
-        verificationTokenExpiry,
+        emailVerified: null,
+        createdAt: new Date(),
+        updatedAt: new Date()
       },
     });
 
@@ -67,10 +69,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     await sendVerificationEmail(email, verificationToken);
 
     // Remove sensitive data from response
-    const { password: _, verificationToken: __, verificationTokenExpiry: ___, ...userWithoutSensitiveData } = user;
+    const { password: _, ...userWithoutPassword } = user;
 
     return res.status(201).json({
-      user: userWithoutSensitiveData,
+      user: userWithoutPassword,
       team,
       message: 'Account created successfully. Please check your email to verify your account.',
     });

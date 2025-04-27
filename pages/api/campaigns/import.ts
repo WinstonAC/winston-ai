@@ -53,11 +53,20 @@ export default async function handler(
           data: {
             name: record.name,
             description: record.description,
-            startDate: new Date(record.startDate),
-            endDate: new Date(record.endDate),
-            budget: parseFloat(record.budget),
-            status: record.status,
-            userId: session.user.id,
+            type: 'email',
+            status: record.status || 'draft',
+            schedule: {
+              create: {
+                type: 'scheduled',
+                date: new Date(record.startDate),
+                time: record.startTime || '09:00'
+              }
+            },
+            user: {
+              connect: { id: session.user.id }
+            },
+            createdAt: new Date(),
+            updatedAt: new Date()
           },
         });
       })

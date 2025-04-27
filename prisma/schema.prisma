@@ -38,6 +38,7 @@ model User {
   performanceMetrics PerformanceMetrics[]
   errorLogs     ErrorLog[]
   apiMetrics    ApiMetrics[]
+  activities    Activity[]
 }
 
 model UserSettings {
@@ -84,9 +85,9 @@ model Lead {
   email         String
   status        String    @default("Sent")
   classification String?
-  sent_at       DateTime  @default(now())
-  created_at    DateTime  @default(now())
-  updated_at    DateTime  @updatedAt
+  sentAt        DateTime  @default(now()) @map("sent_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
   team          Team?     @relation(fields: [teamId], references: [id])
   teamId        String?
   user          User      @relation(fields: [userId], references: [id])
@@ -98,32 +99,27 @@ model Lead {
 
 model EmailHistory {
   id          String    @id @default(cuid())
+  lead        Lead      @relation(fields: [leadId], references: [id])
   leadId      String
-  lead        Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
   subject     String
-  body        String    @db.Text
-  templateId  String?
-  sentAt      DateTime  @default(now())
-  openedAt    DateTime?
-  clickedAt   DateTime?
-  bounced     Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  content     String
+  sentAt      DateTime  @default(now()) @map("sent_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
 }
 
 model Template {
   id            String    @id @default(cuid())
   name          String
-  subject       String
-  body          String    @db.Text
-  isPublic      Boolean   @default(false)
+  content       String    @db.Text
+  type          String
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-  createdBy     String    // User ID
-  user          User      @relation(fields: [createdBy], references: [id])
-  sharedWith    TemplateShare[]
+  user          User      @relation(fields: [userId], references: [id])
+  userId        String
   assets        TemplateAsset[]
   campaigns     Campaign[]
+  sharedWith    TemplateShare[]
 }
 
 model TemplateShare {
@@ -151,17 +147,17 @@ model TemplateAsset {
 }
 
 model Team {
-  id          String    @id @default(cuid())
-  name        String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  users       User[]
-  settings    TeamSettings?
-  invites     TeamInvite[]
-  activities  Activity[]
-  leads       Lead[]
-  segments    Segment[]
-  campaigns   Campaign[]
+  id            String    @id @default(cuid())
+  name          String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  settings      TeamSettings?
+  members       User[]
+  invites       TeamInvite[]
+  activities    Activity[]
+  leads         Lead[]
+  segments      Segment[]
+  campaigns     Campaign[]
 }
 
 model TeamSettings {
@@ -190,18 +186,17 @@ model TeamInvite {
 }
 
 model Activity {
-  id        String   @id @default(cuid())
-  type      String   // e.g., "lead_created", "meeting_scheduled", "email_sent"
-  createdAt DateTime @default(now())
-  
-  // Relations
-  team      Team     @relation(fields: [teamId], references: [id])
-  teamId    String
-  lead      Lead     @relation(fields: [leadId], references: [id])
-  leadId    String
-
-  @@index([teamId])
-  @@index([leadId])
+  id          String    @id @default(cuid())
+  type        String
+  description String
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  lead        Lead      @relation(fields: [leadId], references: [id])
+  leadId      String
+  user        User      @relation(fields: [userId], references: [id])
+  userId      String
+  team        Team?     @relation(fields: [teamId], references: [id])
+  teamId      String?
 }
 
 model ChatbotInteraction {
@@ -241,29 +236,23 @@ model Segment {
 }
 
 model Campaign {
-  id            String    @id @default(cuid())
-  name          String
-  description   String
-  templateId    String
-  template      Template  @relation(fields: [templateId], references: [id])
-  segmentId     String
-  segment       Segment   @relation(fields: [segmentId], references: [id])
-  status        String    @default("draft")
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  user          User      @relation(fields: [userId], references: [id])
-  userId        String
-  team          Team?     @relation(fields: [teamId], references: [id])
-  teamId        String?
-  schedule      CampaignSchedule?
-  metrics       CampaignMetrics?
-  targetAudience TargetAudience?
-
-  @@index([userId])
-  @@index([teamId])
-  @@index([status])
-  @@index([createdAt])
-  @@index([segmentId])
+  id              String    @id @default(cuid())
+  name            String
+  description     String?
+  status          String    @default("draft")
+  type            String
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  user            User      @relation(fields: [userId], references: [id])
+  userId          String
+  metrics         CampaignMetrics?
+  targetAudience  TargetAudience?
+  schedule        CampaignSchedule?
+  segments        Segment[]
+  team            Team?     @relation(fields: [teamId], references: [id])
+  teamId          String?
+  template        Template? @relation(fields: [templateId], references: [id])
+  templateId      String?
 }
 
 model TargetAudience {
@@ -288,76 +277,50 @@ model CampaignSchedule {
 
 model CampaignMetrics {
   id          String    @id @default(cuid())
+  campaign    Campaign  @relation(fields: [campaignId], references: [id])
+  campaignId  String    @unique
   sent        Int       @default(0)
-  delivered   Int       @default(0)
   opened      Int       @default(0)
   clicked     Int       @default(0)
-  bounced     Int       @default(0)
   replied     Int       @default(0)
   meetings    Int       @default(0)
-  campaign    Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  campaignId  String    @unique
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
 }
 
 model PerformanceMetrics {
-  id                Int      @id @default(autoincrement())
-  pageLoadTime      Float
-  apiResponseTime   Float
+  id              String    @id @default(cuid())
+  pageLoadTime    Float
+  apiResponseTime Float
   databaseQueryTime Float
-  memoryUsage       Float
-  cpuUsage          Float?
-  networkLatency    Float?
-  userId            String?
-  user              User?    @relation(fields: [userId], references: [id])
-  path              String?
-  timestamp         DateTime @default(now())
-
-  @@index([timestamp])
-  @@index([userId])
+  memoryUsage     Float
+  createdAt       DateTime  @default(now()) @map("created_at")
+  user            User      @relation(fields: [userId], references: [id])
+  userId          String
 }
 
 model ErrorLog {
-  id          Int      @id @default(autoincrement())
+  id          String    @id @default(cuid())
   message     String
-  stack       String?
-  userId      String?
-  user        User?    @relation(fields: [userId], references: [id])
-  path        String?
-  method      String?
-  statusCode  Int?
-  userAgent   String?
-  browser     String?
-  os          String?
-  severity    String   @default("error") // error, warning, info
-  environment String?  // development, staging, production
-  timestamp   DateTime @default(now())
-
-  @@index([timestamp])
-  @@index([userId])
-  @@index([severity])
-  @@index([environment])
+  error       String
+  severity    String    @default("error")
+  context     Json
+  createdAt   DateTime  @default(now()) @map("created_at")
+  user        User      @relation(fields: [userId], references: [id])
+  userId      String
 }
 
 model ApiMetrics {
-  id            Int      @id @default(autoincrement())
+  id            String    @id @default(cuid())
   endpoint      String
   method        String
   responseTime  Float
   statusCode    Int
-  userId        String?
-  user          User?    @relation(fields: [userId], references: [id])
-  requestSize   Int?
-  responseSize  Int?
-  error         String?
-  timestamp     DateTime @default(now())
-
-  @@index([timestamp])
-  @@index([userId])
-  @@index([endpoint])
-  @@index([statusCode])
+  createdAt     DateTime  @default(now()) @map("created_at")
+  user          User      @relation(fields: [userId], references: [id])
+  userId        String
 }
+
 model Dummy {
   id Int @id @default(autoincrement())
 }

@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
 import { prisma } from '@/lib/prisma';
+import { Activity } from '@prisma/client';
 
 export default async function handler(
   req: NextApiRequest,
@@ -40,7 +41,7 @@ export default async function handler(
       meetings: 0,
     };
 
-    let recentActivity = [];
+    let recentActivity: Activity[] = [];
 
     // If user has a team, get team-specific stats
     if (user.team) {
@@ -76,8 +77,12 @@ export default async function handler(
       recentActivity = activities.map((activity) => ({
         id: activity.id,
         type: activity.type,
-        leadName: activity.lead?.name || 'Unknown Lead',
-        createdAt: activity.createdAt.toISOString(),
+        description: activity.description,
+        leadId: activity.leadId,
+        userId: activity.userId,
+        teamId: activity.teamId,
+        createdAt: activity.createdAt,
+        updatedAt: activity.updatedAt
       }));
     }
 

@@ -11,13 +11,13 @@ const meta = {
   argTypes: {
     variant: {
       control: 'select',
-      options: ['primary', 'secondary', 'danger', 'success'],
+      options: ['default', 'outline', 'ghost', 'danger'],
     },
     size: {
       control: 'select',
       options: ['sm', 'md', 'lg'],
     },
-    isLoading: {
+    loading: {
       control: 'boolean',
     },
     disabled: {
@@ -32,14 +32,21 @@ type Story = StoryObj<typeof meta>;
 export const Primary: Story = {
   args: {
     children: 'Primary Button',
-    variant: 'primary',
+    variant: 'default',
   },
 };
 
 export const Secondary: Story = {
   args: {
     children: 'Secondary Button',
-    variant: 'secondary',
+    variant: 'outline',
+  },
+};
+
+export const Ghost: Story = {
+  args: {
+    children: 'Ghost Button',
+    variant: 'ghost',
   },
 };
 
@@ -50,17 +57,17 @@ export const Danger: Story = {
   },
 };
 
-export const Success: Story = {
+export const Small: Story = {
   args: {
-    children: 'Success Button',
-    variant: 'success',
+    children: 'Small Button',
+    size: 'sm',
   },
 };
 
 export const Loading: Story = {
   args: {
     children: 'Loading Button',
-    isLoading: true,
+    loading: true,
   },
 };
 

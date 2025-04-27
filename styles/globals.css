@@ -22,7 +22,7 @@
 }
 
 .brutalist-box {
-  @apply p-4 border-2 border-brutalist-black;
+  @apply p-4 border-2 border-gray-800;
 }
 
 @font-face {

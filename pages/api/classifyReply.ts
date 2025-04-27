@@ -53,6 +53,7 @@ export default async function handler(
     // Validate API key
     if (!process.env.OPENAI_API_KEY) {
       return res.status(500).json({ 
+        success: false,
         error: 'Server configuration error: Missing OpenAI API key' 
       })
     }

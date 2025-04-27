@@ -4,16 +4,24 @@ import GoogleProvider from 'next-auth/providers/google';
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import { prisma } from '@/lib/prisma';
 import { env } from '@/lib/env-loader';
+import CredentialsProvider from 'next-auth/providers/credentials';
+import bcrypt from 'bcryptjs';
 
-const NEXTAUTH_URL = process.env.NEXTAUTH_URL || 'http://localhost:3001';
+// Validate required environment variables
+if (!env.GOOGLE_CLIENT_ID) throw new Error('GOOGLE_CLIENT_ID is not set');
+if (!env.GOOGLE_CLIENT_SECRET) throw new Error('GOOGLE_CLIENT_SECRET is not set');
+if (!env.NEXTAUTH_SECRET) throw new Error('NEXTAUTH_SECRET is not set');
+
+const NEXTAUTH_URL = env.NEXTAUTH_URL || 'http://localhost:3000';
 
 // Enhanced debug logging
-console.log('Environment setup:', {
+console.log('NextAuth Configuration:', {
   baseUrl: NEXTAUTH_URL,
-  clientId: process.env.GOOGLE_CLIENT_ID,
-  hasSecret: !!process.env.GOOGLE_CLIENT_SECRET,
-  hasDatabaseUrl: !!process.env.DATABASE_URL,
+  clientId: env.GOOGLE_CLIENT_ID,
+  hasSecret: !!env.GOOGLE_CLIENT_SECRET,
+  hasDatabaseUrl: !!env.DATABASE_URL,
   nodeEnv: process.env.NODE_ENV,
+  callbackUrl: `${NEXTAUTH_URL}/api/auth/callback/google`,
 });
 
 export const authOptions: AuthOptions = {
@@ -27,10 +35,32 @@ export const authOptions: AuthOptions = {
         params: {
           prompt: "consent",
           access_type: "offline",
-          response_type: "code"
+          response_type: "code",
+          scope: "openid email profile"
         }
       }
     }),
+    CredentialsProvider({
+      name: 'Credentials',
+      credentials: {
+        email: { label: 'Email', type: 'email', placeholder: 'jsmith@example.com' },
+        password: { label: 'Password', type: 'password' }
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error('Email and password required');
+        }
+        const user = await prisma.user.findUnique({ where: { email: credentials.email } });
+        if (!user || !user.password) {
+          throw new Error('No user found');
+        }
+        const isValid = await bcrypt.compare(credentials.password, user.password);
+        if (!isValid) {
+          throw new Error('Invalid password');
+        }
+        return user;
+      }
+    })
   ],
   pages: {
     signIn: '/login',
@@ -38,6 +68,10 @@ export const authOptions: AuthOptions = {
     error: '/error',
   },
   callbacks: {
+    async signIn({ user, account, profile }) {
+      console.log('SignIn callback:', { user, account, profile });
+      return true;
+    },
     async session({ session, user }) {
       console.log('Session callback:', { session, user });
       return {

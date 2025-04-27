@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getSession } from 'next-auth/react';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getSession({ req });
@@ -20,7 +20,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         },
         include: {
           template: true,
-          segment: true,
+          segments: true,
           metrics: true,
         },
       });
@@ -41,20 +41,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { name, description, templateId, targetAudience, schedule, status } = req.body;
 
       const campaign = await prisma.campaign.update({
-        where: {
-          id: campaignId,
-          userId: session.user.id,
-        },
+        where: { id: campaignId },
         data: {
           name,
           description,
-          templateId,
-          segmentId: targetAudience.segment,
-          filters: targetAudience.filters,
-          scheduleType: schedule.type,
-          scheduleDate: schedule.date ? new Date(schedule.date) : null,
-          scheduleTime: schedule.time,
+          template: templateId ? {
+            connect: { id: templateId }
+          } : undefined,
+          segments: targetAudience?.segment ? {
+            connect: { id: targetAudience.segment }
+          } : undefined,
+          schedule: schedule ? {
+            update: {
+              type: schedule.type,
+              date: schedule.date ? new Date(schedule.date) : null,
+              time: schedule.time
+            }
+          } : undefined,
           status: status || 'draft',
+          updatedAt: new Date()
+        },
+        include: {
+          template: true,
+          segments: true,
+          metrics: true,
         },
       });
 

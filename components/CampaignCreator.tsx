@@ -111,10 +111,10 @@ const CampaignCreator: React.FC<CampaignCreatorProps> = ({
                     templateId: campaign.templateId,
                     segmentId: campaign.segmentId,
                     targetAudience: campaign.targetAudience || { segment: '', filters: {} },
-                    schedule: campaign.schedule || {
-                      type: 'immediate',
-                      date: undefined,
-                      time: undefined
+                    schedule: {
+                      type: campaign.schedule?.type || 'immediate',
+                      date: campaign.schedule?.date,
+                      time: campaign.schedule?.time
                     }
                   });
                   setIsModalOpen(true);
@@ -182,12 +182,12 @@ const CampaignCreator: React.FC<CampaignCreatorProps> = ({
       setIsLoading(true);
       setError(null);
       const response = await api.get<ApiResponse<Campaign[]>>('campaigns', {
-        cache: true,
+        enableCache: true,
         cacheKey: `campaigns-${currentPage}-${pageSize}`,
         pagination: {
           page: currentPage,
-          pageSize
-        }
+          pageSize,
+        },
       });
       
       if (response.error) throw response.error;

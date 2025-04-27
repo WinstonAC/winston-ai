@@ -14,15 +14,14 @@ export default async function handler(
   }
 
   try {
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { teamId: true }
+    });
+
     const activities = await prisma.activity.findMany({
       where: {
-        team: {
-          users: {
-            some: {
-              id: session.user.id
-            }
-          }
-        }
+        teamId: user?.teamId
       },
       include: {
         lead: true,

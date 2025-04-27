@@ -34,10 +34,19 @@ const Login: React.FC = () => {
   };
 
   const handleGoogleLogin = async () => {
+    console.log('Google sign-in button clicked');
+    setIsLoading(true);
     try {
-      await signIn('google', { callbackUrl: '/sandbox' });
+      console.log('Initiating Google sign-in...');
+      const result = await signIn('google', { 
+        callbackUrl: '/sandbox',
+        redirect: true
+      });
+      console.log('SignIn result:', result);
     } catch (err) {
+      console.error('Google sign-in error:', err);
       showErrorToast(new AppError('Google login failed. Please try again.', 'authentication'));
+      setIsLoading(false);
     }
   };
 
@@ -68,7 +77,8 @@ const Login: React.FC = () => {
           {/* Google Login */}
           <button
             onClick={handleGoogleLogin}
-            className="w-full bg-white hover:bg-gray-50 text-[15px] text-gray-900 px-4 py-3 flex items-center justify-center space-x-3 transition-colors"
+            disabled={isLoading}
+            className="w-full bg-white hover:bg-gray-50 text-[15px] text-gray-900 px-4 py-3 flex items-center justify-center space-x-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Image
               src="/assets/google-logo.svg"
@@ -77,7 +87,7 @@ const Login: React.FC = () => {
               height={20}
               className="w-5 h-5"
             />
-            <span>Continue with Google</span>
+            <span>{isLoading ? 'Signing in...' : 'Continue with Google'}</span>
           </button>
 
           {/* Divider */}

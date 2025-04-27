@@ -31,7 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             ],
           },
           orderBy: {
-            created_at: 'desc',
+            createdAt: 'desc',
           },
         });
         return res.status(200).json(leads);

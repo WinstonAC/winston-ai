@@ -29,10 +29,12 @@ export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   loading?: boolean;
+  leftIcon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, loading, disabled, children, ...props }, ref) => {
+  ({ className, variant, size, loading, disabled, children, leftIcon, rightIcon, ...props }, ref) => {
     return (
       <button
         className={cn(buttonVariants({ variant, size, className }))}
@@ -64,8 +66,11 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
               />
             </svg>
           </span>
-        ) : null}
+        ) : (
+          leftIcon && <span className="mr-2">{leftIcon}</span>
+        )}
         {children}
+        {rightIcon && <span className="ml-2">{rightIcon}</span>}
       </button>
     );
   }

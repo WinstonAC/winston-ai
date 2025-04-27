@@ -48,7 +48,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           createdAt: { gte: startDate }
         },
         include: {
-          metrics: true
+          metrics: true,
+          segments: true,
+          template: true
         }
       }),
       // Recent activities
@@ -63,6 +65,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         take: 10,
         include: {
           lead: {
+            select: {
+              name: true,
+              email: true,
+              status: true
+            }
+          },
+          team: {
             select: {
               name: true
             }

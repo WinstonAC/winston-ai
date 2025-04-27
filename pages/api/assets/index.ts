@@ -19,7 +19,7 @@ export default async function handler(
         const assets = await prisma.templateAsset.findMany({
           where: {
             template: {
-              createdBy: session.user.id,
+              userId: session.user.id,
             },
           },
           orderBy: {

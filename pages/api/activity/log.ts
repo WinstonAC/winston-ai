@@ -17,18 +17,46 @@ export default async function handler(
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const { type, teamId, leadId } = req.body;
+    const { type, description, teamId, leadId } = req.body;
 
-    if (!type || !teamId) {
+    if (!type || !description) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
     const activity = await prisma.activity.create({
       data: {
         type,
-        teamId,
-        leadId: leadId || undefined,
+        description,
+        user: {
+          connect: { id: session.user.id }
+        },
+        ...(leadId && {
+          lead: {
+            connect: { id: leadId }
+          }
+        }),
+        ...(teamId && {
+          team: {
+            connect: { id: teamId }
+          }
+        }),
+        createdAt: new Date(),
+        updatedAt: new Date()
       },
+      include: {
+        lead: {
+          select: {
+            name: true,
+            email: true,
+            status: true
+          }
+        },
+        team: {
+          select: {
+            name: true
+          }
+        }
+      }
     });
 
     return res.status(200).json(activity);
