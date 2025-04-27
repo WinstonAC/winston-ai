@@ -5,6 +5,7 @@ import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import Typography from '@tiptap/extension-typography';
+import TextAlign from '@tiptap/extension-text-align';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import { useDropzone } from 'react-dropzone';
 import toast from 'react-hot-toast';
@@ -56,10 +57,13 @@ export default function TemplateEditor({ onSave }: TemplateEditorProps) {
         placeholder: 'Start writing your template...',
       }),
       Typography,
+      TextAlign.configure({
+        types: ['heading', 'paragraph'],
+      }),
     ],
-    content: template?.content as string || '',
+    content: template?.body || '',
     onUpdate: ({ editor }: { editor: Editor }) => {
-      updateTemplate({ content: editor.getHTML() });
+      updateTemplate({ body: editor.getHTML() });
     },
   });
 
@@ -110,8 +114,8 @@ export default function TemplateEditor({ onSave }: TemplateEditorProps) {
         
         <div className="flex-1 overflow-auto p-8 bg-black">
           <div
-            className="prose prose-invert max-w-none"
             {...dropzoneProps}
+            className={`prose prose-invert max-w-none ${dropzoneProps.className || ''}`}
           >
             <input {...getInputProps()} />
             <EditorContent editor={editor} />

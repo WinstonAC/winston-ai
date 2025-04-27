@@ -58,12 +58,16 @@ export default function Navigation() {
     setActiveDropdown(activeDropdown === name ? null : name);
   };
 
+  const setDropdownRef = (name: string) => (el: HTMLDivElement | null) => {
+    dropdownRefs.current[name] = el;
+  };
+
   return (
     <nav className="fixed top-0 left-0 right-0 bg-gray-900 border-b border-gray-800 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
-            <Link href="/" className="flex items-center font-mono text-white">
+            <Link href="/" className="flex items-center font-heading font-bold text-white">
               WINSTON AI
             </Link>
             
@@ -72,11 +76,11 @@ export default function Navigation() {
                 <div 
                   key={item.name} 
                   className="relative"
-                  ref={(el) => dropdownRefs.current[item.name] = el}
+                  ref={setDropdownRef(item.name)}
                 >
                   <button
                     onClick={() => toggleDropdown(item.name)}
-                    className="flex items-center text-sm text-gray-200 hover:text-white"
+                    className="flex items-center font-base text-sm text-gray-200 hover:text-white"
                   >
                     {item.name}
                     <ChevronDownIcon className={`ml-1 h-4 w-4 transform transition-transform ${
@@ -89,7 +93,7 @@ export default function Navigation() {
                         <Link
                           key={subItem.name}
                           href={subItem.href}
-                          className={`block px-4 py-2 text-sm ${
+                          className={`block px-4 py-2 font-base text-sm ${
                             router.pathname === subItem.href
                               ? 'text-white font-medium bg-gray-700'
                               : 'text-gray-200 hover:bg-gray-700'
@@ -133,13 +137,13 @@ export default function Navigation() {
                             console.error('Navigation error:', error);
                           }
                         }}
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white transition-colors"
+                        className="block w-full text-left px-4 py-2 font-base text-sm text-gray-200 hover:bg-gray-700 hover:text-white transition-colors"
                       >
                         Team Management
                       </button>
                       <Link
                         href="/settings"
-                        className="block px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white transition-colors"
+                        className="block px-4 py-2 font-base text-sm text-gray-200 hover:bg-gray-700 hover:text-white transition-colors"
                         onClick={() => setShowAdminMenu(false)}
                       >
                         Account Settings
@@ -149,7 +153,7 @@ export default function Navigation() {
                 </div>
                 <button
                   onClick={() => signOut()}
-                  className="text-sm text-gray-200 hover:text-white"
+                  className="font-base text-sm text-gray-200 hover:text-white"
                 >
                   Sign out
                 </button>
@@ -157,7 +161,7 @@ export default function Navigation() {
             ) : (
               <Link
                 href="/login"
-                className="text-sm text-gray-200 hover:text-white"
+                className="font-base text-sm text-gray-200 hover:text-white"
               >
                 Sign in
               </Link>

@@ -52,7 +52,7 @@ const MarkdownViewer: React.FC<MarkdownViewerProps> = ({ content }) => {
               const match = /language-(\w+)/.exec(className || '');
               return !inline && match ? (
                 <SyntaxHighlighter
-                  style={vscDarkPlus}
+                  style={vscDarkPlus as any}
                   language={match[1]}
                   PreTag="div"
                   className="rounded-lg my-4"

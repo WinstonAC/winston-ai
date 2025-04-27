@@ -43,10 +43,11 @@ interface Lead {
   id: string;
   name: string;
   email: string;
-  status: string;
-  classification: string | null;
-  sent_at?: string;
-  created_at: string;
+  company: string;
+  title: string;
+  status: 'new' | 'contacted' | 'qualified' | 'unqualified';
+  lastContacted?: string;
+  notes?: string;
 }
 
 const StatCard: React.FC<StatCardProps> = ({ title, value, change, icon: Icon }) => (
@@ -150,10 +151,14 @@ const QuickActions: React.FC<{ isSandbox?: boolean }> = ({ isSandbox }) => {
       const parsedLeads = (results as any).data
         .filter((row: any) => row.name && row.email)
         .map((row: any) => ({
+          id: crypto.randomUUID(),
           name: row.name,
           email: row.email,
-          status: 'Pending',
-          classification: null,
+          company: row.company || '',
+          title: row.title || '',
+          status: 'new' as const,
+          lastContacted: undefined,
+          notes: row.notes || ''
         }));
 
       if (parsedLeads.length === 0) {
@@ -304,10 +309,14 @@ const Dashboard: React.FC<DashboardProps> = ({
       const parsedLeads = (results as any).data
         .filter((row: any) => row.name && row.email)
         .map((row: any) => ({
+          id: crypto.randomUUID(),
           name: row.name,
           email: row.email,
-          status: 'Pending',
-          classification: null,
+          company: row.company || '',
+          title: row.title || '',
+          status: 'new' as const,
+          lastContacted: undefined,
+          notes: row.notes || ''
         }));
 
       if (parsedLeads.length === 0) {

@@ -20,21 +20,24 @@ interface Lead {
   status: 'new' | 'contacted' | 'qualified' | 'unqualified';
   lastContacted?: string;
   notes?: string;
+  classification?: 'Interested' | 'Not Interested' | 'Needs Info';
 }
 
 interface LeadTableProps {
   leads: Lead[];
+  loading?: boolean;
 }
 
 const StatusBadge: React.FC<{ status: Lead['status'] }> = ({ status }) => {
   const getStatusStyle = (status: Lead['status']) => {
     switch (status) {
-      case 'Clicked':
+      case 'qualified':
         return 'bg-green-400/20 text-green-400 border-green-400/50';
-      case 'Opened':
+      case 'contacted':
         return 'bg-blue-400/20 text-blue-400 border-blue-400/50';
-      case 'Bounced':
+      case 'unqualified':
         return 'bg-red-400/20 text-red-400 border-red-400/50';
+      case 'new':
       default:
         return 'bg-gray-400/20 text-gray-400 border-gray-400/50';
     }
@@ -120,7 +123,11 @@ const mockLeads = [
   // Add more mock leads as needed
 ];
 
-const LeadTable: React.FC<LeadTableProps> = ({ leads }) => {
+const LeadTable: React.FC<LeadTableProps> = ({ leads, loading }) => {
+  if (loading) {
+    return <LoadingState />;
+  }
+
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full divide-y divide-gray-800/50">

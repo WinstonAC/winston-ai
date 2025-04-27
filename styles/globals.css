@@ -2,6 +2,29 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  body {
+    @apply font-base text-base;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+  }
+}
+
+/* Custom utility classes */
+.brutalist-heading {
+  @apply font-heading text-2xl font-bold tracking-wide;
+}
+
+.brutalist-shouty {
+  @apply font-heading text-4xl font-bold tracking-wider uppercase;
+}
+
+.brutalist-box {
+  @apply p-4 border-2 border-brutalist-black;
+}
+
 @font-face {
   font-family: 'Neue Haas Grotesk';
   src: url('/fonts/NeueHaasGrotesk-Roman.woff2') format('woff2'),

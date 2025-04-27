@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import { ArrowRightIcon } from '@heroicons/react/24/outline';
-import { showErrorToast } from '../lib/error';
+import { showErrorToast, AppError } from '../lib/error';
+import Image from 'next/image';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -23,10 +24,10 @@ const Login: React.FC = () => {
       if (result?.url) {
         router.push(result.url);
       } else {
-        showErrorToast({ message: 'Login failed. Please try again.' });
+        showErrorToast(new AppError('Login failed. Please try again.', 'authentication'));
       }
     } catch (err) {
-      showErrorToast({ message: 'An unexpected error occurred' });
+      showErrorToast(new AppError('An unexpected error occurred', 'unknown'));
     } finally {
       setIsLoading(false);
     }
@@ -36,7 +37,7 @@ const Login: React.FC = () => {
     try {
       await signIn('google', { callbackUrl: '/sandbox' });
     } catch (err) {
-      showErrorToast({ message: 'Google login failed. Please try again.' });
+      showErrorToast(new AppError('Google login failed. Please try again.', 'authentication'));
     }
   };
 
@@ -45,7 +46,7 @@ const Login: React.FC = () => {
       <div className="w-full max-w-[440px] mx-auto">
         {/* Logo */}
         <div className="flex justify-center mb-8">
-          <img
+          <Image
             src="/assets/winston-logo.svg"
             alt="Winston AI Logo"
             width={40}
@@ -69,7 +70,7 @@ const Login: React.FC = () => {
             onClick={handleGoogleLogin}
             className="w-full bg-white hover:bg-gray-50 text-[15px] text-gray-900 px-4 py-3 flex items-center justify-center space-x-3 transition-colors"
           >
-            <img
+            <Image
               src="/assets/google-logo.svg"
               alt="Google"
               width={20}

@@ -12,8 +12,7 @@ import {
   CheckIcon,
   PencilIcon,
   XMarkIcon,
-  ExclamationTriangleIcon,
-  Trash2
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import Modal from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
@@ -29,7 +28,7 @@ import {
   CreateCampaignInput,
   UpdateCampaignInput
 } from '@/types/campaign';
-import { toast } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 import { AppError, handleError, showErrorToast } from '../lib/error';
 
 interface ValidationErrors {
@@ -43,6 +42,14 @@ interface ValidationErrors {
   schedule?: {
     date?: string;
     time?: string;
+  };
+}
+
+interface ApiResponse<T> {
+  data: T;
+  error: Error | null;
+  pagination?: {
+    totalPages: number;
   };
 }
 
@@ -67,23 +74,21 @@ const CampaignCreator: React.FC<CampaignCreatorProps> = ({
   const [pageSize, setPageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
 
-  const defaultCampaignInput: CreateCampaignInput = {
+  const [campaignInput, setCampaignInput] = useState<CreateCampaignInput>({
     name: '',
     description: '',
     templateId: '',
     segmentId: '',
     targetAudience: {
       segment: '',
-      filters: {},
+      filters: {}
     },
     schedule: {
       type: 'immediate',
       date: undefined,
-      time: undefined,
+      time: undefined
     }
-  };
-
-  const [campaignInput, setCampaignInput] = useState<CreateCampaignInput>(defaultCampaignInput);
+  });
 
   // Memoize the campaign list to prevent unnecessary re-renders
   const campaignList = useMemo(() => (
@@ -97,7 +102,7 @@ const CampaignCreator: React.FC<CampaignCreatorProps> = ({
             <h3 className="text-lg font-mono text-[#32CD32]">{campaign.name}</h3>
             <div className="flex space-x-2">
               <Button
-                variant="secondary"
+                variant="outline"
                 onClick={() => {
                   setSelectedCampaign(campaign);
                   setCampaignInput({
@@ -106,15 +111,17 @@ const CampaignCreator: React.FC<CampaignCreatorProps> = ({
                     templateId: campaign.templateId,
                     segmentId: campaign.segmentId,
                     targetAudience: campaign.targetAudience || { segment: '', filters: {} },
-                    schedule: campaign.schedule,
+                    schedule: campaign.schedule || {
+                      type: 'immediate',
+                      date: undefined,
+                      time: undefined
+                    }
                   });
                   setIsModalOpen(true);
                 }}
-                role="button"
-                name="edit-campaign"
-                aria-label={`Edit campaign ${campaign.name}`}
               >
-                <PencilIcon className="h-5 w-5" aria-hidden="true" />
+                <PencilIcon className="h-4 w-4 mr-2" />
+                Edit
               </Button>
               <Button
                 variant="danger"
@@ -174,7 +181,7 @@ const CampaignCreator: React.FC<CampaignCreatorProps> = ({
     try {
       setIsLoading(true);
       setError(null);
-      const { data, error, pagination } = await api.get<Campaign[]>('campaigns', {
+      const response = await api.get<ApiResponse<Campaign[]>>('campaigns', {
         cache: true,
         cacheKey: `campaigns-${currentPage}-${pageSize}`,
         pagination: {
@@ -183,11 +190,11 @@ const CampaignCreator: React.FC<CampaignCreatorProps> = ({
         }
       });
       
-      if (error) throw error;
+      if (response.error) throw response.error;
       
-      setCampaigns(data || []);
-      if (pagination) {
-        setTotalPages(pagination.totalPages);
+      setCampaigns(response.data || []);
+      if (response.pagination) {
+        setTotalPages(response.pagination.totalPages);
       }
     } catch (err) {
       const appError = handleError(err);
@@ -257,18 +264,18 @@ const CampaignCreator: React.FC<CampaignCreatorProps> = ({
     
     try {
       if (selectedCampaign) {
-        const { error } = await api.put(`campaigns/${selectedCampaign.id}`, {
+        const response = await api.put<ApiResponse<Campaign>>(`campaigns/${selectedCampaign.id}`, {
           ...campaignInput,
           segmentId: campaignInput.segmentId || undefined
         });
-        if (error) throw error;
+        if (response.error) throw response.error;
         toast.success('Campaign updated successfully');
       } else {
-        const { error } = await api.post('campaigns', {
+        const response = await api.post<ApiResponse<Campaign>>('campaigns', {
           ...campaignInput,
           segmentId: campaignInput.segmentId || undefined
         });
-        if (error) throw error;
+        if (response.error) throw response.error;
         toast.success('Campaign created successfully');
       }
       
@@ -288,8 +295,8 @@ const CampaignCreator: React.FC<CampaignCreatorProps> = ({
     try {
       setIsLoading(true);
       setError(null);
-      const { error } = await api.delete(`campaigns/${id}`);
-      if (error) throw error;
+      const response = await api.delete<ApiResponse<void>>(`campaigns/${id}`);
+      if (response.error) throw response.error;
       toast.success('Campaign deleted successfully');
       setShowDeleteConfirm(null);
       await fetchCampaigns();
@@ -303,7 +310,21 @@ const CampaignCreator: React.FC<CampaignCreatorProps> = ({
   };
 
   const resetForm = () => {
-    setCampaignInput(defaultCampaignInput);
+    setCampaignInput({
+      name: '',
+      description: '',
+      templateId: '',
+      segmentId: '',
+      targetAudience: {
+        segment: '',
+        filters: {}
+      },
+      schedule: {
+        type: 'immediate',
+        date: undefined,
+        time: undefined
+      }
+    });
     setSelectedCampaign(null);
     setValidationErrors({});
   };
@@ -318,14 +339,14 @@ const CampaignCreator: React.FC<CampaignCreatorProps> = ({
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-mono text-[#32CD32]">EMAIL_CAMPAIGNS_</h2>
         <Button
-          variant="primary"
+          variant="default"
           onClick={handleOpenCreateModal}
           role="button"
           name="open-create-campaign-modal"
           aria-label="Create new campaign"
           disabled={isLoading}
         >
-          {isLoading ? <Loader size="sm" /> : 'Create Campaign'}
+          {isLoading ? <Loader /> : 'Create Campaign'}
         </Button>
       </div>
 
@@ -559,7 +580,7 @@ const CampaignCreator: React.FC<CampaignCreatorProps> = ({
           <div className="flex justify-end space-x-4">
             <Button
               type="button"
-              variant="secondary"
+              variant="outline"
               onClick={() => {
                 setIsModalOpen(false);
                 resetForm();
@@ -570,10 +591,10 @@ const CampaignCreator: React.FC<CampaignCreatorProps> = ({
             </Button>
             <Button
               type="submit"
-              variant="primary"
+              variant="default"
               disabled={isCreating}
             >
-              {isCreating ? <Loader size="sm" /> : (selectedCampaign ? 'Update' : 'Create')}
+              {isCreating ? <Loader /> : (selectedCampaign ? 'Update' : 'Create')}
             </Button>
           </div>
         </form>
@@ -592,7 +613,7 @@ const CampaignCreator: React.FC<CampaignCreatorProps> = ({
             <div className="flex justify-end space-x-4">
               <Button
                 type="button"
-                variant="secondary"
+                variant="outline"
                 onClick={() => setShowDeleteConfirm(null)}
                 disabled={isLoading}
               >
@@ -604,7 +625,7 @@ const CampaignCreator: React.FC<CampaignCreatorProps> = ({
                 onClick={() => handleDelete(showDeleteConfirm)}
                 disabled={isLoading}
               >
-                {isLoading ? <Loader size="sm" /> : 'Delete'}
+                {isLoading ? <Loader /> : 'Delete'}
               </Button>
             </div>
           </div>

@@ -2,40 +2,46 @@ import React, { useState } from 'react';
 
 interface ChatbotProps {
   initialContext?: 'analytics' | 'general';
+  onClose?: () => void;
 }
 
-const Chatbot: React.FC<ChatbotProps> = ({ initialContext = 'general' }) => {
+const Chatbot: React.FC<ChatbotProps> = ({ initialContext = 'general', onClose }) => {
   const [isOpen, setIsOpen] = useState(false);
+
+  const handleClose = () => {
+    setIsOpen(false);
+    onClose?.();
+  };
 
   return (
     <div className="fixed bottom-4 right-4">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full shadow-lg"
+        className="bg-primary hover:bg-primary-hover text-white font-heading font-bold py-2 px-4 rounded-full shadow-lg"
       >
         Chat with Winston
       </button>
       {isOpen && (
-        <div className="fixed bottom-20 right-4 w-80 bg-white rounded-lg shadow-xl p-4">
+        <div className="fixed bottom-20 right-4 w-80 bg-background border border-divider rounded-lg shadow-xl p-4">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="font-bold">Winston AI Assistant</h3>
+            <h3 className="font-heading font-bold text-white">Winston AI Assistant</h3>
             <button
-              onClick={() => setIsOpen(false)}
-              className="text-gray-500 hover:text-gray-700"
+              onClick={handleClose}
+              className="text-gray-400 hover:text-white transition-colors"
             >
               ×
             </button>
           </div>
           <div className="h-64 overflow-y-auto mb-4">
-            <p className="text-gray-600">Hello! How can I help you today?</p>
+            <p className="font-base text-gray-300">Hello! How can I help you today?</p>
           </div>
           <div className="flex">
             <input
               type="text"
               placeholder="Type your message..."
-              className="flex-1 border rounded-l-lg px-4 py-2"
+              className="flex-1 font-base bg-input border-divider rounded-l-lg px-4 py-2 text-white placeholder-gray-500"
             />
-            <button className="bg-blue-500 text-white px-4 py-2 rounded-r-lg">
+            <button className="bg-primary hover:bg-primary-hover text-white font-heading font-semibold px-4 py-2 rounded-r-lg transition-colors">
               Send
             </button>
           </div>

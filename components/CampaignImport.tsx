@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
-import { FiUpload } from 'react-icons/fi';
+import { ArrowUpTrayIcon } from '@heroicons/react/24/outline';
 
 export default function CampaignImport() {
   const router = useRouter();
@@ -69,7 +69,7 @@ export default function CampaignImport() {
             `}
           >
             <div className="flex flex-col items-center justify-center pt-5 pb-6">
-              <FiUpload className="w-8 h-8 mb-3 text-gray-400" />
+              <ArrowUpTrayIcon className="w-8 h-8 mb-3 text-gray-400" />
               <p className="mb-2 text-sm text-gray-400">
                 <span className="font-semibold">Click to upload</span> or drag and drop
               </p>

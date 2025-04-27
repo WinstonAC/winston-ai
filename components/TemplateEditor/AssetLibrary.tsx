@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { toast } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 import { FiUpload, FiImage, FiVideo, FiTrash2, FiX } from 'react-icons/fi';
 import Image from 'next/image';
 import { AppError, handleError, showErrorToast } from '../../lib/error';
@@ -11,16 +11,15 @@ interface Asset {
   url: string;
   name: string;
   size: number;
-  mimeType: string;
+  createdAt: Date;
 }
 
 interface AssetLibraryProps {
-  onSelectAsset?: (asset: Asset) => void;
-  templateId?: string;
-  onClose?: () => void;
+  onClose: () => void;
+  onSelect: (asset: Asset) => void;
 }
 
-const AssetLibrary: React.FC<AssetLibraryProps> = ({ onSelectAsset, templateId, onClose }) => {
+const AssetLibrary: React.FC<AssetLibraryProps> = ({ onClose, onSelect }) => {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -65,9 +64,6 @@ const AssetLibrary: React.FC<AssetLibraryProps> = ({ onSelectAsset, templateId, 
     
     for (const file of acceptedFiles) {
       formData.append('file', file);
-      if (templateId) {
-        formData.append('templateId', templateId);
-      }
 
       try {
         const response = await fetch('/api/assets/upload', {
@@ -110,14 +106,12 @@ const AssetLibrary: React.FC<AssetLibraryProps> = ({ onSelectAsset, templateId, 
       <div className="bg-black text-white p-8 border-4 border-white w-full max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold">ASSET LIBRARY</h2>
-          {onClose && (
-            <button
-              onClick={onClose}
-              className="p-2 border-4 border-white hover:bg-white hover:text-black transition-colors"
-            >
-              <FiX size={24} />
-            </button>
-          )}
+          <button
+            onClick={onClose}
+            className="p-2 border-4 border-white hover:bg-white hover:text-black transition-colors"
+          >
+            <FiX size={24} />
+          </button>
         </div>
 
         <div
@@ -154,7 +148,7 @@ const AssetLibrary: React.FC<AssetLibraryProps> = ({ onSelectAsset, templateId, 
                 <div
                   key={asset.id}
                   className="p-4 border-4 border-white hover:bg-white hover:text-black transition-colors cursor-pointer relative group"
-                  onClick={() => onSelectAsset?.(asset)}
+                  onClick={() => onSelect(asset)}
                 >
                   <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-lg bg-gray-800 mb-2">
                     {asset.type === 'image' ? (

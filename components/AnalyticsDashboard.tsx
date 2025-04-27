@@ -364,18 +364,26 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
     </div>
   );
 
-  const chartOptions: ChartOptions = useMemo(() => ({
+  const baseChartOptions = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'top',
+        display: true,
+        position: 'top' as const,
+        labels: {
+          color: 'rgb(107, 114, 128)',
+          font: {
+            family: 'system-ui',
+            size: 12,
+          },
+        },
       },
       tooltip: {
         callbacks: {
-          label: (context: TooltipItem<'line'>) => {
-            const raw = context.raw as { id: string; x: number; y: number };
-            const campaign = campaigns.find(c => c.id === raw.id);
+          label: (context: any) => {
+            const raw = context.raw || {};
+            const campaign = campaigns.find(c => c[selectedMetrics.x] === raw.x && c[selectedMetrics.y] === raw.y);
             return [
               `Campaign: ${campaign?.name}`,
               `${selectedMetrics.x}: ${raw.x}`,
@@ -387,86 +395,151 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
         },
       },
     },
-  }), [campaigns, selectedMetrics]);
+  }), [campaigns, selectedMetrics.x, selectedMetrics.y]);
 
-  const chartData = useMemo((): ChartData | null => {
-    if (!showComparison || selectedCampaigns.length < 2) return null;
+  const cartesianScales = useMemo(() => ({
+    x: {
+      type: 'linear' as const,
+      position: 'bottom' as const,
+      title: {
+        display: true,
+        text: selectedMetrics.x,
+      },
+      ticks: {
+        color: 'rgb(107, 114, 128)',
+        font: {
+          family: 'system-ui',
+          size: 12,
+        },
+      },
+      grid: {
+        color: 'rgb(243, 244, 246)',
+      },
+    },
+    y: {
+      type: 'linear' as const,
+      position: 'left' as const,
+      title: {
+        display: true,
+        text: selectedMetrics.y,
+      },
+      ticks: {
+        color: 'rgb(107, 114, 128)',
+        font: {
+          family: 'system-ui',
+          size: 12,
+        },
+      },
+      grid: {
+        color: 'rgb(243, 244, 246)',
+      },
+    },
+  }), [selectedMetrics.x, selectedMetrics.y]);
 
-    const selectedCampaignsData = campaigns.filter(campaign => 
-      selectedCampaigns.includes(campaign.id)
-    );
+  const lineChartOptions: ChartOptions<'line'> = useMemo(() => ({
+    ...baseChartOptions,
+    scales: cartesianScales,
+  }), [baseChartOptions, cartesianScales]);
 
-    const labels = selectedCampaignsData.map(campaign => campaign.name);
-    const metricData = selectedCampaignsData.map(campaign => 
-      Number(campaign[comparisonView.metric])
-    );
+  const barChartOptions: ChartOptions<'bar'> = useMemo(() => ({
+    ...baseChartOptions,
+    scales: cartesianScales,
+  }), [baseChartOptions, cartesianScales]);
+
+  const scatterChartOptions: ChartOptions<'scatter'> = useMemo(() => ({
+    ...baseChartOptions,
+    scales: cartesianScales,
+  }), [baseChartOptions, cartesianScales]);
+
+  const pieChartOptions: ChartOptions<'pie'> = useMemo(() => ({
+    ...baseChartOptions,
+  }), [baseChartOptions]);
+
+  const chartData = useMemo(() => {
+    if (!selectedMetrics.x || !selectedMetrics.y || !data?.dailyMetrics) return null;
+    
+    const metrics = data.dailyMetrics.map(item => ({
+      x: item[selectedMetrics.x as keyof typeof item],
+      y: item[selectedMetrics.y as keyof typeof item]
+    }));
 
     return {
-      labels,
-      datasets: [
-        {
-          label: comparisonView.metric.charAt(0).toUpperCase() + comparisonView.metric.slice(1),
-          data: metricData,
-          borderColor: '#ffffff',
-          backgroundColor: 'rgba(255, 255, 255, 0.5)',
-          borderWidth: 2,
-        },
-      ],
+      labels: metrics.map(m => m.x.toString()),
+      datasets: [{
+        label: `${selectedMetrics.y} vs ${selectedMetrics.x}`,
+        data: metrics.map(m => Number(m.y)),
+        borderColor: '#ffffff',
+        backgroundColor: 'rgba(255, 255, 255, 0.5)',
+        borderWidth: 2,
+        fill: false
+      }]
     };
-  }, [showComparison, selectedCampaigns, campaigns, comparisonView.metric]);
+  }, [data?.dailyMetrics, selectedMetrics]);
 
-  const scatterData = useMemo((): ScatterData | null => {
-    if (!showComparison || selectedCampaigns.length < 2) return null;
-
-    const selectedCampaignsData = campaigns.filter(campaign => 
-      selectedCampaigns.includes(campaign.id)
-    );
-
+  const scatterData = useMemo(() => {
     return {
       datasets: [{
         label: 'Campaign Performance',
-        data: selectedCampaignsData.map(campaign => ({
-          x: Number(campaign[selectedMetrics.x]),
-          y: Number(campaign[selectedMetrics.y]),
+        data: campaigns.map(campaign => ({
+          x: campaign[selectedMetrics.x] as number,
+          y: campaign[selectedMetrics.y] as number,
           id: campaign.id,
           name: campaign.name,
         })),
-        backgroundColor: 'rgba(255, 255, 255, 0.5)',
-        borderColor: '#ffffff',
-        borderWidth: 2,
+        backgroundColor: 'rgba(50, 205, 50, 0.5)',
+        borderColor: 'rgba(50, 205, 50, 1)',
+        borderWidth: 1,
         pointRadius: 6,
         pointHoverRadius: 8,
       }],
     };
-  }, [showComparison, selectedCampaigns, campaigns, selectedMetrics]);
+  }, [campaigns, selectedMetrics.x, selectedMetrics.y]);
 
   const renderChart = () => {
     if (!chartData) return null;
 
+    const typedChartData = chartData as {
+      labels: string[];
+      datasets: {
+        label: string;
+        data: number[];
+        borderColor: string;
+        backgroundColor: string;
+        borderWidth: number;
+        fill?: boolean;
+      }[];
+    };
+
     switch (chartType) {
       case 'line':
-        return <Line data={chartData} options={chartOptions} />;
+        return <Line data={typedChartData} options={lineChartOptions} />;
       case 'bar':
-        return <Bar data={chartData} options={chartOptions} />;
+        return <Bar data={typedChartData} options={barChartOptions} />;
       case 'pie':
-        return <Pie data={chartData} options={chartOptions} />;
+        return <Pie data={typedChartData} options={pieChartOptions} />;
       case 'scatter':
-        return <Scatter data={scatterData} options={chartOptions} />;
+        return <Scatter data={typedChartData} options={scatterChartOptions} />;
       case 'area':
-        return <Line 
-          data={{
-            ...chartData,
-            datasets: chartData.datasets.map(dataset => ({
-              ...dataset,
-              fill: true,
-            })),
-          }} 
-          options={chartOptions} 
-        />;
+        return (
+          <Line
+            data={{
+              ...typedChartData,
+              datasets: typedChartData.datasets.map(dataset => ({
+                ...dataset,
+                fill: true,
+              })),
+            }}
+            options={lineChartOptions}
+          />
+        );
       case 'heatmap':
-        return <div className="h-full flex items-center justify-center">
-          <p className="text-white">Heatmap visualization coming soon</p>
-        </div>;
+        return (
+          <div className="relative h-96">
+            <div className="absolute inset-0">
+              {/* Heatmap implementation */}
+            </div>
+          </div>
+        );
       default:
         return null;
     }
@@ -536,7 +609,8 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
             selectsStart
             startDate={dateRange.startDate}
             endDate={dateRange.endDate}
-            maxDate={dateRange.endDate || new Date()}
+            minDate={dateRange.startDate || undefined}
+            maxDate={new Date()}
             className="font-mono text-[#32CD32] bg-black border-2 border-[#32CD32] px-4 py-2"
             placeholderText="Start Date"
             data-testid="date-picker"
@@ -547,7 +621,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
             selectsEnd
             startDate={dateRange.startDate}
             endDate={dateRange.endDate}
-            minDate={dateRange.startDate}
+            minDate={dateRange.startDate || undefined}
             maxDate={new Date()}
             className="font-mono text-[#32CD32] bg-black border-2 border-[#32CD32] px-4 py-2"
             placeholderText="End Date"

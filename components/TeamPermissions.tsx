@@ -1,18 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { usePermissions } from '../contexts/PermissionsContext';
-import { UserRole, TeamPermission } from '../types/auth';
+import { UserRole, TeamPermission, User } from '../types/auth';
 import { CheckIcon, XMarkIcon, ExclamationCircleIcon, TrashIcon, PencilIcon, PlusIcon } from '@heroicons/react/24/outline';
-import { toast } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 import { useSession } from 'next-auth/react';
 import { UserGroupIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
 
 interface TeamMember {
   id: string;
-  name: string;
-  email: string;
-  role: UserRole;
-  permissions: TeamPermission[];
-  joinedAt: string;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+  role: string;
+  permissions: string[];
 }
 
 interface Team {
@@ -42,34 +42,28 @@ export const TeamPermissions: React.FC = () => {
   const modalRef = useRef<HTMLDivElement>(null);
   const firstInputRef = useRef<HTMLInputElement>(null);
 
+  const fetchTeam = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/team/members');
+      if (!response.ok) {
+        throw new Error('Failed to fetch team members');
+      }
+      const data = await response.json();
+      setTeam({
+        id: '',
+        name: '',
+        members: data,
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch team members');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     let isMounted = true;
-
-    const fetchTeam = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch('/api/team/members');
-        if (!response.ok) {
-          throw new Error('Failed to fetch team members');
-        }
-        const data = await response.json();
-        if (isMounted) {
-          setTeam({
-            id: '',
-            name: '',
-            members: data,
-          });
-        }
-      } catch (err) {
-        if (isMounted) {
-          setError(err instanceof Error ? err.message : 'Failed to fetch team members');
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
 
     if (session?.user) {
       fetchTeam();
@@ -78,7 +72,7 @@ export const TeamPermissions: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [session, setLoading, setTeam, setError]);
+  }, [session]);
 
   useEffect(() => {
     if (showEditModal && firstInputRef.current) {
@@ -275,7 +269,8 @@ export const TeamPermissions: React.FC = () => {
   }
 
   const members = team.members || [];
-  const isAdmin = members.find(m => m.id === session?.user?.id)?.role === 'admin';
+  const sessionUser = session?.user as User | undefined;
+  const isAdmin = members.find(m => m.id === sessionUser?.id)?.role === UserRole.ADMIN;
 
   const handleRoleChange = (memberId: string, newRole: UserRole) => {
     updateMemberRole(memberId, newRole as TeamMember['role']);
@@ -329,12 +324,12 @@ export const TeamPermissions: React.FC = () => {
                 <div className="flex items-center">
                   <div className="flex-shrink-0 h-10 w-10">
                     <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                      <span className="text-gray-500">{member.name.charAt(0)}</span>
+                      <span className="text-gray-500">{member.name?.charAt(0) || ''}</span>
                     </div>
                   </div>
                   <div className="ml-4">
-                    <div className="text-sm font-medium text-gray-900">{member.name}</div>
-                    <div className="text-sm text-gray-500">{member.email}</div>
+                    <div className="text-sm font-medium text-gray-900">{member.name || ''}</div>
+                    <div className="text-sm text-gray-500">{member.email || ''}</div>
                   </div>
                 </div>
                 <div className="flex items-center space-x-4">

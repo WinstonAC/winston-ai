@@ -29,7 +29,7 @@ class ErrorBoundary extends React.Component<Props, State> {
         <div className="min-h-screen flex items-center justify-center bg-gray-100">
           <div className="bg-white p-8 rounded-lg shadow-md">
             <h2 className="text-2xl font-bold text-red-600 mb-4">Something went wrong</h2>
-            <p className="text-gray-600">We're sorry, but something went wrong. Please try refreshing the page.</p>
+            <p className="text-gray-600">We&apos;re sorry, but something went wrong. Please try refreshing the page.</p>
             <button
               onClick={() => window.location.reload()}
               className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"

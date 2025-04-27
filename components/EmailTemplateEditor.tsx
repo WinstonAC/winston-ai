@@ -11,7 +11,7 @@ import {
   LinkIcon, 
   TrashIcon,
   PlusIcon,
-  SaveIcon 
+  CheckIcon
 } from '@heroicons/react/24/outline';
 
 interface EmailTemplate {
@@ -111,7 +111,7 @@ const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
             disabled={isSaving}
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
-            <SaveIcon className="h-5 w-5 mr-2" />
+            <CheckIcon className="h-5 w-5 mr-2" />
             {isSaving ? 'Saving...' : 'Save Template'}
           </button>
           {template && onDelete && (
@@ -239,5 +239,4 @@ const EmailTemplateEditor: React.FC<EmailTemplateEditorProps> = ({
   );
 };
 
-export default EmailTemplateEditor; 
 export default EmailTemplateEditor; 
