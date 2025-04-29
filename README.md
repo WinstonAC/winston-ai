@@ -10,7 +10,7 @@ Winston AI is an AI-powered sales assistant that helps manage leads, campaigns, 
 ### Team Management
 - **Team Member Invitation**: Invite team members via email
 - **Team Dashboard**: Manage team members and their roles
-- **Secure Authentication**: Robust session handling and access control
+- **Secure Authentication**: Supabase-powered authentication with magic links and social providers
 
 ### Chatbot Assistant
 - **Unified Interface**: Single chatbot for both general assistance and analytics help
@@ -27,7 +27,7 @@ Winston AI is an AI-powered sales assistant that helps manage leads, campaigns, 
 
 ### Pages
 - **Landing Page**: Minimal design with floating animations
-- **Login**: Secure authentication with team support
+- **Sign In**: Secure authentication with magic links
 - **Dashboard**: Overview of leads, campaigns, and team activity
 - **Leads**: Lead management and tracking
 - **Campaigns**: Campaign creation and monitoring
@@ -42,19 +42,22 @@ Winston AI is an AI-powered sales assistant that helps manage leads, campaigns, 
 2. Install Node.js v18.18.0 (required for compatibility)
 3. Install dependencies:
    ```bash
-   npm install --legacy-peer-deps
+   npm install
    ```
 4. Set up your environment variables:
    ```bash
    cp .env.example .env.local
+   ```
+   Required environment variables:
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL="your-supabase-project-url"
+   NEXT_PUBLIC_SUPABASE_ANON_KEY="your-supabase-anon-key"
    ```
 5. Run the development server:
    ```bash
    npm run dev
    ```
 6. Open [http://localhost:3000](http://localhost:3000) in your browser
-
-Note: The `--legacy-peer-deps` flag is required due to dependency conflicts between Storybook versions.
 
 ## Sandbox Testing
 
@@ -67,35 +70,22 @@ The sandbox environment provides a pre-configured testing environment with sampl
 ### Setting Up the Sandbox
 
 1. **Prerequisites**:
-   - PostgreSQL database running locally
+   - Supabase project (local or cloud)
    - Node.js v18.18.0 or later
-   - All dependencies installed (`npm install --legacy-peer-deps`)
+   - All dependencies installed (`npm install`)
 
 2. **Database Setup**:
    ```bash
-   # Create the database
-   createdb winston_ai
-   
-   # Run migrations
-   npx prisma migrate deploy
+   # Run Supabase migrations
+   npx supabase db push
    ```
 
 3. **Environment Configuration**:
-   Create a `.env` file with the following variables:
+   Create a `.env.local` file with the following variables:
    ```env
-   # Database
-   DATABASE_URL="postgresql://postgres:postgres@localhost:5432/winston_ai?schema=public"
-   
-   # NextAuth.js
-   NEXTAUTH_URL="http://localhost:3000"
-   NEXTAUTH_SECRET="your-secret-key-here"
-   
-   # Email (optional for testing)
-   EMAIL_SERVER_HOST="smtp.gmail.com"
-   EMAIL_SERVER_PORT=587
-   EMAIL_SERVER_USER="your-email@gmail.com"
-   EMAIL_SERVER_PASSWORD="your-app-specific-password"
-   EMAIL_FROM="noreply@winston-ai.com"
+   # Supabase
+   NEXT_PUBLIC_SUPABASE_URL="your-supabase-project-url"
+   NEXT_PUBLIC_SUPABASE_ANON_KEY="your-supabase-anon-key"
    ```
 
 4. **Initialize Sandbox**:
@@ -115,16 +105,12 @@ The sandbox environment includes:
 2. **Test Users**:
    - Admin User:
      - Email: admin@winston-ai.com
-     - Password: demo123
-     - Role: Team Admin
    - Demo User:
      - Email: demo@winston-ai.com
-     - Password: demo123
-     - Role: Team Member
    - Test User:
      - Email: test@winston-ai.com
-     - Password: demo123
-     - Role: Team Member
+
+   Note: Use magic links to sign in - no passwords required!
 
 3. **Sample Data**:
    - 15 leads per user
@@ -136,7 +122,7 @@ The sandbox environment includes:
 ### Testing Workflows
 
 1. **Authentication Testing**:
-   - Test login with different user roles
+   - Test magic link sign-in
    - Verify role-based access control
    - Test session management
 
@@ -182,13 +168,13 @@ npm run sandbox
 ### Troubleshooting
 
 1. **Database Connection Issues**:
-   - Verify PostgreSQL is running
-   - Check DATABASE_URL in .env
-   - Ensure database exists and is accessible
+   - Verify Supabase project is running
+   - Check environment variables
+   - Ensure database migrations are up to date
 
 2. **Authentication Problems**:
-   - Verify NEXTAUTH_URL and NEXTAUTH_SECRET
-   - Check session configuration
+   - Verify Supabase URL and anon key
+   - Check email configuration in Supabase dashboard
    - Clear browser cookies if needed
 
 3. **Data Reset**:
@@ -199,8 +185,8 @@ npm run sandbox
    ```
 
 4. **Common Errors**:
-   - "Database not found": Run migrations
-   - "Invalid credentials": Verify user data
+   - "Failed to fetch": Check Supabase connection
+   - "Invalid credentials": Verify magic link
    - "Permission denied": Check role settings
 
 ### Best Practices
@@ -231,97 +217,32 @@ This section provides simplified instructions for non-technical team members who
    - Go to: http://localhost:3000
    - If the page doesn't load, contact your technical team
 
-2. **Login Information**:
+2. **Sign In**:
    Use one of these test accounts:
    - Admin Account (Full Access):
      - Email: admin@winston-ai.com
-     - Password: demo123
    - Demo Account (Limited Access):
      - Email: demo@winston-ai.com
-     - Password: demo123
    - Test Account (Basic Access):
      - Email: test@winston-ai.com
-     - Password: demo123
+
+   You'll receive a magic link in your email to sign in securely.
 
 ### What to Test
 
 1. **Basic Navigation**:
-   - Can you log in successfully?
-   - Can you see the dashboard after logging in?
-   - Can you access all menu items?
-
-2. **Lead Management**:
-   - Can you view the list of leads?
-   - Can you add a new lead?
-   - Can you update a lead's status?
-
-3. **Campaign Testing**:
-   - Can you view existing campaigns?
-   - Can you create a new campaign?
-   - Can you see campaign statistics?
-
-4. **Team Features**:
-   - Can you see other team members?
-   - Can you view team activity?
-   - Can you access team settings?
-
-### Common Issues and Solutions
-
-1. **Login Problems**:
-   - If you can't log in:
-     - Double-check your email and password
-     - Try a different browser
-     - Contact your technical team
-
-2. **Page Loading Issues**:
-   - If pages don't load:
-     - Refresh the page
-     - Clear your browser cache
-     - Try a different browser
-
-3. **Data Not Showing**:
-   - If you don't see any data:
-     - Log out and log back in
-     - Check if you're using the correct account
-     - Contact your technical team
-
-### Reporting Issues
-
-When reporting problems, please include:
-1. What you were trying to do
-2. What happened instead
-3. Any error messages you saw
-4. Which account you were using
-5. Which browser you were using
-
-### Testing Checklist
-
-Use this checklist to ensure you've tested all key features:
-
-- [ ] Login with each account type
-- [ ] View and navigate the dashboard
-- [ ] Check lead management features
-- [ ] Test campaign creation and viewing
-- [ ] Verify team member visibility
-- [ ] Test the chatbot assistant
-- [ ] View analytics and reports
-- [ ] Check email notifications (if configured)
-
-### Support
-
-If you encounter any issues:
-1. First, try the solutions listed above
-2. If the problem persists, contact your technical team
-3. Provide as much detail as possible about the issue
+   - Can you sign in successfully with the magic link?
+   - Can you see the dashboard after signing in?
+   - Does the chatbot respond to your questions?
 
 ## Quick Reference Guide
 
 ### Login Information
-| Account Type | Email | Password | Access Level |
-|-------------|-------|----------|--------------|
-| Admin | admin@winston-ai.com | demo123 | Full Access |
-| Demo | demo@winston-ai.com | demo123 | Limited Access |
-| Test | test@winston-ai.com | demo123 | Basic Access |
+| Account Type | Email | Access Level |
+|-------------|-------|--------------|
+| Admin | admin@winston-ai.com | Full Access |
+| Demo | demo@winston-ai.com | Limited Access |
+| Test | test@winston-ai.com | Basic Access |
 
 ### Common Actions
 1. **Viewing Leads**
@@ -360,7 +281,7 @@ If you encounter any issues:
    - Try a different browser
 
 2. **Can't Log In**
-   - Verify email and password
+   - Verify email and magic link
    - Check caps lock
    - Try a different account
 
@@ -638,4 +559,3 @@ Test accounts:
 - Admin: admin@winston-ai.com
 - Demo: demo@winston-ai.com
 - Test: test@winston-ai.com
-Password: demo123
