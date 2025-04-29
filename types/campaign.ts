@@ -1,3 +1,7 @@
+import { Lead } from './lead';
+import { Template } from './template';
+import { Segment } from '@/types/segment';
+
 export interface Campaign {
   id: string;
   name: string;
@@ -6,14 +10,15 @@ export interface Campaign {
   segmentId: string;
   targetAudience?: {
     segment: string;
-    filters: Record<string, any>;
+    filters: Record<string, unknown>;
   };
-  schedule?: {
+  schedule: {
     type: 'immediate' | 'scheduled';
     date?: string;
     time?: string;
+    timezone?: string;
   };
-  status?: string;
+  status: 'draft' | 'scheduled' | 'running' | 'completed' | 'failed';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -25,12 +30,13 @@ export interface CreateCampaignInput {
   segmentId: string;
   targetAudience: {
     segment: string;
-    filters: Record<string, any>;
+    filters: Record<string, unknown>;
   };
   schedule: {
     type: 'immediate' | 'scheduled';
     date?: string;
     time?: string;
+    timezone?: string;
   };
 }
 
@@ -39,9 +45,9 @@ export interface UpdateCampaignInput extends Partial<CreateCampaignInput> {
 }
 
 export interface CampaignCreatorProps {
-  leads: any[]; // Replace with proper Lead type
-  templates: any[]; // Replace with proper Template type
-  segments: any[]; // Replace with proper Segment type
+  leads: Lead[];
+  templates: Template[];
+  segments: Segment[];
   onCreateCampaign?: (input: CreateCampaignInput) => Promise<void>;
   onUpdateCampaign?: (input: UpdateCampaignInput) => Promise<void>;
   onDeleteCampaign?: (id: string) => Promise<void>;

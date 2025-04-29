@@ -1,142 +1,68 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { createClient, User as SupabaseUser } from '@supabase/supabase-js';
+import { useRouter } from 'next/router';
 
-interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: 'admin' | 'user';
-  teamId: string;
-}
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL ?? '',
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
+);
 
 interface AuthContextType {
-  user: User | null;
+  user: SupabaseUser | null;
   loading: boolean;
   error: string | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
-  logout: () => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
+  signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     // Check for existing session
     const checkSession = async () => {
       try {
-        const token = localStorage.getItem('authToken');
-        if (token) {
-          // TODO: Implement token validation with backend
-          // const response = await fetch('/api/auth/validate', {
-          //   headers: { Authorization: `Bearer ${token}` }
-          // });
-          // if (response.ok) {
-          //   const userData = await response.json();
-          //   setUser(userData);
-          // } else {
-          //   localStorage.removeItem('authToken');
-          // }
-        }
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) throw sessionError;
+        
+        setUser(session?.user ?? null);
+
+        // Set up auth state change listener
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+          setUser(session?.user ?? null);
+          if (!session?.user && !router.pathname.startsWith('/auth/')) {
+            router.push('/auth/signin');
+          }
+        });
+
+        return () => {
+          subscription.unsubscribe();
+        };
       } catch (err) {
-        console.error('Session validation error:', err);
-        localStorage.removeItem('authToken');
+        console.error('Session check error:', err);
+        setError(err instanceof Error ? err.message : 'Failed to check authentication status');
       } finally {
         setLoading(false);
       }
     };
 
     checkSession();
-  }, []);
+  }, [router]);
 
-  const login = async (email: string, password: string) => {
+  const signOut = async () => {
     try {
       setLoading(true);
-      setError(null);
-      // TODO: Implement actual login with backend
-      // const response = await fetch('/api/auth/login', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ email, password })
-      // });
-      // const data = await response.json();
-      // if (response.ok) {
-      //   localStorage.setItem('authToken', data.token);
-      //   setUser(data.user);
-      // } else {
-      //   throw new Error(data.message || 'Login failed');
-      // }
+      const { error: signOutError } = await supabase.auth.signOut();
+      if (signOutError) throw signOutError;
+      
+      router.push('/auth/signin');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred during login');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const register = async (email: string, password: string, name: string) => {
-    try {
-      setLoading(true);
-      setError(null);
-      // TODO: Implement actual registration with backend
-      // const response = await fetch('/api/auth/register', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ email, password, name })
-      // });
-      // const data = await response.json();
-      // if (response.ok) {
-      //   localStorage.setItem('authToken', data.token);
-      //   setUser(data.user);
-      // } else {
-      //   throw new Error(data.message || 'Registration failed');
-      // }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred during registration');
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const logout = async () => {
-    try {
-      setLoading(true);
-      // TODO: Implement actual logout with backend
-      // await fetch('/api/auth/logout', {
-      //   method: 'POST',
-      //   headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` }
-      // });
-      localStorage.removeItem('authToken');
-      setUser(null);
-    } catch (err) {
-      console.error('Logout error:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const resetPassword = async (email: string) => {
-    try {
-      setLoading(true);
-      setError(null);
-      // TODO: Implement actual password reset with backend
-      // const response = await fetch('/api/auth/reset-password', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ email })
-      // });
-      // if (!response.ok) {
-      //   const data = await response.json();
-      //   throw new Error(data.message || 'Password reset failed');
-      // }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred during password reset');
-      throw err;
+      console.error('Sign out error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to sign out');
     } finally {
       setLoading(false);
     }
@@ -147,10 +73,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       user,
       loading,
       error,
-      login,
-      register,
-      logout,
-      resetPassword
+      signOut
     }}>
       {children}
     </AuthContext.Provider>

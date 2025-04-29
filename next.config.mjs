@@ -11,11 +11,11 @@ const config = {
     });
     return config;
   },
-  experimental: {
-    // Removed appDir as it's no longer needed in Next.js 14
-  },
   compiler: {
     styledComponents: true,
+  },
+  experimental: {
+    optimizePackageImports: ['@heroicons/react', 'lucide-react'],
   },
   env: {
     NEXTAUTH_URL: process.env.NEXTAUTH_URL || 'http://localhost:3001',

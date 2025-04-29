@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import nodemailer from 'nodemailer';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../../lib/supabase';
 import { demoFollowUp } from '@/lib/emails';
 
 interface RequestBody {

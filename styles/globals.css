@@ -25,32 +25,8 @@
   @apply p-4 border-2 border-gray-800;
 }
 
-@font-face {
-  font-family: 'Neue Haas Grotesk';
-  src: url('/fonts/NeueHaasGrotesk-Roman.woff2') format('woff2'),
-       url('/fonts/NeueHaasGrotesk-Roman.woff') format('woff');
-  font-weight: normal;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: 'Neue Haas Grotesk';
-  src: url('/fonts/NeueHaasGrotesk-Medium.woff2') format('woff2'),
-       url('/fonts/NeueHaasGrotesk-Medium.woff') format('woff');
-  font-weight: 500;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: 'Neue Haas Grotesk';
-  src: url('/fonts/NeueHaasGrotesk-Bold.woff2') format('woff2'),
-       url('/fonts/NeueHaasGrotesk-Bold.woff') format('woff');
-  font-weight: bold;
-  font-style: normal;
-}
-
 :root {
-  --font-neue-haas: 'Neue Haas Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-neue-haas: -apple-system, BlinkMacSystemFont, sans-serif;
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 214, 219, 220;
   --background-end-rgb: 255, 255, 255;

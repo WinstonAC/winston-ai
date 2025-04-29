@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/contexts/AuthContext';
 import { ChatBubbleLeftIcon, XMarkIcon, QuestionMarkCircleIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
@@ -116,7 +116,7 @@ interface ChatbotProps {
 
 const Chatbot: React.FC<ChatbotProps> = ({ initialContext = 'general', onClose }) => {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -133,6 +133,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ initialContext = 'general', onClose }
   const [showPageHelp, setShowPageHelp] = useState(false);
   const [showHelpBubble, setShowHelpBubble] = useState(false);
   const isLandingPage = router.pathname === '/';
+  const userId = user?.id;
 
   // Initialize messages based on context and page
   useEffect(() => {
@@ -208,8 +209,8 @@ const Chatbot: React.FC<ChatbotProps> = ({ initialContext = 'general', onClose }
   // Enhanced context-aware responses
   const getContextResponses = () => {
     const path = router.pathname;
-    const userRole = session?.user?.role || 'USER';
-    const teamId = session?.user?.teamId;
+    const userRole = user?.role || 'USER';
+    const teamId = user?.teamId;
 
     const baseResponses = {
       '/dashboard': {

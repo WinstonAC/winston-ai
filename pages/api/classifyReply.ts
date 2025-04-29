@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import OpenAI from 'openai'
-import { supabase } from '@/lib/supabase'
+import { supabase } from '../../lib/supabase'
 
 // Type for the expected request body
 interface RequestBody {

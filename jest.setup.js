@@ -1,6 +1,7 @@
-import '@testing-library/jest-dom';
-import 'jest-environment-jsdom';
-import { TextEncoder, TextDecoder } from 'util';
+require('@testing-library/jest-dom');
+require('jest-environment-jsdom');
+const { TextEncoder, TextDecoder } = require('util');
+const React = require('react');
 
 // Mock next/router
 jest.mock('next/router', () => ({
@@ -27,63 +28,32 @@ jest.mock('next/router', () => ({
 // Mock fetch
 global.fetch = jest.fn();
 
-// Mock Prisma
-jest.mock('@prisma/client', () => {
-  const mockPrisma = {
-    user: {
-      findUnique: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
+// Mock Supabase
+jest.mock('@supabase/supabase-js', () => {
+  const mockSupabase = {
+    auth: {
+      signInWithEmail: jest.fn(() => Promise.resolve({ data: { user: { id: 'test-user-id' } }, error: null })),
+      signInWithGoogle: jest.fn(() => Promise.resolve({ data: { user: { id: 'test-user-id' } }, error: null })),
+      signOut: jest.fn(() => Promise.resolve({ error: null })),
+      getSession: jest.fn(() => Promise.resolve({ data: { session: { user: { id: 'test-user-id', email: 'test@example.com' } } }, error: null })),
+      onAuthStateChange: jest.fn(() => ({ data: { subscription: { unsubscribe: jest.fn() } } })),
     },
-    lead: {
-      findMany: jest.fn(),
-      findUnique: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-    },
-    team: {
-      findUnique: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-    },
-    activity: {
-      findMany: jest.fn(),
-      create: jest.fn(),
-    },
+    from: jest.fn(() => ({
+      select: jest.fn().mockReturnThis(),
+      insert: jest.fn().mockReturnThis(),
+      update: jest.fn().mockReturnThis(),
+      delete: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      order: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      single: jest.fn().mockResolvedValue({ data: null, error: null }),
+      data: [],
+    })),
   };
   return {
-    PrismaClient: jest.fn(() => mockPrisma),
+    createClient: jest.fn(() => mockSupabase),
   };
 });
-
-// Mock next-auth
-jest.mock('next-auth/next', () => ({
-  getServerSession: jest.fn(() => ({
-    user: {
-      id: 'test-user-id',
-      email: 'test@example.com',
-    },
-  })),
-}));
-
-// Mock next-auth/react
-jest.mock('next-auth/react', () => ({
-  useSession: jest.fn(() => ({
-    data: {
-      user: {
-        id: 'test-user-id',
-        email: 'test@example.com',
-      },
-    },
-    status: 'authenticated',
-  })),
-  signIn: jest.fn(),
-  signOut: jest.fn(),
-  getSession: jest.fn(),
-}));
 
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
@@ -145,7 +115,7 @@ jest.mock('chart.js', () => ({
 
 // Mock react-chartjs-2
 jest.mock('react-chartjs-2', () => ({
-  Line: () => <div data-testid="line-chart">Line Chart</div>,
-  Bar: () => <div data-testid="bar-chart">Bar Chart</div>,
-  Pie: () => <div data-testid="pie-chart">Pie Chart</div>,
+  Line: () => React.createElement('div', { 'data-testid': 'line-chart' }, 'Line Chart'),
+  Bar: () => React.createElement('div', { 'data-testid': 'bar-chart' }, 'Bar Chart'),
+  Pie: () => React.createElement('div', { 'data-testid': 'pie-chart' }, 'Pie Chart'),
 })); 

@@ -1,257 +1,47 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getServerSession } from 'next-auth/next';
-import { prisma } from '@/lib/prisma';
-import { authOptions } from './auth/[...nextauth]';
-import { rateLimit } from '@/lib/rate-limit';
-
-// Initialize rate limiter
-const limiter = rateLimit({
-  interval: 60 * 1000, // 1 minute
-  uniqueTokenPerInterval: 500,
-});
+import { supabase } from '../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  try {
-    // Apply rate limiting
-    await limiter.check(res, 10, 'CACHE_TOKEN'); // 10 requests per minute
-  } catch {
-    return res.status(429).json({ error: 'Rate limit exceeded' });
-  }
-
-  // Get user session
-  const session = await getServerSession(req, res, authOptions);
-  
-  // Check authentication
-  if (!session?.user?.id) {
-    console.error('Authentication failed: No user session');
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-
-  const userId = session.user.id;
-
-  // Verify user exists in database
-  try {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user) {
-      console.error('Authentication failed: User not found in database');
-      return res.status(401).json({ error: 'User not found' });
-    }
-  } catch (error) {
-    console.error('Error verifying user:', error);
-    return res.status(500).json({ error: 'Failed to verify user' });
-  }
+  // TODO: Replace with real user ID from Supabase Auth session
+  const userId = req.query.userId as string || 'demo-user-id';
 
   switch (req.method) {
     case 'GET': {
-      try {
-        // First try to get campaigns without related data
-        const campaigns = await prisma.campaign.findMany({
-          where: { userId },
-          orderBy: { createdAt: 'desc' }
-        });
-
-        // Then fetch related data for each campaign
-        const campaignsWithData = await Promise.all(
-          campaigns.map(async (campaign) => {
-            try {
-              const fullCampaign = await prisma.campaign.findUnique({
-                where: { id: campaign.id },
-                include: {
-                  template: true,
-                  segments: true,
-                  targetAudience: true,
-                  schedule: true,
-                  metrics: true
-                }
-              });
-              return fullCampaign;
-            } catch (error) {
-              console.error(`Error fetching related data for campaign ${campaign.id}:`, error);
-              return campaign;
-            }
-          })
-        );
-
-        return res.status(200).json(campaignsWithData.filter(Boolean));
-      } catch (error) {
-        console.error('Error fetching campaigns:', error);
-        return res.status(500).json({ 
-          error: 'Failed to fetch campaigns',
-          details: error instanceof Error ? error.message : 'Unknown error'
-        });
-      }
+      // List all campaigns for user
+      const { data: campaigns, error } = await supabase
+        .from('campaigns')
+        .select('*, template(*), segments(*), targetAudience(*), schedule(*), metrics(*)')
+        .eq('userId', userId)
+        .order('createdAt', { ascending: false });
+      if (error) return res.status(500).json({ error: error.message });
+      return res.status(200).json(campaigns || []);
     }
-
     case 'POST': {
-      try {
-        const { name, description, type = 'email', templateId, segmentId, targetAudience, schedule } = req.body;
-
-        // Validate required fields
-        if (!name || !templateId || !targetAudience || !schedule) {
-          return res.status(400).json({ 
-            error: 'Missing required fields',
-            details: {
-              name: !name ? 'Campaign name is required' : undefined,
-              templateId: !templateId ? 'Template ID is required' : undefined,
-              targetAudience: !targetAudience ? 'Target audience is required' : undefined,
-              schedule: !schedule ? 'Schedule is required' : undefined
-            }
-          });
-        }
-
-        // If segmentId is provided, verify it exists and user has access
-        if (segmentId) {
-          const user = await prisma.user.findUnique({
-            where: { id: userId },
-            select: { teamId: true }
-          });
-
-          const segment = await prisma.segment.findFirst({
-            where: {
-              id: segmentId,
-              OR: [
-                { userId },
-                { teamId: user?.teamId }
-              ]
-            }
-          });
-
-          if (!segment) {
-            return res.status(404).json({ error: 'Segment not found or access denied' });
-          }
-        }
-
-        const campaign = await prisma.campaign.create({
-          data: {
-            name,
-            description,
-            type,
-            status: 'draft',
-            schedule: JSON.parse(schedule),
-            user: {
-              connect: { id: session.user.id }
-            },
-            segments: segmentId ? {
-              connect: { id: segmentId }
-            } : undefined,
-            createdAt: new Date(),
-            updatedAt: new Date()
-          },
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true
-              }
-            },
-            segments: true
-          }
-        });
-
-        return res.status(201).json(campaign);
-      } catch (error) {
-        console.error('Error creating campaign:', error);
-        return res.status(500).json({ 
-          error: 'Failed to create campaign',
-          details: error instanceof Error ? error.message : 'Unknown error'
-        });
-      }
+      // Create a new campaign
+      const newCampaign = { ...req.body, userId };
+      const { data: campaign, error } = await supabase
+        .from('campaigns')
+        .insert(newCampaign)
+        .select()
+        .single();
+      if (error) return res.status(500).json({ error: error.message });
+      return res.status(201).json(campaign);
     }
-
     case 'PUT': {
-      try {
-        const { id, segmentId, ...updateData } = req.body;
-        if (!id) {
-          return res.status(400).json({ error: 'Campaign ID is required' });
-        }
-
-        // If segmentId is provided, verify it exists and user has access
-        if (segmentId) {
-          const user = await prisma.user.findUnique({
-            where: { id: userId },
-            select: { teamId: true }
-          });
-
-          const segment = await prisma.segment.findFirst({
-            where: {
-              id: segmentId,
-              OR: [
-                { userId },
-                { teamId: user?.teamId }
-              ]
-            }
-          });
-
-          if (!segment) {
-            return res.status(404).json({ error: 'Segment not found or access denied' });
-          }
-        }
-
-        const campaign = await prisma.campaign.update({
-          where: { id, userId },
-          data: {
-            ...updateData,
-            segmentId,
-            targetAudience: updateData.targetAudience ? {
-              update: {
-                segment: updateData.targetAudience.segment,
-                filters: updateData.targetAudience.filters
-              }
-            } : undefined,
-            schedule: updateData.schedule ? {
-              update: {
-                type: updateData.schedule.type,
-                date: updateData.schedule.date ? new Date(updateData.schedule.date) : null,
-                time: updateData.schedule.time
-              }
-            } : undefined
-          },
-          include: {
-            targetAudience: true,
-            schedule: true,
-            metrics: true,
-            template: true,
-            segments: true
-          }
-        });
-
-        return res.status(200).json(campaign);
-      } catch (error) {
-        console.error('Error updating campaign:', error);
-        return res.status(500).json({ 
-          error: 'Failed to update campaign',
-          details: error instanceof Error ? error.message : 'Unknown error'
-        });
-      }
+      // Update a campaign (by id in body)
+      const { id, ...updateData } = req.body;
+      if (!id) return res.status(400).json({ error: 'Campaign ID is required' });
+      const { data: campaign, error } = await supabase
+        .from('campaigns')
+        .update(updateData)
+        .eq('id', id)
+        .eq('userId', userId)
+        .select()
+        .single();
+      if (error) return res.status(500).json({ error: error.message });
+      return res.status(200).json(campaign);
     }
-
-    case 'DELETE': {
-      try {
-        const { id } = req.query;
-        if (!id || typeof id !== 'string') {
-          return res.status(400).json({ error: 'Campaign ID is required' });
-        }
-
-        await prisma.campaign.delete({
-          where: { id, userId }
-        });
-
-        return res.status(204).end();
-      } catch (error) {
-        console.error('Error deleting campaign:', error);
-        return res.status(500).json({ 
-          error: 'Failed to delete campaign',
-          details: error instanceof Error ? error.message : 'Unknown error'
-        });
-      }
-    }
-
     default:
-      res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE']);
-      return res.status(405).json({ error: `Method ${req.method} not allowed` });
+      return res.status(405).json({ error: 'Method not allowed' });
   }
 } 

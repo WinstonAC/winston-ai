@@ -1,62 +1,35 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/pages/api/auth/[...nextauth]';
-import { prisma } from '@/lib/prisma';
+import { supabase } from '../../../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const session = await getServerSession(req, res, authOptions);
+  // TODO: Replace with real user ID from Supabase Auth session
+  const userId = req.query.userId as string || 'demo-user-id';
 
-  if (!session?.user?.id) {
-    return res.status(401).json({ error: 'Unauthorized' });
+  if (req.method === 'GET') {
+    // Fetch user
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .single();
+    if (userError) return res.status(500).json({ error: userError.message });
+
+    // Fetch members
+    const { data: members, error: membersError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('teamId', user.teamId);
+    if (membersError) return res.status(500).json({ error: membersError.message });
+
+    // Fetch invites
+    const { data: invites, error: invitesError } = await supabase
+      .from('teamInvites')
+      .select('*')
+      .eq('teamId', user.teamId);
+    if (invitesError) return res.status(500).json({ error: invitesError.message });
+
+    return res.status(200).json({ user, members, invites });
   }
 
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  try {
-    // Get the current user's team
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { teamId: true },
-    });
-
-    if (!user?.teamId) {
-      return res.status(404).json({ error: 'User is not part of a team' });
-    }
-
-    // Fetch team members
-    const members = await prisma.user.findMany({
-      where: { teamId: user.teamId },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        teamRole: true,
-      },
-    });
-
-    // Fetch pending invitations
-    const invites = await prisma.teamInvite.findMany({
-      where: {
-        teamId: user.teamId,
-        expiresAt: {
-          gt: new Date(),
-        },
-      },
-      select: {
-        id: true,
-        email: true,
-        expiresAt: true,
-      },
-    });
-
-    return res.status(200).json({
-      members,
-      invites,
-    });
-  } catch (error) {
-    console.error('Error fetching team data:', error);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
+  return res.status(405).json({ error: 'Method not allowed' });
 } 

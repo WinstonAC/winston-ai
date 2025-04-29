@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../../lib/supabase';
 
 // Types for webhook payloads
 type EmailEvent = 'sent' | 'opened' | 'clicked' | 'bounced';
