@@ -22,7 +22,7 @@ export default function NewLandingPage() {
               Automate your sales process with intelligent lead generation, email automation, and meeting scheduling.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/register">
+              <Link href="/auth/signin?register=true">
                 <button className="bg-[#32CD32] text-black px-8 py-3 rounded-lg hover:bg-[#2db82d] transition-colors">
                   Get Started
                 </button>
@@ -87,7 +87,7 @@ export default function NewLandingPage() {
           >
             <h2 className="text-4xl font-bold mb-8">Ready to automate your outreach?</h2>
             <Link
-              href="/dashboard"
+              href="/auth/signin?register=true"
               className="inline-block px-8 py-4 bg-white text-black rounded-lg font-semibold hover:bg-gray-100 transition-all transform hover:scale-105"
             >
               Start Free Trial

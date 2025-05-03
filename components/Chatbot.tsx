@@ -1,4 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+
+interface Message {
+  text: string;
+  sender: 'user' | 'bot';
+  timestamp: Date;
+}
 
 interface ChatbotProps {
   initialContext?: 'analytics' | 'general';
@@ -7,24 +13,96 @@ interface ChatbotProps {
 
 const Chatbot: React.FC<ChatbotProps> = ({ initialContext = 'general', onClose }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([
+    { text: 'Hello! I\'m Winston, your AI sales assistant. How can I help you today?', sender: 'bot', timestamp: new Date() }
+  ]);
+  const [inputMessage, setInputMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const handleClose = () => {
     setIsOpen(false);
     onClose?.();
   };
 
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim() || isLoading) return;
+
+    const userMessage: Message = {
+      text: inputMessage,
+      sender: 'user',
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInputMessage('');
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: inputMessage,
+          context: initialContext
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get response from AI');
+      }
+
+      const data = await response.json();
+      
+      const botResponse: Message = {
+        text: data.response,
+        sender: 'bot',
+        timestamp: new Date()
+      };
+
+      setMessages(prev => [...prev, botResponse]);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      const errorMessage: Message = {
+        text: 'Sorry, I encountered an error. Please try again.',
+        sender: 'bot',
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
   return (
-    <div className="fixed bottom-4 right-4">
+    <div className="fixed bottom-4 right-4 z-50">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="bg-primary hover:bg-primary-hover text-white font-heading font-bold py-2 px-4 rounded-full shadow-lg"
+        className="bg-[#32CD32] hover:bg-[#32CD32]/90 text-black font-mono font-bold py-2 px-4 rounded-full shadow-lg transition-colors"
       >
         Chat with Winston
       </button>
       {isOpen && (
-        <div className="fixed bottom-20 right-4 w-80 bg-background border border-divider rounded-lg shadow-xl p-4">
+        <div className="fixed bottom-20 right-4 w-80 bg-black border-2 border-[#32CD32] rounded-lg shadow-xl p-4">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="font-heading font-bold text-white">Winston AI Assistant</h3>
+            <h3 className="font-mono font-bold text-[#32CD32]">Winston AI Assistant</h3>
             <button
               onClick={handleClose}
               className="text-gray-400 hover:text-white transition-colors"
@@ -32,16 +110,51 @@ const Chatbot: React.FC<ChatbotProps> = ({ initialContext = 'general', onClose }
               ×
             </button>
           </div>
-          <div className="h-64 overflow-y-auto mb-4">
-            <p className="font-base text-gray-300">Hello! How can I help you today?</p>
+          <div className="h-64 overflow-y-auto mb-4 space-y-4">
+            {messages.map((message, index) => (
+              <div
+                key={index}
+                className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`max-w-[80%] p-3 rounded-lg ${
+                    message.sender === 'user'
+                      ? 'bg-[#32CD32] text-black'
+                      : 'bg-gray-800 text-white'
+                  }`}
+                >
+                  {message.text}
+                </div>
+              </div>
+            ))}
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="bg-gray-800 text-white p-3 rounded-lg">
+                  <div className="flex space-x-2">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100" />
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200" />
+                  </div>
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
           </div>
-          <div className="flex">
+          <div className="flex space-x-2">
             <input
               type="text"
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              onKeyPress={handleKeyPress}
               placeholder="Type your message..."
-              className="flex-1 font-base bg-input border-divider rounded-l-lg px-4 py-2 text-white placeholder-gray-500"
+              className="flex-1 bg-gray-800 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#32CD32]"
+              disabled={isLoading}
             />
-            <button className="bg-primary hover:bg-primary-hover text-white font-heading font-semibold px-4 py-2 rounded-r-lg transition-colors">
+            <button
+              onClick={handleSendMessage}
+              disabled={isLoading || !inputMessage.trim()}
+              className="bg-[#32CD32] hover:bg-[#32CD32]/90 text-black font-mono font-bold px-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               Send
             </button>
           </div>

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useAuth } from '@/components/AuthProvider';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabase';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -12,7 +11,6 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import ProtectedRoute from '@/components/ProtectedRoute';
 import { useRouter } from 'next/router';
 import { PlusIcon } from '@heroicons/react/24/outline';
 
@@ -29,10 +27,11 @@ ChartJS.register(
 type Campaign = {
   id: string;
   name: string;
-  status: string;
+  status: 'active' | 'draft' | 'paused';
   start_date: string;
   end_date: string;
   budget: number;
+  user_id: string;
 };
 
 type Analytics = {
@@ -41,54 +40,56 @@ type Analytics = {
   clicks: number;
   conversions: number;
   spend: number;
+  campaign_id: string;
 };
 
 function CampaignsContent() {
-  const { user } = useAuth();
   const router = useRouter();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [analytics, setAnalytics] = useState<Analytics[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
+    const fetchData = async () => {
+      try {
+        // Get current session
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) {
+          router.push('/auth/signin');
+          return;
+        }
 
-    const fetchCampaigns = async () => {
-      const { data, error } = await supabase
-        .from('campaigns')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        // Fetch campaigns
+        const { data: campaignsData, error: campaignsError } = await supabase
+          .from('campaigns')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching campaigns:', error);
-        return;
+        if (campaignsError) throw campaignsError;
+        setCampaigns(campaignsData || []);
+
+        // Fetch analytics for all campaigns
+        const { data: analyticsData, error: analyticsError } = await supabase
+          .from('campaign_analytics')
+          .select('*')
+          .in('campaign_id', campaignsData?.map(c => c.id) || [])
+          .order('date', { ascending: true });
+
+        if (analyticsError) throw analyticsError;
+        setAnalytics(analyticsData || []);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
       }
-
-      setCampaigns(data || []);
     };
 
-    const fetchAnalytics = async () => {
-      const { data, error } = await supabase
-        .from('campaign_analytics')
-        .select('*')
-        .order('date', { ascending: true });
-
-      if (error) {
-        console.error('Error fetching analytics:', error);
-        return;
-      }
-
-      setAnalytics(data || []);
-    };
-
-    Promise.all([fetchCampaigns(), fetchAnalytics()]).finally(() => {
-      setLoading(false);
-    });
-  }, [user]);
+    fetchData();
+  }, [router]);
 
   const chartData = {
-    labels: analytics.map(a => a.date),
+    labels: analytics.map(a => new Date(a.date).toLocaleDateString()),
     datasets: [
       {
         label: 'Impressions',
@@ -234,9 +235,5 @@ function CampaignsContent() {
 }
 
 export default function CampaignsPage() {
-  return (
-    <ProtectedRoute>
-      <CampaignsContent />
-    </ProtectedRoute>
-  );
+  return <CampaignsContent />;
 } 

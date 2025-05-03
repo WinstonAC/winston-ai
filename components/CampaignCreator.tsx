@@ -259,29 +259,24 @@ const CampaignCreator: React.FC<CampaignCreatorProps> = ({
     e.preventDefault();
     if (!validateCampaign(campaignInput)) return;
 
-    setIsCreating(true);
-    setError(null);
-    
     try {
-      if (selectedCampaign) {
-        const response = await api.put<ApiResponse<Campaign>>(`campaigns/${selectedCampaign.id}`, {
-          ...campaignInput,
-          segmentId: campaignInput.segmentId || undefined
-        });
-        if (response.error) throw response.error;
-        toast.success('Campaign updated successfully');
-      } else {
-        const response = await api.post<ApiResponse<Campaign>>('campaigns', {
-          ...campaignInput,
-          segmentId: campaignInput.segmentId || undefined
-        });
-        if (response.error) throw response.error;
-        toast.success('Campaign created successfully');
-      }
+      setIsCreating(true);
+      setError(null);
       
-      setIsModalOpen(false);
-      resetForm();
-      await fetchCampaigns();
+      const response = await api.post<ApiResponse<Campaign>>('campaigns', {
+        ...campaignInput,
+        targetAudience: campaignInput.targetAudience || { segment: '', filters: {} }
+      });
+      
+      if (response.error) throw response.error;
+      
+      if (response.data) {
+        onCreateCampaign?.({
+          ...response.data,
+          targetAudience: response.data.targetAudience || { segment: '', filters: {} }
+        });
+        setSuccessMessage('Campaign created successfully');
+      }
     } catch (err) {
       const appError = handleError(err);
       setError(appError.message);
@@ -295,10 +290,15 @@ const CampaignCreator: React.FC<CampaignCreatorProps> = ({
     try {
       setIsLoading(true);
       setError(null);
+      
       const response = await api.delete<ApiResponse<void>>(`campaigns/${id}`);
+      
       if (response.error) throw response.error;
-      toast.success('Campaign deleted successfully');
-      setShowDeleteConfirm(null);
+      
+      onDeleteCampaign?.(id);
+      setSuccessMessage('Campaign deleted successfully');
+      
+      // Refresh campaigns list
       await fetchCampaigns();
     } catch (err) {
       const appError = handleError(err);
@@ -306,6 +306,7 @@ const CampaignCreator: React.FC<CampaignCreatorProps> = ({
       showErrorToast(appError);
     } finally {
       setIsLoading(false);
+      setShowDeleteConfirm(null);
     }
   };
 

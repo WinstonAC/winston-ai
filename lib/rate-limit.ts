@@ -14,39 +14,41 @@ interface RateLimitStore {
 
 const store: RateLimitStore = {};
 
-export function rateLimit({ interval, uniqueTokenPerInterval }: RateLimitOptions) {
+export default function rateLimit({ interval, uniqueTokenPerInterval }: RateLimitOptions) {
   return {
-    check: (res: NextApiResponse, limit: number, token: string) => {
-      const now = Date.now();
-      const resetTime = now + interval;
+    check: (res: NextApiResponse, limit: number, token: string) =>
+      new Promise<void>((resolve, reject) => {
+        const now = Date.now();
+        const resetTime = (store[token]?.lastReset || 0) + interval;
 
-      if (!store[token]) {
-        store[token] = {
-          tokens: limit - 1,
-          lastReset: now,
-        };
-        return;
-      }
+        if (now > resetTime) {
+          store[token] = {
+            tokens: limit - 1,
+            lastReset: now,
+          };
+          return resolve();
+        }
 
-      if (now > store[token].lastReset + interval) {
-        store[token] = {
-          tokens: limit - 1,
-          lastReset: now,
-        };
-        return;
-      }
+        if (!store[token]) {
+          store[token] = {
+            tokens: limit - 1,
+            lastReset: now,
+          };
+          return resolve();
+        }
 
-      if (store[token].tokens <= 0) {
+        if (store[token].tokens <= 0) {
+          res.setHeader('X-RateLimit-Limit', limit);
+          res.setHeader('X-RateLimit-Remaining', 0);
+          res.setHeader('X-RateLimit-Reset', resetTime);
+          return reject(new Error('Rate limit exceeded'));
+        }
+
+        store[token].tokens -= 1;
         res.setHeader('X-RateLimit-Limit', limit);
-        res.setHeader('X-RateLimit-Remaining', 0);
+        res.setHeader('X-RateLimit-Remaining', store[token].tokens);
         res.setHeader('X-RateLimit-Reset', resetTime);
-        throw new Error('Rate limit exceeded');
-      }
-
-      store[token].tokens -= 1;
-      res.setHeader('X-RateLimit-Limit', limit);
-      res.setHeader('X-RateLimit-Remaining', store[token].tokens);
-      res.setHeader('X-RateLimit-Reset', resetTime);
-    },
+        return resolve();
+      }),
   };
 } 

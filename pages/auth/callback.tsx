@@ -8,22 +8,8 @@ export default function AuthCallback() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const handleLogin = async () => {
+    const handleCallback = async () => {
       try {
-        const code = router.query.code
-
-        if (typeof code !== 'string') {
-          throw new Error('No code found in URL')
-        }
-
-        // Exchange code for session
-        const { error: signInError } = await supabase.auth.exchangeCodeForSession(code)
-
-        if (signInError) {
-          throw signInError
-        }
-
-        // Get the session
         const { data: { session }, error: sessionError } = await supabase.auth.getSession()
 
         if (sessionError) {
@@ -31,13 +17,13 @@ export default function AuthCallback() {
         }
 
         if (session) {
-          console.log('Session established')
+          // User is verified and logged in
           await router.push('/dashboard')
         } else {
           throw new Error('No session found')
         }
       } catch (err) {
-        console.error('Login failed:', err)
+        console.error('Callback error:', err)
         setError(err instanceof Error ? err.message : 'An unexpected error occurred')
         setTimeout(() => {
           router.push('/auth/signin')
@@ -47,8 +33,8 @@ export default function AuthCallback() {
       }
     }
 
-    if (router.isReady && router.query.code) {
-      handleLogin()
+    if (router.isReady) {
+      handleCallback()
     }
   }, [router, router.isReady])
 
@@ -76,7 +62,7 @@ export default function AuthCallback() {
             <div className="w-2 h-2 bg-[#32CD32] rounded-full animate-bounce delay-200" />
           </div>
           <p className="text-[#32CD32] font-mono tracking-wider">
-            {loading ? 'COMPLETING LOGIN...' : 'REDIRECTING...'}
+            {loading ? 'VERIFYING...' : 'REDIRECTING...'}
           </p>
         </div>
       </div>
