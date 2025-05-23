@@ -7,7 +7,8 @@ import {
   ArrowTrendingUpIcon,
   BeakerIcon,
   DocumentTextIcon,
-  ArrowPathIcon
+  ArrowPathIcon,
+  RocketLaunchIcon
 } from '@heroicons/react/24/outline';
 import SandboxSettings from './SandboxSettings';
 import { useRouter } from 'next/router';
@@ -48,6 +49,24 @@ interface Lead {
   status: 'new' | 'contacted' | 'qualified' | 'unqualified';
   lastContacted?: string;
   notes?: string;
+}
+
+interface Campaign {
+  id: string;
+  name: string;
+  description: string;
+  status: 'draft' | 'scheduled' | 'active' | 'completed' | 'failed';
+  metrics?: {
+    sent: number;
+    delivered: number;
+    opened: number;
+    clicked: number;
+    bounced: number;
+    replied: number;
+    meetings: number;
+  };
+  createdAt: string;
+  updatedAt: string;
 }
 
 const StatCard: React.FC<StatCardProps> = ({ title, value, change, icon: Icon }) => (
@@ -257,6 +276,120 @@ const QuickActions: React.FC<{ isSandbox?: boolean }> = ({ isSandbox }) => {
   );
 };
 
+const CampaignsSection: React.FC = () => {
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchCampaigns();
+  }, []);
+
+  const fetchCampaigns = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/campaigns');
+      if (!response.ok) {
+        throw new Error('Failed to fetch campaigns');
+      }
+      const data = await response.json();
+      setCampaigns(data.campaigns || []);
+    } catch (error) {
+      console.error('Error fetching campaigns:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getStatusColor = (status: Campaign['status']) => {
+    switch (status) {
+      case 'active':
+        return 'text-green-400';
+      case 'scheduled':
+        return 'text-blue-400';
+      case 'completed':
+        return 'text-gray-400';
+      case 'failed':
+        return 'text-red-400';
+      default:
+        return 'text-yellow-400';
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-gray-900/50 backdrop-blur rounded-lg border border-gray-800/50 p-6">
+        <div className="flex items-center justify-center h-32">
+          <ArrowPathIcon className="w-6 h-6 text-gray-400 animate-spin" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-gray-900/50 backdrop-blur rounded-lg border border-gray-800/50 overflow-hidden">
+      <div className="p-6 border-b border-gray-800/50">
+        <div className="flex justify-between items-center">
+          <h2 className="font-mono text-xl text-gray-300 tracking-wider uppercase">Active Campaigns</h2>
+          <button 
+            onClick={() => window.location.href = '/campaigns/new'}
+            className="border border-gray-800/50 bg-gray-900/30 text-gray-300 px-6 py-3
+                     font-mono text-xs tracking-wider uppercase rounded-lg
+                     hover:bg-gray-800/50 hover:text-white hover:border-gray-700
+                     transition-all duration-200 ease-in-out"
+          >
+            New Campaign
+          </button>
+        </div>
+      </div>
+      
+      <div className="divide-y divide-gray-800/50">
+        {campaigns.length === 0 ? (
+          <div className="p-6 text-center text-gray-400">
+            <RocketLaunchIcon className="w-12 h-12 mx-auto mb-4" />
+            <p className="font-mono">No active campaigns</p>
+            <p className="text-sm mt-2">Create your first campaign to get started</p>
+          </div>
+        ) : (
+          campaigns.map((campaign) => (
+            <div key={campaign.id} className="p-6 hover:bg-gray-800/30 transition-colors duration-200">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="text-white font-medium">{campaign.name}</h3>
+                  <p className="text-gray-400 text-sm mt-1">{campaign.description}</p>
+                </div>
+                <span className={`font-mono text-sm ${getStatusColor(campaign.status)}`}>
+                  {campaign.status.toUpperCase()}
+                </span>
+              </div>
+              
+              {campaign.metrics && (
+                <div className="grid grid-cols-4 gap-4 mt-4">
+                  <div className="text-center">
+                    <p className="text-gray-400 text-xs font-mono">SENT</p>
+                    <p className="text-white mt-1">{campaign.metrics.sent}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-gray-400 text-xs font-mono">OPENED</p>
+                    <p className="text-white mt-1">{campaign.metrics.opened}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-gray-400 text-xs font-mono">CLICKED</p>
+                    <p className="text-white mt-1">{campaign.metrics.clicked}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-gray-400 text-xs font-mono">REPLIES</p>
+                    <p className="text-white mt-1">{campaign.metrics.replied}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+};
+
 const Dashboard: React.FC<DashboardProps> = ({ 
   stats, 
   recentActivity, 
@@ -394,6 +527,9 @@ const Dashboard: React.FC<DashboardProps> = ({
           <div className="bg-gray-900/50 backdrop-blur rounded-lg border border-gray-800/50 overflow-hidden">
             <ActivityFeed activities={recentActivity} />
           </div>
+          
+          {/* Campaigns Section */}
+          <CampaignsSection />
           
           {/* Recent Leads Section */}
           <div className="bg-gray-900/50 backdrop-blur rounded-lg border border-gray-800/50 overflow-hidden">
