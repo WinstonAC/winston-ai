@@ -25,9 +25,11 @@ export default function AuthCallback() {
       } catch (err) {
         console.error('Callback error:', err)
         setError(err instanceof Error ? err.message : 'An unexpected error occurred')
-        setTimeout(() => {
+        // Add a timeout for the redirect
+        const redirectTimer = setTimeout(() => {
           router.push('/auth/signin')
-        }, 2000)
+        }, 3000)
+        return () => clearTimeout(redirectTimer)
       } finally {
         setLoading(false)
       }
@@ -45,7 +47,7 @@ export default function AuthCallback() {
           <div className="text-center border-2 border-red-500 rounded-lg p-6 bg-black/60">
             <p className="text-red-400 font-mono tracking-wider">Authentication failed</p>
             <p className="text-sm text-red-400 font-mono mt-2">{error}</p>
-            <p className="text-sm text-gray-400 font-mono mt-4">Redirecting to login...</p>
+            <p className="text-sm text-gray-400 font-mono mt-4">Redirecting to login in 3 seconds...</p>
           </div>
         </div>
       </div>

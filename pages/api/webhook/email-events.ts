@@ -91,6 +91,7 @@ export default async function handler(
   try {
     // Verify webhook signature
     if (!verifyWebhookSignature(req)) {
+      console.error('Invalid webhook signature');
       return res.status(401).json({
         success: false,
         error: 'Invalid webhook signature'
@@ -99,6 +100,11 @@ export default async function handler(
 
     // Parse the webhook payload
     const parsedEvent = parseWebhookPayload(req.body);
+    console.log('Processing email event:', {
+      email: parsedEvent.email,
+      event: parsedEvent.event,
+      timestamp: parsedEvent.timestamp
+    });
 
     // Start a Supabase transaction
     const { data: eventData, error: eventError } = await supabase
@@ -112,7 +118,10 @@ export default async function handler(
       .select()
       .single();
 
-    if (eventError) throw eventError;
+    if (eventError) {
+      console.error('Failed to insert email event:', eventError);
+      throw eventError;
+    }
 
     // Update lead status
     const { error: leadError } = await supabase
@@ -123,10 +132,13 @@ export default async function handler(
       })
       .eq('email', parsedEvent.email);
 
-    if (leadError) throw leadError;
+    if (leadError) {
+      console.error('Failed to update lead status:', leadError);
+      throw leadError;
+    }
 
     // Log success
-    console.log(`Email event recorded: ${parsedEvent.email} - ${parsedEvent.event}`);
+    console.log(`Email event recorded successfully: ${parsedEvent.email} - ${parsedEvent.event}`);
 
     // Return success
     return res.status(200).json({ 
@@ -135,6 +147,7 @@ export default async function handler(
 
   } catch (error) {
     console.error('Webhook error:', error);
+    // Don't expose internal errors to the client
     return res.status(500).json({ 
       success: false, 
       error: 'Failed to process webhook' 

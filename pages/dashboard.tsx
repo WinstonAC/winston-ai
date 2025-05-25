@@ -90,7 +90,14 @@ export default function DashboardPage() {
       ]);
 
       if (!statsRes.ok || !activityRes.ok || !leadsRes.ok) {
-        throw new Error('Failed to fetch dashboard data');
+        const errorData = await Promise.all([
+          statsRes.ok ? null : statsRes.json(),
+          activityRes.ok ? null : activityRes.json(),
+          leadsRes.ok ? null : leadsRes.json()
+        ]);
+        
+        const errors = errorData.filter(Boolean).map(err => err?.message || 'Unknown error');
+        throw new Error(`Failed to fetch dashboard data: ${errors.join(', ')}`);
       }
 
       const [stats, activity, leadsData] = await Promise.all([
@@ -102,7 +109,10 @@ export default function DashboardPage() {
       setDashboardData({ stats, recentActivity: activity });
       setLeads(leadsData);
     } catch (err) {
+      console.error('Dashboard data error:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch dashboard data');
+      // Retry after 5 seconds if there's an error
+      setTimeout(fetchDashboardData, 5000);
     } finally {
       setIsLoading(false);
     }
