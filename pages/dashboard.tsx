@@ -70,8 +70,10 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      const { data, error } = await supabase.auth.getSession();
+      console.log("[Auth] Session data:", data);
+      if (error) console.error("[Auth] Session error:", error);
+      if (!data.session) {
         router.push('/auth/signin');
       }
     };

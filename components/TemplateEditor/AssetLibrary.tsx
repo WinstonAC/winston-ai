@@ -158,6 +158,8 @@ const AssetLibrary: React.FC<AssetLibraryProps> = ({ onClose, onSelect }) => {
                         width={100}
                         height={100}
                         className="object-cover rounded-lg"
+                        priority={false}
+                        loading="lazy"
                       />
                     ) : (
                       <div className="flex items-center justify-center w-full h-full">

@@ -10,20 +10,47 @@ export default function AuthCallback() {
   useEffect(() => {
     const handleCallback = async () => {
       try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        console.log("[OAuth] Starting callback handling...")
+        
+        let session = null
+        let sessionError = null
+
+        if (process.env.NODE_ENV === 'development') {
+          console.log("[DEV] Using direct session check to avoid ISO-8859 token error")
+          const { data, error } = await supabase.auth.getSession()
+          session = data?.session
+          sessionError = error
+        } else {
+          console.log("[PROD] Using standard session resolution flow")
+          // First try to get session from URL
+          const { data: urlData, error: urlError } = await supabase.auth.getSessionFromUrl()
+          console.log("[OAuth] Session from URL:", urlData)
+          
+          if (urlError) {
+            console.error("[OAuth] URL session error:", urlError.message)
+            throw urlError
+          }
+
+          // Then verify the session
+          const { data, error } = await supabase.auth.getSession()
+          session = data?.session
+          sessionError = error
+        }
 
         if (sessionError) {
+          console.error("[OAuth] Session error:", sessionError.message)
           throw sessionError
         }
 
         if (session) {
-          // User is verified and logged in
+          console.log("[OAuth] Session verified, redirecting to dashboard")
           await router.push('/dashboard')
         } else {
+          console.log("[OAuth] No session found, redirecting to login")
           throw new Error('No session found')
         }
       } catch (err) {
-        console.error('Callback error:', err)
+        console.error('[OAuth] Callback error:', err)
         setError(err instanceof Error ? err.message : 'An unexpected error occurred')
         // Add a timeout for the redirect
         const redirectTimer = setTimeout(() => {
@@ -64,7 +91,7 @@ export default function AuthCallback() {
             <div className="w-2 h-2 bg-[#32CD32] rounded-full animate-bounce delay-200" />
           </div>
           <p className="text-[#32CD32] font-mono tracking-wider">
-            {loading ? 'VERIFYING...' : 'REDIRECTING...'}
+            {loading ? 'LOGGING YOU IN...' : 'REDIRECTING...'}
           </p>
         </div>
       </div>

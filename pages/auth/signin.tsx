@@ -4,6 +4,10 @@ import { supabase } from '@/lib/supabase'
 import Chatbot from '@/components/Chatbot'
 import Image from 'next/image'
 
+// Debug logging for Supabase client initialization
+console.log("[ENV] Supabase URL", process.env.NEXT_PUBLIC_SUPABASE_URL)
+console.log("[ENV] Anon Key", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.slice(0, 6), "...")
+
 export default function LoginPage() {
   const router = useRouter()
   const [email, setEmail] = useState('')
@@ -39,12 +43,14 @@ export default function LoginPage() {
     setIsLoading(true)
     setError(null)
 
+    console.log("[OAuth] about to sign in with Google")
+
     try {
-      console.log('Starting Google OAuth flow...')
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/dashboard`,
+          redirectTo: `${window.location.origin}/auth/callback`,
+          scopes: 'email profile',
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
@@ -53,13 +59,11 @@ export default function LoginPage() {
       })
 
       if (error) {
-        console.error('Google OAuth error:', error)
+        console.error("[OAuth] signInWithOAuth failed", error.message)
         throw error
       }
-
-      console.log('Google OAuth response:', data)
     } catch (err) {
-      console.error('Google login error:', err)
+      console.error("[OAuth] Fatal crash", err)
       setError(err instanceof Error ? err.message : 'Failed to login with Google')
     } finally {
       setIsLoading(false)
@@ -77,6 +81,7 @@ export default function LoginPage() {
               width={40}
               height={40}
               priority
+              className="w-10 h-10"
             />
           </div>
           <h2 className="text-center text-3xl font-mono tracking-wider text-[#32CD32]">
@@ -105,6 +110,7 @@ export default function LoginPage() {
               width={20}
               height={20}
               priority
+              className="w-5 h-5"
             />
             <span>{isLoading ? 'Signing in...' : 'Continue with Google'}</span>
           </button>
