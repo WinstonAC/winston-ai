@@ -1,11 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { createClient, User as SupabaseUser } from '@supabase/supabase-js';
+import { User as SupabaseUser } from '@supabase/supabase-js';
 import { useRouter } from 'next/router';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? '',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
-);
+import { supabase } from '@/lib/supabase';
 
 interface AuthContextType {
   user: SupabaseUser | null;
