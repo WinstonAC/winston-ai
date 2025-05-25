@@ -8,6 +8,18 @@
 - [ ] /campaigns     (Decide: keep campaigns.tsx or index.tsx)
 - [ ] /login         (OAuth works via Google)
 
+## 🔍 Components
+- [ ] Navigation menu
+- [ ] Footer links
+- [ ] Auth redirects
+- [ ] Console errors (browser + server)
+- [ ] Email flow (log errors if failing)
+
+## 🛠️ Fix Notes
+- [ ] Comment/remove unused Campaigns UI
+- [ ] Confirm .env values
+- [ ] Supabase: check 'leads' table and fields
+
 ## 🔍 Feature Audit
 - [ ] Authentication
   - [ ] Google OAuth flow
