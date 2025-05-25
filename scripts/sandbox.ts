@@ -1,7 +1,4 @@
-import { PrismaClient } from '@prisma/client';
 import { hash } from 'bcryptjs';
-
-const prisma = new PrismaClient();
 
 async function main() {
   // Create test team

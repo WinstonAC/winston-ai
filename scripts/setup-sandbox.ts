@@ -1,15 +1,6 @@
-import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import { faker } from '@faker-js/faker';
 import { EmailTemplate, defaultTemplates } from '../lib/templates';
-
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL,
-    },
-  },
-});
 
 // Constants for sample data generation
 const SAMPLE_LEADS_PER_USER = 15;

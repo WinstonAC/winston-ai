@@ -18,12 +18,4 @@ export const supabase = createBrowserClient(
       detectSessionInUrl: true
     }
   }
-);
-
-// Apply development patch to prevent getSessionFromUrl crash
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-  console.warn('[🔥 HARD PATCH] Bypassing getSessionFromUrl to prevent crash');
-  supabase.auth.getSessionFromUrl = async () => {
-    return { data: null, error: null };
-  };
-} 
+); 

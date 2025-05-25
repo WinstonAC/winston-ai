@@ -1,10 +1,23 @@
 import { create } from 'zustand';
-import { Template, TemplateAsset } from '@prisma/client';
+
+interface Template {
+  id: string;
+  name: string;
+  content?: string;
+  createdAt?: string;
+}
 
 interface Variable {
   name: string;
   defaultValue: string;
   order?: number;
+}
+
+interface TemplateAsset {
+  id: string;
+  name: string;
+  url: string;
+  type: string;
 }
 
 interface EditorState {

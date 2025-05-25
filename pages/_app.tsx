@@ -9,18 +9,6 @@ import { Toast } from '../components/Toast';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { AuthProvider } from '../contexts/AuthContext';
 
-// Monkey patch Supabase's broken OAuth flow in dev
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-  import('@/lib/supabase').then(({ supabase }) => {
-    if (supabase?.auth) {
-      supabase.auth.getSessionFromUrl = async () => {
-        console.warn('[PATCH] Skipping corrupted getSessionFromUrl in DEV mode');
-        return { data: null, error: null };
-      };
-    }
-  });
-}
-
 export default function App({ 
   Component, 
   pageProps

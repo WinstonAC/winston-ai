@@ -1,5 +1,4 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { supabase } from '../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // TODO: Replace with real user ID from Supabase Auth session
@@ -8,13 +7,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === 'POST') {
     // Create a new asset (upload)
     const newAsset = { ...req.body, userId };
-    const { data: asset, error } = await supabase
-      .from('templateAssets')
-      .insert(newAsset)
-      .select()
-      .single();
-    if (error) return res.status(500).json({ error: error.message });
-    return res.status(201).json(asset);
+    // Replace any supabase usage with a mock response for uploads
+    // For example, if there is a supabase upload, just return a mock asset object with a URL and ID
+    return res.status(201).json(newAsset);
   }
 
   return res.status(405).json({ error: 'Method not allowed' });

@@ -1,100 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useRouter } from 'next/router'
-import { supabase } from '@/lib/supabase'
 
 export default function AuthCallback() {
   const router = useRouter()
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const handleCallback = async () => {
-      try {
-        console.log("[OAuth] Starting callback handling...")
-        
-        let session = null
-        let sessionError = null
-
-        if (process.env.NODE_ENV === 'development') {
-          console.log("[DEV] Using direct session check to avoid ISO-8859 token error")
-          const { data, error } = await supabase.auth.getSession()
-          session = data?.session
-          sessionError = error
-        } else {
-          console.log("[PROD] Using standard session resolution flow")
-          // First try to get session from URL
-          const { data: urlData, error: urlError } = await supabase.auth.getSessionFromUrl()
-          console.log("[OAuth] Session from URL:", urlData)
-          
-          if (urlError) {
-            console.error("[OAuth] URL session error:", urlError.message)
-            throw urlError
-          }
-
-          // Then verify the session
-          const { data, error } = await supabase.auth.getSession()
-          session = data?.session
-          sessionError = error
-        }
-
-        if (sessionError) {
-          console.error("[OAuth] Session error:", sessionError.message)
-          throw sessionError
-        }
-
-        if (session) {
-          console.log("[OAuth] Session verified, redirecting to dashboard")
-          await router.push('/dashboard')
-        } else {
-          console.log("[OAuth] No session found, redirecting to login")
-          throw new Error('No session found')
-        }
-      } catch (err) {
-        console.error('[OAuth] Callback error:', err)
-        setError(err instanceof Error ? err.message : 'An unexpected error occurred')
-        // Add a timeout for the redirect
-        const redirectTimer = setTimeout(() => {
-          router.push('/auth/signin')
-        }, 3000)
-        return () => clearTimeout(redirectTimer)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    if (router.isReady) {
-      handleCallback()
-    }
-  }, [router, router.isReady])
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-black">
-        <div className="max-w-md w-full space-y-4 p-6">
-          <div className="text-center border-2 border-red-500 rounded-lg p-6 bg-black/60">
-            <p className="text-red-400 font-mono tracking-wider">Authentication failed</p>
-            <p className="text-sm text-red-400 font-mono mt-2">{error}</p>
-            <p className="text-sm text-gray-400 font-mono mt-4">Redirecting to login in 3 seconds...</p>
-          </div>
-        </div>
-      </div>
-    )
-  }
+    // Redirect to home page
+    router.push('/')
+  }, [router])
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black">
-      <div className="max-w-md w-full space-y-4 p-6">
-        <div className="text-center border-2 border-[#32CD32] rounded-lg p-6 bg-black/60">
-          <div className="flex items-center justify-center space-x-2 mb-4">
-            <div className="w-2 h-2 bg-[#32CD32] rounded-full animate-bounce" />
-            <div className="w-2 h-2 bg-[#32CD32] rounded-full animate-bounce delay-100" />
-            <div className="w-2 h-2 bg-[#32CD32] rounded-full animate-bounce delay-200" />
-          </div>
-          <p className="text-[#32CD32] font-mono tracking-wider">
-            {loading ? 'LOGGING YOU IN...' : 'REDIRECTING...'}
-          </p>
-        </div>
-      </div>
+    <div className="flex min-h-screen items-center justify-center">
+      <p className="text-lg">Redirecting...</p>
     </div>
   )
 } 

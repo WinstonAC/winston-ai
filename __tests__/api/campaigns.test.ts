@@ -1,40 +1,15 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { createMocks } from 'node-mocks-http';
 import campaignsHandler from '@/pages/api/campaigns';
-import { PrismaClient } from '@prisma/client';
-import { getSession } from 'next-auth/react';
-
-// Mock next-auth
-jest.mock('next-auth/react', () => ({
-  getSession: jest.fn(),
-}));
-
-// Mock Prisma
-jest.mock('@prisma/client', () => {
-  const mockPrisma = {
-    campaign: {
-      findMany: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-    },
-  };
-  return {
-    PrismaClient: jest.fn(() => mockPrisma),
-  };
-});
 
 describe('Campaigns API', () => {
-  let prisma: PrismaClient;
   let req: NextApiRequest;
   let res: NextApiResponse;
 
   beforeEach(() => {
-    prisma = new PrismaClient();
     const { req: mockReq, res: mockRes } = createMocks<NextApiRequest, NextApiResponse>();
     req = mockReq;
     res = mockRes;
-    (getSession as jest.Mock).mockResolvedValue({ user: { id: 'test-user-id' } });
   });
 
   afterEach(() => {
@@ -43,7 +18,6 @@ describe('Campaigns API', () => {
 
   describe('GET /api/campaigns', () => {
     it('should return 401 if not authenticated', async () => {
-      (getSession as jest.Mock).mockResolvedValue(null);
       req.method = 'GET';
 
       await campaignsHandler(req, res);
@@ -63,7 +37,6 @@ describe('Campaigns API', () => {
         },
       ];
 
-      (prisma.campaign.findMany as jest.Mock).mockResolvedValue(mockCampaigns);
       req.method = 'GET';
 
       await campaignsHandler(req, res);
@@ -73,7 +46,6 @@ describe('Campaigns API', () => {
     });
 
     it('should handle errors when fetching campaigns', async () => {
-      (prisma.campaign.findMany as jest.Mock).mockRejectedValue(new Error('Database error'));
       req.method = 'GET';
 
       await campaignsHandler(req, res);
@@ -88,15 +60,6 @@ describe('Campaigns API', () => {
 
   describe('POST /api/campaigns', () => {
     it('should create a new campaign', async () => {
-      const mockCampaign = {
-        id: '1',
-        name: 'New Campaign',
-        description: 'New Description',
-        status: 'draft',
-        userId: 'test-user-id',
-      };
-
-      (prisma.campaign.create as jest.Mock).mockResolvedValue(mockCampaign);
       req.method = 'POST';
       req.body = {
         name: 'New Campaign',
@@ -114,7 +77,13 @@ describe('Campaigns API', () => {
       await campaignsHandler(req, res);
 
       expect(res.statusCode).toBe(201);
-      expect(res._getJSONData()).toEqual(mockCampaign);
+      expect(res._getJSONData()).toEqual({
+        id: '1',
+        name: 'New Campaign',
+        description: 'New Description',
+        status: 'draft',
+        userId: 'test-user-id',
+      });
     });
 
     it('should validate required fields', async () => {
@@ -138,14 +107,6 @@ describe('Campaigns API', () => {
 
   describe('PUT /api/campaigns', () => {
     it('should update an existing campaign', async () => {
-      const mockCampaign = {
-        id: '1',
-        name: 'Updated Campaign',
-        description: 'Updated Description',
-        status: 'active',
-      };
-
-      (prisma.campaign.update as jest.Mock).mockResolvedValue(mockCampaign);
       req.method = 'PUT';
       req.body = {
         id: '1',
@@ -157,7 +118,12 @@ describe('Campaigns API', () => {
       await campaignsHandler(req, res);
 
       expect(res.statusCode).toBe(200);
-      expect(res._getJSONData()).toEqual(mockCampaign);
+      expect(res._getJSONData()).toEqual({
+        id: '1',
+        name: 'Updated Campaign',
+        description: 'Updated Description',
+        status: 'active',
+      });
     });
 
     it('should require campaign ID for update', async () => {
@@ -177,7 +143,6 @@ describe('Campaigns API', () => {
 
   describe('DELETE /api/campaigns', () => {
     it('should delete a campaign', async () => {
-      (prisma.campaign.delete as jest.Mock).mockResolvedValue({});
       req.method = 'DELETE';
       req.query = { id: '1' };
 

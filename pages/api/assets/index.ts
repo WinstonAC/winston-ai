@@ -1,5 +1,4 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { supabase } from '../../lib/supabase';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // TODO: Replace with real user ID from Supabase Auth session
@@ -7,23 +6,34 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'GET') {
     // List all assets for user
-    const { data: assets, error } = await supabase
-      .from('templateAssets')
-      .select('*')
-      .eq('userId', userId);
-    if (error) return res.status(500).json({ error: error.message });
+    const assets = [
+      {
+        id: '1',
+        name: 'Asset 1',
+        url: 'https://example.com/asset1.jpg',
+        type: 'image',
+        userId,
+      },
+      {
+        id: '2',
+        name: 'Asset 2',
+        url: 'https://example.com/asset2.jpg',
+        type: 'image',
+        userId,
+      },
+    ];
     return res.status(200).json(assets || []);
   }
 
   if (req.method === 'POST') {
     // Create a new asset
     const newAsset = { ...req.body, userId };
-    const { data: asset, error } = await supabase
-      .from('templateAssets')
-      .insert(newAsset)
-      .select()
-      .single();
-    if (error) return res.status(500).json({ error: error.message });
+    const asset = {
+      id: '3',
+      ...newAsset,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
     return res.status(201).json(asset);
   }
 

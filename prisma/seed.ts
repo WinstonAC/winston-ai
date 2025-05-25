@@ -1,7 +1,4 @@
-import { PrismaClient } from '@prisma/client';
 import { exit } from 'process';
-
-const prisma = new PrismaClient();
 
 async function main(): Promise<void> {
   try {

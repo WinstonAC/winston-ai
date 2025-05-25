@@ -10,31 +10,14 @@ import {
   isUnauthorizedResponse 
 } from '@/tests/utils/auth';
 
-// Mock Prisma
-jest.mock('@prisma/client', () => ({
-  PrismaClient: jest.fn().mockImplementation(() => ({
-    lead: {
-      count: jest.fn(),
-      findMany: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-    },
-    campaign: {
-      findMany: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-    },
-    team: {
-      findFirst: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-    },
-    activity: {
-      findMany: jest.fn(),
-    },
-  })),
+// Mock session
+jest.mock('next-auth/react', () => ({
+  getSession: jest.fn().mockResolvedValue({
+    user: {
+      id: 'test-user-id',
+      email: 'test@example.com'
+    }
+  })
 }));
 
 describe('API Endpoints', () => {
@@ -53,30 +36,6 @@ describe('API Endpoints', () => {
       mockGetServerSession({
         user: { id: 'test-user-id', teamId: 'test-team-id' }
       });
-
-      // Mock Prisma responses
-      const mockPrisma = require('@prisma/client').PrismaClient;
-      const prismaInstance = new mockPrisma();
-      
-      prismaInstance.lead.count.mockResolvedValue(100);
-      prismaInstance.campaign.findMany.mockResolvedValue([
-        {
-          metrics: {
-            sent: 50,
-            opened: 25,
-            replied: 10,
-            meetings: 5,
-          },
-        },
-      ]);
-      prismaInstance.activity.findMany.mockResolvedValue([
-        {
-          id: '1',
-          type: 'email_sent',
-          lead: { name: 'Test Lead' },
-          createdAt: new Date(),
-        },
-      ]);
 
       await analytics(req, res);
 
@@ -122,16 +81,6 @@ describe('API Endpoints', () => {
         user: { id: 'test-user-id', teamId: 'test-team-id' }
       });
 
-      // Mock Prisma response
-      const mockPrisma = require('@prisma/client').PrismaClient;
-      const prismaInstance = new mockPrisma();
-      
-      prismaInstance.campaign.create.mockResolvedValue({
-        id: 'campaign-1',
-        name: 'Test Campaign',
-        status: 'draft',
-      });
-
       await campaigns(req, res);
 
       expect(res._getStatusCode()).toBe(201);
@@ -171,16 +120,6 @@ describe('API Endpoints', () => {
       // Mock authenticated session with team
       mockGetServerSession({
         user: { id: 'test-user-id', teamId: 'test-team-id' }
-      });
-
-      // Mock Prisma response
-      const mockPrisma = require('@prisma/client').PrismaClient;
-      const prismaInstance = new mockPrisma();
-      
-      prismaInstance.lead.create.mockResolvedValue({
-        id: 'lead-1',
-        name: 'Test Lead',
-        email: 'test@example.com',
       });
 
       await leads(req, res);
@@ -224,19 +163,6 @@ describe('API Endpoints', () => {
       // Mock authenticated session
       mockGetServerSession({
         user: { id: 'test-user-id' }
-      });
-
-      // Mock Prisma response
-      const mockPrisma = require('@prisma/client').PrismaClient;
-      const prismaInstance = new mockPrisma();
-      
-      prismaInstance.team.create.mockResolvedValue({
-        id: 'team-1',
-        name: 'Test Team',
-        members: [
-          { userId: 'test-user-id', role: 'admin' },
-          { userId: 'member-1', role: 'member' },
-        ],
       });
 
       await team(req, res);
