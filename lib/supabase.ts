@@ -12,13 +12,16 @@ if (!supabaseAnonKey) {
   throw new Error('Missing NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable');
 }
 
-// Create Supabase client with auth configuration
+// Create Supabase client with auth configuration optimized for OAuth
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
-    flowType: 'pkce'
+    flowType: 'implicit', // Use implicit flow to avoid PKCE state issues
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+    storageKey: 'supabase.auth.token',
+    debug: process.env.NODE_ENV === 'development'
   }
 });
 

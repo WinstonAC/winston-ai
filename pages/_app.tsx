@@ -8,7 +8,6 @@ import { useRouter } from 'next/router';
 import { Toast } from '../components/Toast';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { AuthProvider } from '../contexts/AuthContext';
-import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs';
 import { SessionContextProvider } from '@supabase/auth-helpers-react';
 import { supabase } from '../lib/supabase';
 
@@ -16,7 +15,6 @@ export default function App({
   Component, 
   pageProps
 }: AppProps) {
-  const [supabaseClient] = useState(() => createPagesBrowserClient());
   const router = useRouter();
   const isAuthPage = ['/auth/signin', '/auth/callback'].includes(router.pathname);
 
@@ -34,27 +32,27 @@ export default function App({
 
   return (
     <SessionContextProvider 
-      supabaseClient={supabaseClient} 
+      supabaseClient={supabase}
       initialSession={pageProps.initialSession || null}
     >
       <AuthProvider>
         <Head>
-          <link rel="icon" href="/assets/winston-favicon.ico" sizes="32x32" />
+          <title>Winston AI</title>
+          <meta name="description" content="AI-powered lead generation and outreach platform" />
           <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <link rel="icon" href="/favicon.ico" />
         </Head>
-        
-        {!isAuthPage ? (
-          <Layout>
-            <ErrorBoundary>
+        <ErrorBoundary>
+          {isAuthPage ? (
+            <Component {...pageProps} />
+          ) : (
+            <Layout>
               <Component {...pageProps} />
-            </ErrorBoundary>
-            <Chatbot initialContext={router.pathname.includes('analytics') ? 'analytics' : 'general'} />
-          </Layout>
-        ) : (
-          <Component {...pageProps} />
-        )}
-        
-        <Toast position="top-right" />
+              <Chatbot />
+            </Layout>
+          )}
+          <Toast />
+        </ErrorBoundary>
       </AuthProvider>
     </SessionContextProvider>
   );

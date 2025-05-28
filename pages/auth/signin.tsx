@@ -46,7 +46,7 @@ export default function LoginPage() {
     setError(null)
     setMessage(null)
 
-    console.log("[OAuth] about to sign in with Google")
+    console.log("[OAuth] Starting Google OAuth with implicit flow")
 
     try {
       const { error } = await supabase.auth.signInWithOAuth({
@@ -54,10 +54,6 @@ export default function LoginPage() {
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
           scopes: 'email profile',
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
         },
       })
 

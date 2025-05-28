@@ -9,6 +9,9 @@ export default function AuthCallback() {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
+        console.log('[Callback] Starting auth callback processing...')
+        console.log('[Callback] Current URL:', window.location.href)
+        
         // Parse both URL query parameters and hash fragments
         const urlParams = new URLSearchParams(window.location.search)
         const urlHash = new URLSearchParams(window.location.hash.substring(1))
@@ -18,94 +21,98 @@ export default function AuthCallback() {
 
         // Handle error from auth provider
         if (error_code) {
-          console.error('Auth provider error:', error_description || error_code)
+          console.error('[Callback] Auth provider error:', error_description || error_code)
           setError(error_description || error_code)
           setTimeout(() => {
-            router.push('/auth/signin?error=auth_provider_error')
+            window.location.href = '/auth/signin?error=auth_provider_error'
           }, 2000)
           return
         }
 
-        // Handle hash-based tokens (Magic Links)
-        const access_token = urlHash.get('access_token')
-        const refresh_token = urlHash.get('refresh_token')
-
-        if (access_token && refresh_token) {
-          console.log('Processing hash-based magic link tokens...')
-          const { data, error } = await supabase.auth.setSession({
-            access_token,
-            refresh_token,
-          })
-          
-          if (error) {
-            console.error('Magic link session set error:', error)
-            setError(error.message)
-            setTimeout(() => {
-              router.push('/auth/signin?error=magic_link_failed')
-            }, 2000)
-            return
-          }
-
-          if (data.session) {
-            console.log('Magic link authentication successful, redirecting to dashboard')
-            console.log("Session:", data.session)
-            window.location.href = '/dashboard'
-            return
-          }
-        }
-
-        // Handle query-based code (OAuth PKCE flow)
-        const code = urlParams.get('code')
-
-        if (code) {
-          console.log('Processing OAuth PKCE code...')
-          const { data, error } = await supabase.auth.exchangeCodeForSession(code)
-          
-          if (error) {
-            console.error('OAuth code exchange error:', error)
-            setError(error.message)
-            setTimeout(() => {
-              router.push('/auth/signin?error=oauth_failed')
-            }, 2000)
-            return
-          }
-
-          if (data.session) {
-            console.log('OAuth authentication successful, redirecting to dashboard')
-            console.log("Session:", data.session)
-            window.location.href = '/dashboard'
-            return
-          }
-        }
-
-        // Fallback: check for existing session
+        // For implicit flow, let Supabase handle the session automatically
+        console.log('[Callback] Checking for existing session...')
         const { data: { session }, error: sessionError } = await supabase.auth.getSession()
         
         if (sessionError) {
-          console.error('Session check error:', sessionError)
+          console.error('[Callback] Session check error:', sessionError)
           setError(sessionError.message)
           setTimeout(() => {
-            router.push('/auth/signin?error=session_error')
+            window.location.href = '/auth/signin?error=session_error'
           }, 2000)
           return
         }
 
         if (session) {
-          console.log('Existing session found, redirecting to dashboard')
-          console.log("Session:", session)
+          console.log('[Callback] Session found, redirecting to dashboard')
+          console.log('[Callback] Session user:', session.user?.email)
           window.location.href = '/dashboard'
-        } else {
-          // No session found, redirect to login
-          console.log('No session found, redirecting to signin')
-          setTimeout(() => {
-            router.push('/auth/signin?error=no_session')
-          }, 2000)
+          return
         }
+
+        // Handle hash-based tokens (Magic Links or implicit OAuth)
+        const access_token = urlHash.get('access_token')
+        const refresh_token = urlHash.get('refresh_token')
+
+        if (access_token) {
+          console.log('[Callback] Processing hash-based tokens...')
+          const { data, error } = await supabase.auth.setSession({
+            access_token,
+            refresh_token: refresh_token || '',
+          })
+          
+          if (error) {
+            console.error('[Callback] Token session set error:', error)
+            setError(error.message)
+            setTimeout(() => {
+              window.location.href = '/auth/signin?error=token_failed'
+            }, 2000)
+            return
+          }
+
+          if (data.session) {
+            console.log('[Callback] Token authentication successful, redirecting to dashboard')
+            console.log('[Callback] Session user:', data.session.user?.email)
+            window.location.href = '/dashboard'
+            return
+          }
+        }
+
+        // Handle query-based code (fallback for PKCE if needed)
+        const code = urlParams.get('code')
+
+        if (code) {
+          console.log('[Callback] Processing OAuth code...')
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+          
+          if (error) {
+            console.error('[Callback] OAuth code exchange error:', error)
+            // If PKCE fails, redirect to try implicit flow
+            console.log('[Callback] PKCE failed, redirecting to retry with implicit flow')
+            setTimeout(() => {
+              window.location.href = '/auth/signin?error=oauth_retry'
+            }, 2000)
+            return
+          }
+
+          if (data.session) {
+            console.log('[Callback] OAuth authentication successful, redirecting to dashboard')
+            console.log('[Callback] Session user:', data.session.user?.email)
+            window.location.href = '/dashboard'
+            return
+          }
+        }
+
+        // No session found, redirect to login
+        console.log('[Callback] No session found, redirecting to signin')
+        setTimeout(() => {
+          window.location.href = '/auth/signin?error=no_session'
+        }, 2000)
+
       } catch (error) {
-        console.error('Callback handling error:', error)
+        console.error('[Callback] Fatal error:', error)
         setError(error instanceof Error ? error.message : 'Authentication failed')
         setTimeout(() => {
-          router.push('/auth/signin?error=callback_failed')
+          window.location.href = '/auth/signin?error=callback_failed'
         }, 2000)
       }
     }
