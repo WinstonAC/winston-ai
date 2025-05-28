@@ -1,51 +1,62 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { Session } from 'next-auth';
-import { getServerSession } from 'next-auth';
+import { supabase } from '@/lib/supabase';
 
-// Mock session data type
-export interface MockSessionData {
-  user?: {
-    id: string;
-    email: string;
-    name?: string;
-    image?: string;
-    role?: string;
-    teamId?: string;
-  };
-  expires?: string;
+// Mock user data type
+export interface MockUserData {
+  id: string;
+  email: string;
+  name?: string;
+  role?: string;
+  teamId?: string;
 }
 
-// Default mock session data
-const defaultMockSession: MockSessionData = {
-  user: {
-    id: 'test-user-id',
-    email: 'test@example.com',
-    name: 'Test User',
-    role: 'user',
-  },
-  expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+// Default mock user data
+const defaultMockUser: MockUserData = {
+  id: 'test-user-id',
+  email: 'test@example.com',
+  name: 'Test User',
+  role: 'user',
+  teamId: 'test-team-id',
 };
 
-// Mock getServerSession for API routes
-export const mockGetServerSession = (mockSession: Partial<MockSessionData> = {}) => {
-  const session = { ...defaultMockSession, ...mockSession };
-  jest.mock('next-auth', () => ({
-    getServerSession: jest.fn().mockResolvedValue(session),
+// Mock Supabase auth for API routes
+export const mockSupabaseAuth = (mockUser: Partial<MockUserData> = {}) => {
+  const user = { ...defaultMockUser, ...mockUser };
+  
+  jest.mock('@/lib/supabase', () => ({
+    supabase: {
+      auth: {
+        getUser: jest.fn().mockResolvedValue({
+          data: { user },
+          error: null
+        }),
+        getSession: jest.fn().mockResolvedValue({
+          data: { session: { user } },
+          error: null
+        })
+      }
+    }
   }));
-  return session;
 };
 
-// Mock useSession for client components
-export const mockUseSession = (mockSession: Partial<MockSessionData> = {}) => {
-  const session = { ...defaultMockSession, ...mockSession };
-  jest.mock('next-auth/react', () => ({
-    useSession: jest.fn().mockReturnValue({
-      data: session,
-      status: 'authenticated',
+// Mock useAuth for client components
+export const mockUseAuth = (mockUser: Partial<MockUserData> = {}) => {
+  const user = { ...defaultMockUser, ...mockUser };
+  
+  jest.mock('@/contexts/AuthContext', () => ({
+    useAuth: jest.fn().mockReturnValue({
+      user,
+      loading: false,
+      signIn: jest.fn(),
+      signOut: jest.fn(),
     }),
-    getSession: jest.fn().mockResolvedValue(session),
   }));
-  return session;
+};
+
+// Helper to setup authenticated test environment
+export const setupAuthenticatedTest = (user: Partial<MockUserData> = {}) => {
+  mockSupabaseAuth(user);
+  mockUseAuth(user);
 };
 
 // Helper to create an authenticated request
@@ -53,7 +64,7 @@ export const createAuthenticatedRequest = (
   method: string,
   body?: any,
   query?: any,
-  session: Partial<MockSessionData> = {}
+  session: Partial<MockUserData> = {}
 ) => {
   const req = {
     method,
@@ -64,7 +75,7 @@ export const createAuthenticatedRequest = (
     },
   } as NextApiRequest;
 
-  mockGetServerSession(session);
+  mockSupabaseAuth(session);
 
   return req;
 };

@@ -26,7 +26,6 @@
     "test:email": "tsx scripts/email-test.ts",
     "test:responsive": "tsx scripts/test-responsive.ts",
     "test:all": "npm run test && npm run test:email && npm run test:responsive",
-    "prisma:seed": "tsx prisma/seed.ts",
     "test:api": "jest --config jest.config.e2e.js"
   },
   "dependencies": {
@@ -56,10 +55,9 @@
     "framer-motion": "^10.16.4",
     "jose": "^6.0.10",
     "lucide-react": "^0.503.0",
-    "next": "14.1.0",
-    "next-auth": "^4.24.11",
-    "nodemailer": "^6.9.9",
-    "openai": "^4.96.2",
+    "next": "14.2.15",
+    "nodemailer": "^6.9.15",
+    "openai": "^4.67.3",
     "papaparse": "^5.5.2",
     "react": "^18",
     "react-beautiful-dnd": "^13.1.1",
@@ -69,10 +67,11 @@
     "react-dropzone": "^14.2.3",
     "react-hot-toast": "^2.4.1",
     "react-icons": "^5.5.0",
-    "react-markdown": "^8.0.7",
+    "react-markdown": "^9.0.1",
     "react-syntax-highlighter": "^15.5.0",
-    "tailwind-merge": "^3.2.0",
-    "zod": "^3.24.3",
+    "recharts": "^2.12.7",
+    "tailwind-merge": "^2.5.4",
+    "zod": "^3.23.8",
     "zustand": "^4.5.2"
   },
   "devDependencies": {

@@ -1,11 +1,11 @@
 import React, { Suspense, useState } from 'react';
-import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import dynamic from 'next/dynamic';
 import Loader from '@/components/Loader';
 import AgentLog from '@/components/AgentLog';
 import { LogEntry, AgentState } from '@/types/agent';
+import { useAuth } from '@/contexts/AuthContext';
 
 const SandboxHeader = dynamic(() => import('@/components/SandboxHeader'), {
   loading: () => <div className="h-16 bg-gray-800 animate-pulse" />,
@@ -16,13 +16,17 @@ const SandboxSettings = dynamic(() => import('@/components/SandboxSettings'), {
 });
 
 export default function Sandbox() {
-  const { data: session, status } = useSession();
+  const { user, loading } = useAuth();
   const router = useRouter();
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [agentState, setAgentState] = useState<AgentState>({
     isProcessing: false,
     currentTask: undefined,
     progress: 0,
+    processedRows: 0,
+    totalRows: 0,
+    successCount: 0,
+    errorCount: 0,
   });
 
   const addLog = (message: string, type: LogEntry['type'] = 'info', details?: Record<string, any>) => {
@@ -63,12 +67,12 @@ export default function Sandbox() {
     }
   };
 
-  if (status === 'loading') {
+  if (loading) {
     return <Loader />;
   }
 
-  if (status === 'unauthenticated') {
-    router.push('/login');
+  if (!user) {
+    router.push('/auth/signin');
     return null;
   }
 
@@ -83,8 +87,8 @@ export default function Sandbox() {
         <Suspense fallback={<div className="h-16 bg-gray-800 animate-pulse" />}>
           <SandboxHeader 
             currentUser={{
-              name: session?.user?.name || 'User',
-              email: session?.user?.email || '',
+              name: user?.user_metadata?.name || user?.email || 'User',
+              email: user?.email || '',
               role: 'USER'
             }}
             onReset={() => {
@@ -93,6 +97,10 @@ export default function Sandbox() {
                 isProcessing: false,
                 currentTask: undefined,
                 progress: 0,
+                processedRows: 0,
+                totalRows: 0,
+                successCount: 0,
+                errorCount: 0,
               });
             }}
           />
@@ -103,7 +111,11 @@ export default function Sandbox() {
             <div className="bg-gray-800 rounded-lg shadow-xl p-6">
               <h1 className="text-3xl font-bold text-white mb-8">AI Sandbox</h1>
               <Suspense fallback={<div className="h-64 bg-gray-800 animate-pulse rounded-lg" />}>
-                <SandboxSettings />
+                <SandboxSettings 
+                  onUpdate={(settings) => {
+                    addLog(`Settings updated: ${JSON.stringify(settings)}`, 'info');
+                  }}
+                />
               </Suspense>
               <div className="mt-6">
                 <button

@@ -3,8 +3,10 @@ import { usePermissions } from '../contexts/PermissionsContext';
 import { UserRole, TeamPermission, User } from '../types/auth';
 import { CheckIcon, XMarkIcon, ExclamationCircleIcon, TrashIcon, PencilIcon, PlusIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { useSession } from 'next-auth/react';
-import { UserGroupIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
+import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
+import { UserIcon, CogIcon, ShieldCheckIcon, EyeIcon } from '@heroicons/react/24/outline';
+import { getAnalyticsPermissions } from '@/types/auth';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface TeamMember {
   id: string;
@@ -33,7 +35,7 @@ export const TeamPermissions: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
-  const { data: session } = useSession();
+  const { user } = useAuth();
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [formData, setFormData] = useState<Partial<TeamMember>>({});
@@ -65,14 +67,14 @@ export const TeamPermissions: React.FC = () => {
   useEffect(() => {
     let isMounted = true;
 
-    if (session?.user) {
+    if (user) {
       fetchTeam();
     }
 
     return () => {
       isMounted = false;
     };
-  }, [session]);
+  }, [user]);
 
   useEffect(() => {
     if (showEditModal && firstInputRef.current) {
@@ -269,7 +271,7 @@ export const TeamPermissions: React.FC = () => {
   }
 
   const members = team.members || [];
-  const sessionUser = session?.user as User | undefined;
+  const sessionUser = user;
   const isAdmin = members.find(m => m.id === sessionUser?.id)?.role === UserRole.ADMIN;
 
   const handleRoleChange = (memberId: string, newRole: UserRole) => {
@@ -343,7 +345,7 @@ export const TeamPermissions: React.FC = () => {
                     <option value="member">Member</option>
                     <option value="viewer">Viewer</option>
                   </select>
-                  {isAdmin && member.id !== session?.user?.id && (
+                  {isAdmin && member.id !== user?.id && (
                     <button
                       onClick={() => handleDelete(member.id)}
                       disabled={isUpdating}

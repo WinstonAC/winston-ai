@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { prisma } from '@/lib/prisma';
 
 export default function FirstTimeSetup() {
   const router = useRouter();
@@ -172,14 +171,18 @@ export default function FirstTimeSetup() {
 }
 
 // This function runs on the server to check if setup is needed
+// TODO: Replace with Supabase implementation for MVP
 export async function getServerSideProps() {
-  const users = await prisma.user.findMany();
+  // TODO: Replace with Supabase implementation
+  // const users = await prisma.user.findMany();
   
-  // If users exist, redirect to login
+  // For MVP, assume no users exist to allow setup
+  const users: any[] = [];
+  
   if (users.length > 0) {
     return {
       redirect: {
-        destination: '/login',
+        destination: '/dashboard',
         permanent: false,
       },
     };

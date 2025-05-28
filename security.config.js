@@ -103,5 +103,17 @@ module.exports = {
       cpuUsage: 80,
       memoryUsage: 80
     }
+  },
+
+  auth: {
+    providers: ['supabase'],
+    session: {
+      strategy: 'jwt',
+      maxAge: 30 * 24 * 60 * 60, // 30 days
+    },
+    supabase: {
+      url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    }
   }
 }; 

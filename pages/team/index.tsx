@@ -1,8 +1,6 @@
 import { useState } from 'react';
-import { GetServerSideProps } from 'next';
-import { getSession } from 'next-auth/react';
+import { GetServerSideProps, GetServerSidePropsContext } from 'next';
 import Head from 'next/head';
-import { prisma } from '@/lib/prisma';
 
 interface TeamMember {
   id: string;
@@ -204,55 +202,34 @@ export default function TeamPage({ members, pendingInvites, isAdmin }: TeamPageP
   );
 }
 
-export const getServerSideProps: GetServerSideProps = async (context) => {
-  const session = await getSession(context);
+// Default props for MVP testing
+TeamPage.defaultProps = {
+  members: [],
+  pendingInvites: [],
+  isAdmin: false,
+};
 
-  if (!session?.user) {
-    return {
-      redirect: {
-        destination: '/login',
-        permanent: false,
-      },
-    };
-  }
+// TODO: Replace with Supabase implementation for MVP
+export async function getServerSideProps(context: GetServerSidePropsContext) {
+  // TODO: Replace with Supabase implementation
+  // const user = await prisma.user.findUnique({
+  //   where: { id: context.params?.id as string },
+  //   include: { team: true }
+  // });
 
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email! },
-    include: {
-      team: {
-        include: {
-          users: true,
-          invites: true,
-        },
-      },
-    },
-  });
-
-  if (!user?.team) {
-    return {
-      redirect: {
-        destination: '/dashboard',
-        permanent: false,
-      },
-    };
-  }
-
-  const isAdmin = user.teamRole === 'ADMIN' || user.teamRole === 'OWNER';
-
+  // For MVP, return mock data
   return {
     props: {
-      members: user.team.users.map((member) => ({
-        id: member.id,
-        name: member.name,
-        email: member.email,
-        teamRole: member.teamRole,
-      })),
-      pendingInvites: user.team.invites.map((invite) => ({
-        id: invite.id,
-        email: invite.email,
-        expiresAt: invite.expiresAt.toISOString(),
-      })),
-      isAdmin,
-    },
+      user: {
+        id: '1',
+        name: 'Demo User',
+        email: 'demo@winston-ai.com',
+        role: 'admin',
+        team: {
+          id: '1',
+          name: 'Demo Team'
+        }
+      }
+    }
   };
-}; 
+} 

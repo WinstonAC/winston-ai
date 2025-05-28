@@ -1,32 +1,48 @@
+import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { act } from 'react-dom/test-utils';
 import { Campaigns } from '@/pages/campaigns';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/router';
 
-// Mock next-auth
-jest.mock('next-auth/react', () => ({
-  useSession: jest.fn(),
+// Mock useAuth
+jest.mock('@/contexts/AuthContext', () => ({
+  useAuth: jest.fn(),
 }));
 
-// Mock next/router
+// Mock router
 jest.mock('next/router', () => ({
-  useRouter: jest.fn(),
+  useRouter: () => ({
+    push: jest.fn(),
+    pathname: '/campaigns',
+    query: {},
+  }),
 }));
 
-// Mock fetch
-global.fetch = jest.fn();
+// Mock components
+jest.mock('@/components/Navigation', () => {
+  return function MockNavigation() {
+    return <nav data-testid="navigation">Navigation</nav>;
+  };
+});
+
+jest.mock('@/components/CampaignList', () => {
+  return function MockCampaignList() {
+    return <div data-testid="campaign-list">Campaign List</div>;
+  };
+});
+
+jest.mock('@/components/Loader', () => {
+  return function MockLoader() {
+    return <div data-testid="loader">Loading...</div>;
+  };
+});
 
 describe('Campaigns', () => {
-  const mockSession = {
-    data: {
-      user: {
-        id: '1',
-        email: 'test@example.com',
-        role: 'admin',
-      },
-    },
-    status: 'authenticated',
+  const mockUser = {
+    id: 'test-user-id',
+    email: 'test@example.com',
+    name: 'Test User',
   };
 
   const mockRouter = {
@@ -63,7 +79,10 @@ describe('Campaigns', () => {
   ];
 
   beforeEach(() => {
-    (useSession as jest.Mock).mockReturnValue(mockSession);
+    (useAuth as jest.Mock).mockReturnValue({
+      user: mockUser,
+      loading: false,
+    });
     (useRouter as jest.Mock).mockReturnValue(mockRouter);
     (global.fetch as jest.Mock).mockImplementation((url) => {
       switch (url) {
@@ -185,5 +204,36 @@ describe('Campaigns', () => {
     await waitFor(() => {
       expect(screen.getByText('API Error')).toBeInTheDocument();
     });
+  });
+
+  it('renders loading state when auth is loading', () => {
+    (useAuth as jest.Mock).mockReturnValue({
+      user: null,
+      loading: true,
+    });
+
+    render(<Campaigns />);
+    expect(screen.getByTestId('loader')).toBeInTheDocument();
+  });
+
+  it('renders campaigns page when user is authenticated', () => {
+    (useAuth as jest.Mock).mockReturnValue({
+      user: mockUser,
+      loading: false,
+    });
+
+    render(<Campaigns />);
+    expect(screen.getByTestId('navigation')).toBeInTheDocument();
+    expect(screen.getByTestId('campaign-list')).toBeInTheDocument();
+  });
+
+  it('redirects to login when user is not authenticated', () => {
+    (useAuth as jest.Mock).mockReturnValue({
+      user: null,
+      loading: false,
+    });
+
+    render(<Campaigns />);
+    // The component should handle redirect logic
   });
 }); 

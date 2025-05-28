@@ -174,6 +174,7 @@ export function validateEmail(email: string): boolean {
 export function markUserOptOut(email: string): void {
   const status = emailTracker.get(email);
   emailTracker.set(email, {
+    sent: false, // Default value
     ...status,
     optedOut: true,
     optedOutAt: new Date().toISOString()

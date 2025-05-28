@@ -13,11 +13,13 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [message, setMessage] = useState<string | null>(null)
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
+    setMessage(null)
 
     try {
       const { error } = await supabase.auth.signInWithOtp({
@@ -42,6 +44,7 @@ export default function LoginPage() {
   const handleGoogleLogin = async () => {
     setIsLoading(true)
     setError(null)
+    setMessage(null)
 
     console.log("[OAuth] about to sign in with Google")
 
@@ -96,6 +99,12 @@ export default function LoginPage() {
           {error && (
             <div className="bg-red-900/50 border border-red-500 rounded-lg p-4">
               <p className="text-red-400 text-sm">{error}</p>
+            </div>
+          )}
+
+          {message && (
+            <div className="bg-green-900/50 border border-green-500 rounded-lg p-4">
+              <p className="text-green-400 text-sm">{message}</p>
             </div>
           )}
 

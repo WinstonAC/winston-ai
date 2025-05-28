@@ -210,7 +210,6 @@ const Chatbot: React.FC<ChatbotProps> = ({ initialContext = 'general', onClose }
   const getContextResponses = () => {
     const path = router.pathname;
     const userRole = user?.role || 'USER';
-    const teamId = user?.teamId;
 
     const baseResponses = {
       '/dashboard': {
@@ -246,7 +245,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ initialContext = 'general', onClose }
       }
     };
 
-    return baseResponses[path] || baseResponses['/dashboard'];
+    return baseResponses[path as keyof typeof baseResponses] || baseResponses['/dashboard'];
   };
 
   // Enhanced command matching
@@ -338,7 +337,7 @@ What specific feature would you like to know more about?`;
 
     // Process input
     const command = matchCommand(input);
-    const multiStepResponse = handleMultiStep(command);
+    const multiStepResponse = command ? handleMultiStep(command) : null;
 
     if (multiStepResponse) {
       setMessages(prev => [...prev, {
@@ -359,7 +358,7 @@ What specific feature would you like to know more about?`;
         response = handleAnalyticsQuery(input);
       } else {
         const contextResponses = getContextResponses();
-        response = command ? contextResponses.responses[command] : 'I_DONT_UNDERSTAND_PLEASE_TRY_AGAIN_';
+        response = command ? `I can help you with ${command}. What would you like to know?` : 'I_DONT_UNDERSTAND_PLEASE_TRY_AGAIN_';
       }
 
       setMessages(prev => [...prev, {

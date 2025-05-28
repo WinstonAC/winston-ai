@@ -1,9 +1,9 @@
 import React from 'react';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/contexts/AuthContext';
 import { ChartBarIcon, ArrowsRightLeftIcon, DocumentArrowDownIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 
 const Analytics = () => {
-  const { data: session } = useSession();
+  const { user } = useAuth();
 
   return (
     <div className="min-h-screen bg-black text-white p-8">

@@ -3,52 +3,72 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
 import Navigation from '@/components/Navigation';
-import { signIn, useSession, signOut } from 'next-auth/react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
 
 export default function Login() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { user, loading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { registered } = router.query;
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const dropdownRefs = React.useRef<Record<string, HTMLDivElement | null>>({});
 
   useEffect(() => {
-    // Only redirect if user is authenticated and not coming from the landing page
-    if (status === 'authenticated' && router.query.from !== 'landing') {
+    if (!loading && user) {
       router.push('/dashboard');
     }
-  }, [status, router]);
+  }, [user, loading, router]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
+    setIsLoading(true);
+    setError(null);
 
     try {
-      const result = await signIn('credentials', {
-        redirect: false,
-        email,
-        password,
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email.trim(),
+        options: {
+          emailRedirectTo: `${window.location.origin}/dashboard`,
+        },
       });
 
-      if (result?.error) {
-        setError(result.error);
-        setLoading(false);
-        return;
-      }
+      if (error) throw error;
+      
+      // Show success message or redirect
+      alert('Check your email for the login link');
+    } catch (err) {
+      console.error('Login error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to send login link');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-      router.push('/dashboard');
-    } catch (error) {
-      console.error('Login error:', error);
-      setError('An unexpected error occurred');
-      setLoading(false);
+  const handleGoogleLogin = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (error) throw error;
+    } catch (err) {
+      console.error('Google login error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to login with Google');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -73,6 +93,10 @@ export default function Login() {
     setActiveDropdown(activeDropdown === name ? null : name);
   };
 
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <>
       <Head>
@@ -90,7 +114,7 @@ export default function Login() {
                 SIGN IN
               </h2>
             </div>
-            <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+            <form className="mt-8 space-y-6" onSubmit={handleEmailLogin}>
               {registered && (
                 <div className="mb-4 p-4 bg-[#32CD32]/10 text-[#32CD32] rounded-md text-sm border border-[#32CD32]/20 font-mono">
                   ACCOUNT CREATED SUCCESSFULLY
@@ -149,10 +173,10 @@ export default function Login() {
               <div>
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={isLoading}
                   className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-sm font-mono tracking-wider text-white bg-[#32CD32] hover:bg-[#32CD32]/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#32CD32] disabled:opacity-50"
                 >
-                  {loading ? 'SIGNING IN' : 'SIGN IN'}
+                  {isLoading ? 'SENDING LOGIN LINK' : 'SIGN IN'}
                 </button>
               </div>
 

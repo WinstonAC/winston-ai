@@ -1,5 +1,5 @@
 import { ClassificationResult } from '@/types/agent';
-import { classificationPrompt } from '@/prompts';
+import { CLASSIFICATION_PROMPTS } from '@/prompts';
 
 export async function classifyReply(
   emailContent: string,

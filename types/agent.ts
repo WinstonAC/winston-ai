@@ -25,7 +25,7 @@ export interface CSVRow {
   status?: EmailStatus;
   lastContacted?: string;
   optOut?: boolean;
-  [key: string]: string | boolean | undefined;
+  [key: string]: string | boolean | EmailStatus | undefined;
 }
 
 export interface ClassificationResult {

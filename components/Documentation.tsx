@@ -273,7 +273,7 @@ const DeveloperSection: React.FC = () => (
             <li>• TypeScript</li>
             <li>• Tailwind CSS</li>
             <li>• Prisma ORM</li>
-            <li>• NextAuth.js</li>
+            <li>• Supabase Auth</li>
           </ul>
         </div>
       </div>
@@ -332,6 +332,7 @@ const DeveloperSection: React.FC = () => (
               <li>• POST /api/auth/signin</li>
               <li>• POST /api/auth/signout</li>
               <li>• GET /api/auth/session</li>
+              <li>• GET /api/auth/user</li>
             </ul>
           </div>
           <div className="text-gray-300">

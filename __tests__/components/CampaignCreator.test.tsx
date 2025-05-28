@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { CampaignCreator } from '@/components/CampaignCreator';
 import { api } from '@/lib/api';
 import { toast } from 'react-hot-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Mock react-hot-toast
 jest.mock('react-hot-toast', () => ({
@@ -21,13 +22,21 @@ jest.mock('@/lib/api', () => ({
   },
 }));
 
-// Mock next-auth
-jest.mock('next-auth/react', () => ({
-  useSession: () => ({
-    data: { user: { id: '1', email: 'test@example.com' } },
-    status: 'authenticated',
+// Mock useAuth
+jest.mock('@/contexts/AuthContext', () => ({
+  useAuth: jest.fn(),
+}));
+
+// Mock router
+jest.mock('next/router', () => ({
+  useRouter: () => ({
+    push: jest.fn(),
+    pathname: '/campaigns/new',
   }),
 }));
+
+// Mock fetch
+global.fetch = jest.fn();
 
 const mockTemplates = [
   { id: '1', name: 'Template 1' },
@@ -45,7 +54,23 @@ const mockLeads = [
 ];
 
 describe('CampaignCreator', () => {
+  const mockUser = {
+    id: 'test-user-id',
+    email: 'test@example.com',
+    name: 'Test User',
+  };
+
   beforeEach(() => {
+    (useAuth as jest.Mock).mockReturnValue({
+      user: mockUser,
+      loading: false,
+    });
+
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ id: 'new-campaign-id' }),
+    });
+
     jest.clearAllMocks();
     (api.get as jest.Mock).mockResolvedValue({ data: [] });
   });
@@ -136,6 +161,20 @@ describe('CampaignCreator', () => {
     await waitFor(() => {
       expect(api.delete).toHaveBeenCalledWith(expect.stringContaining('campaigns/'));
       expect(toast.success).toHaveBeenCalledWith('Campaign deleted successfully');
+    });
+  });
+
+  it('handles form submission', async () => {
+    render(<CampaignCreator />);
+    
+    const nameInput = screen.getByLabelText(/campaign name/i);
+    userEvent.change(nameInput, { target: { value: 'Test Campaign' } });
+    
+    const submitButton = screen.getByRole('button', { name: /create/i });
+    userEvent.click(submitButton);
+    
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalled();
     });
   });
 }); 

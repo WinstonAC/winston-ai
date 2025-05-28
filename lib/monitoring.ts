@@ -1,95 +1,79 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-import { getSession } from 'next-auth/react';
+import { supabase } from '@/lib/supabase';
 
-// Simple in-memory metrics storage
-const metrics: {
-  performance: Record<string, number[]>;
-  errors: Array<{ message: string; timestamp: Date }>;
-  api: Record<string, { count: number; avgResponseTime: number }>;
-} = {
-  performance: {},
-  errors: [],
-  api: {}
-};
-
-export async function trackPerformance(metric: string, value: number) {
-  if (!metrics.performance[metric]) {
-    metrics.performance[metric] = [];
-  }
-  metrics.performance[metric].push(value);
+interface MonitoringEvent {
+  type: 'page_view' | 'user_action' | 'error' | 'performance';
+  data: Record<string, any>;
+  timestamp: string;
+  userId?: string;
+  sessionId?: string;
 }
 
-export async function logError(message: string) {
-  metrics.errors.push({
-    message,
-    timestamp: new Date()
-  });
-}
+class MonitoringService {
+  private events: MonitoringEvent[] = [];
+  private isEnabled = process.env.NODE_ENV === 'production';
 
-export async function trackApiCall(endpoint: string, responseTime: number) {
-  if (!metrics.api[endpoint]) {
-    metrics.api[endpoint] = { count: 0, avgResponseTime: 0 };
-  }
-  const current = metrics.api[endpoint];
-  current.count++;
-  current.avgResponseTime = (current.avgResponseTime * (current.count - 1) + responseTime) / current.count;
-}
+  async logEvent(type: MonitoringEvent['type'], data: Record<string, any>) {
+    if (!this.isEnabled) return;
 
-export async function getMetrics() {
-  return {
-    performance: Object.entries(metrics.performance).reduce((acc, [key, values]) => ({
-      ...acc,
-      [key]: {
-        avg: values.reduce((sum, val) => sum + val, 0) / values.length,
-        min: Math.min(...values),
-        max: Math.max(...values)
-      }
-    }), {}),
-    errors: metrics.errors,
-    api: metrics.api
-  };
-}
+    try {
+      // Get current user session
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const event: MonitoringEvent = {
+        type,
+        data,
+        timestamp: new Date().toISOString(),
+        userId: session?.user?.id,
+        sessionId: session?.access_token?.slice(0, 8), // Use part of token as session ID
+      };
 
-// API route for monitoring
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const session = await getSession({ req });
-
-  if (req.method === 'POST') {
-    const { type, data } = req.body;
-
-    switch (type) {
-      case 'performance':
-        await trackPerformance(data.metric, data.value);
-        break;
-      case 'error':
-        await logError(data.message);
-        break;
-      case 'api':
-        await trackApiCall(data.endpoint, data.responseTime);
-        break;
+      this.events.push(event);
+      
+      // In a real implementation, you'd send this to your monitoring service
+      console.log('Monitoring event:', event);
+    } catch (error) {
+      console.error('Failed to log monitoring event:', error);
     }
-
-    return res.status(200).json({ success: true });
   }
 
-  if (req.method === 'GET') {
-    const { type } = req.query;
-
-    let data;
-    switch (type) {
-      case 'performance':
-        data = await getMetrics();
-        break;
-      case 'error':
-        data = metrics.errors;
-        break;
-      case 'api':
-        data = metrics.api;
-        break;
-    }
-
-    return res.status(200).json(data);
+  async logPageView(path: string, additionalData?: Record<string, any>) {
+    await this.logEvent('page_view', {
+      path,
+      userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'server',
+      ...additionalData,
+    });
   }
 
-  return res.status(405).json({ error: 'Method not allowed' });
-} 
+  async logUserAction(action: string, additionalData?: Record<string, any>) {
+    await this.logEvent('user_action', {
+      action,
+      ...additionalData,
+    });
+  }
+
+  async logError(error: Error, context?: Record<string, any>) {
+    await this.logEvent('error', {
+      message: error.message,
+      stack: error.stack,
+      ...context,
+    });
+  }
+
+  async logPerformance(metric: string, value: number, additionalData?: Record<string, any>) {
+    await this.logEvent('performance', {
+      metric,
+      value,
+      ...additionalData,
+    });
+  }
+
+  getEvents(): MonitoringEvent[] {
+    return [...this.events];
+  }
+
+  clearEvents(): void {
+    this.events = [];
+  }
+}
+
+export const monitoring = new MonitoringService(); 

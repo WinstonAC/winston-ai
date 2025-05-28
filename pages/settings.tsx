@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Settings() {
-  const { data: session, status } = useSession();
+  const { user, loading } = useAuth();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -18,23 +18,23 @@ export default function Settings() {
 
   // Update form data when session loads
   useEffect(() => {
-    if (session?.user) {
+    if (user) {
       setFormData(prev => ({
         ...prev,
-        name: session.user.name || '',
-        email: session.user.email || '',
+        name: user.user_metadata?.name || '',
+        email: user.email || '',
       }));
     }
-  }, [session]);
+  }, [user]);
 
   // Redirect if not authenticated
-  if (status === 'unauthenticated') {
+  if (!user && !loading) {
     router.push('/login');
     return null;
   }
 
   // Show loading state while checking authentication
-  if (status === 'loading') {
+  if (loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">

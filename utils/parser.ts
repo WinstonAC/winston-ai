@@ -183,7 +183,8 @@ export const parseCSV = async (
 
         // Validate headers on first row
         if (!headerValidated) {
-          const headers = Object.keys(results.data);
+          const data = results.data as Record<string, string>;
+          const headers = Object.keys(data);
           const { isValid, errors: headerErrors, warnings: headerWarnings } = validateCSVStructure(headers);
           if (!isValid) {
             errors.push(...headerErrors);
@@ -197,7 +198,7 @@ export const parseCSV = async (
         const row = results.data as Record<string, string>;
         
         // Validate row
-        const { isValid, errors: rowErrors, warnings: rowWarnings } = validateCSVRow(row, parser.streamer.current_row);
+        const { isValid, errors: rowErrors, warnings: rowWarnings } = validateCSVRow(row, rowCount);
         if (rowErrors.length > 0) {
           errors.push(...rowErrors);
           invalidRowCount++;
@@ -214,16 +215,16 @@ export const parseCSV = async (
 
         // Update progress
         if (onProgress) {
-          onProgress(parser.streamer.current_row / parser.streamer.total_rows * 100);
+          onProgress((rowCount / MAX_ROWS) * 100); // Approximate progress
         }
 
         // Log progress
-        if (onLog && parser.streamer.current_row % 100 === 0) {
+        if (onLog && rowCount % 100 === 0) {
           onLog({
-            message: `Processed ${parser.streamer.current_row} rows...`,
+            message: `Processed ${rowCount} rows...`,
             timestamp: new Date().toISOString(),
             type: 'info',
-            rowNumber: parser.streamer.current_row
+            rowNumber: rowCount
           });
         }
       },

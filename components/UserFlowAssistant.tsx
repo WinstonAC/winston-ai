@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/contexts/AuthContext';
 import { ChatBubbleLeftIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 interface AssistantMessage {
@@ -16,7 +16,7 @@ const UserFlowAssistant: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [currentMessage, setCurrentMessage] = useState<AssistantMessage | null>(null);
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { user, loading } = useAuth();
 
   const messages = useMemo<Record<string, AssistantMessage>>(() => ({
     '/': {

@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import dynamic from 'next/dynamic';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/contexts/AuthContext';
 import Navigation from '@/components/Navigation';
-import LeadTable from '@/components/LeadTable';
+import LeadTable, { Lead } from '@/components/LeadTable';
 import Loader from '@/components/Loader';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
@@ -31,16 +31,6 @@ interface DashboardData {
   }[];
 }
 
-interface Lead {
-  id: string;
-  name: string;
-  email: string;
-  status: 'Sent' | 'Opened' | 'Clicked' | 'Booked' | 'Bounced';
-  classification: 'Interested' | 'Not Interested' | 'Needs Info' | null;
-  sent_at: string;
-  created_at: string;
-}
-
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second
 
@@ -61,24 +51,78 @@ async function fetchWithRetry(url: string, options: RequestInit = {}, retries = 
 }
 
 export default function DashboardPage() {
-  const { data: session, status } = useSession();
+  const { user, loading } = useAuth();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [activities, setActivities] = useState<any[]>([]);
 
   useEffect(() => {
-    const checkSession = async () => {
-      const { data, error } = await supabase.auth.getSession();
-      console.log("[Auth] Session data:", data);
-      if (error) console.error("[Auth] Session error:", error);
-      if (!data.session) {
-        router.push('/auth/signin');
+    if (loading) return;
+    
+    if (!user) {
+      router.push('/auth/signin');
+      return;
+    }
+
+    // Fetch dashboard data
+    const fetchData = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) throw error;
+
+        // Mock data for MVP
+        setLeads([
+          {
+            id: '1',
+            name: 'John Doe',
+            email: 'john@example.com',
+            company: 'Acme Corp',
+            title: 'CEO',
+            status: 'new',
+            lastContacted: '2024-01-15'
+          },
+          {
+            id: '2', 
+            name: 'Jane Smith',
+            email: 'jane@example.com',
+            company: 'Tech Inc',
+            title: 'CTO',
+            status: 'contacted',
+            lastContacted: '2024-01-14'
+          }
+        ]);
+
+        setCampaigns([
+          {
+            id: '1',
+            name: 'Q1 Outreach',
+            status: 'active',
+            leads: 150,
+            responses: 23
+          }
+        ]);
+
+        setActivities([
+          {
+            id: '1',
+            type: 'email_sent',
+            description: 'Welcome email sent to John Doe',
+            timestamp: '2024-01-15T10:30:00Z'
+          }
+        ]);
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
-    checkSession();
-  }, [router]);
+
+    fetchData();
+  }, [user, loading, router]);
 
   const fetchDashboardData = async () => {
     try {
@@ -130,7 +174,7 @@ export default function DashboardPage() {
     }
   };
 
-  if (status === 'loading' || isLoading) {
+  if (loading || isLoading) {
     return <Loader />;
   }
 

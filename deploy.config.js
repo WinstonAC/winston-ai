@@ -50,7 +50,12 @@ module.exports = {
         enabled: false,
         type: 'memory',
         ttl: 300 // 5 minutes
-      }
+      },
+      env: {
+        NODE_ENV: 'development',
+        NEXT_PUBLIC_SUPABASE_URL: process.env.DEV_SUPABASE_URL,
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.DEV_SUPABASE_ANON_KEY,
+      },
     },
     staging: {
       name: 'staging',
@@ -102,7 +107,12 @@ module.exports = {
         enabled: true,
         type: 'redis',
         ttl: 600 // 10 minutes
-      }
+      },
+      env: {
+        NODE_ENV: 'staging',
+        NEXT_PUBLIC_SUPABASE_URL: process.env.STAGING_SUPABASE_URL,
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.STAGING_SUPABASE_ANON_KEY,
+      },
     },
     production: {
       name: 'production',
@@ -154,7 +164,12 @@ module.exports = {
         enabled: true,
         type: 'redis',
         ttl: 1800 // 30 minutes
-      }
+      },
+      env: {
+        NODE_ENV: 'production',
+        NEXT_PUBLIC_SUPABASE_URL: process.env.PROD_SUPABASE_URL,
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.PROD_SUPABASE_ANON_KEY,
+      },
     }
   },
   deployment: {

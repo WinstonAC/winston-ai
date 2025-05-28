@@ -153,27 +153,30 @@ export const getAnalyticsPermissions = (user: User): AnalyticsPermissions => {
     dataAccessLevel: 'own',
     
     // Usage Limits
-    usageLimits: getDefaultUsageLimits(user.plan),
+    usageLimits: getDefaultUsageLimits('free'),
     
     // Team Features
     teamPermissions: getDefaultTeamPermissions(user.role),
   };
 
-  // Plan-based permissions
-  if (user.plan === 'pro' || user.plan === 'enterprise') {
-    basePermissions.canExportData = true;
-    basePermissions.canCompareCampaigns = true;
-    basePermissions.canViewRealTimeData = true;
-    basePermissions.canViewTeamCampaigns = true;
-    basePermissions.dataAccessLevel = 'team';
-  }
+  // For MVP, assume free plan - can be enhanced later
+  const userPlan: PlanType = 'free';
 
-  if (user.plan === 'enterprise') {
-    basePermissions.canManageAnnotations = true;
-    basePermissions.canAccessAdvancedCharts = true;
-    basePermissions.canCreateCustomReports = true;
-    basePermissions.canScheduleExports = true;
-  }
+  // Plan-based permissions (currently disabled for MVP since all users are free)
+  // if (userPlan === 'pro' || userPlan === 'enterprise') {
+  //   basePermissions.canExportData = true;
+  //   basePermissions.canCompareCampaigns = true;
+  //   basePermissions.canViewRealTimeData = true;
+  //   basePermissions.canViewTeamCampaigns = true;
+  //   basePermissions.dataAccessLevel = 'team';
+  // }
+
+  // if (userPlan === 'enterprise') {
+  //   basePermissions.canManageAnnotations = true;
+  //   basePermissions.canAccessAdvancedCharts = true;
+  //   basePermissions.canCreateCustomReports = true;
+  //   basePermissions.canScheduleExports = true;
+  // }
 
   // Role-based permissions
   if (user.role === 'admin') {

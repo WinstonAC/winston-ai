@@ -1,5 +1,10 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { env } from '@/lib/env-loader';
+
+const env = {
+  NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  NODE_ENV: process.env.NODE_ENV,
+};
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   // Only allow GET requests
@@ -9,13 +14,8 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 
   // Return environment variables (excluding sensitive ones)
   return res.status(200).json({
-    NODE_ENV: env.NODE_ENV,
-    NEXTAUTH_URL: env.NEXTAUTH_URL,
-    DATABASE_URL: env.DATABASE_URL ? '***' : undefined,
-    // Log which variables are present without exposing their values
-    hasDatabaseUrl: !!env.DATABASE_URL,
-    hasNextAuthSecret: !!env.NEXTAUTH_SECRET,
-    hasGoogleClientId: !!env.GOOGLE_CLIENT_ID,
-    hasGoogleClientSecret: !!env.GOOGLE_CLIENT_SECRET,
+    supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL,
+    hasSupabaseKey: !!env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    nodeEnv: env.NODE_ENV,
   });
 } 

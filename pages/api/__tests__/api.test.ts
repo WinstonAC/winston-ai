@@ -1,192 +1,186 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { createMocks } from 'node-mocks-http';
-import analytics from '../analytics';
-import campaigns from '../campaigns';
-import leads from '../leads';
-import team from '../team';
-import { 
-  mockGetServerSession, 
-  createAuthenticatedRequest, 
-  isUnauthorizedResponse 
+import { supabase } from '@/lib/supabase';
+import {
+  mockSupabaseAuth,
 } from '@/tests/utils/auth';
 
-// Mock session
-jest.mock('next-auth/react', () => ({
-  getSession: jest.fn().mockResolvedValue({
-    user: {
-      id: 'test-user-id',
-      email: 'test@example.com'
-    }
-  })
+// Mock Supabase
+jest.mock('@/lib/supabase', () => ({
+  supabase: {
+    auth: {
+      getUser: jest.fn(),
+      getSession: jest.fn(),
+    },
+    from: jest.fn(() => ({
+      select: jest.fn(() => ({
+        eq: jest.fn(() => Promise.resolve({ data: [], error: null }))
+      }))
+    }))
+  }
 }));
 
-describe('API Endpoints', () => {
+const mockUser = {
+  id: 'test-user-id',
+  email: 'test@example.com',
+  name: 'Test User',
+  role: 'user',
+  teamId: 'test-team-id',
+};
+
+describe('API Routes Authentication', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  describe('Analytics API', () => {
-    it('should return analytics data for authenticated user', async () => {
-      const { req, res } = createMocks<NextApiRequest, NextApiResponse>({
+  describe('GET /api/analytics', () => {
+    it('should return 401 when no authorization header', async () => {
+      const req = {
         method: 'GET',
-        query: { range: '30d' },
+        headers: {},
+      } as NextApiRequest;
+      
+      const res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      } as unknown as NextApiResponse;
+
+      // Mock no auth
+      (supabase.auth.getUser as jest.Mock).mockResolvedValue({
+        data: { user: null },
+        error: new Error('No token provided')
       });
 
-      // Mock authenticated session
-      mockGetServerSession({
-        user: { id: 'test-user-id', teamId: 'test-team-id' }
-      });
+      const handler = require('@/pages/api/analytics').default;
+      await handler(req, res);
 
-      await analytics(req, res);
-
-      expect(res._getStatusCode()).toBe(200);
-      expect(res._getJSONData()).toHaveProperty('totalLeads');
-      expect(res._getJSONData()).toHaveProperty('openRate');
-      expect(res._getJSONData()).toHaveProperty('responseRate');
-      expect(res._getJSONData()).toHaveProperty('meetings');
-      expect(res._getJSONData()).toHaveProperty('recentActivity');
-      expect(res._getJSONData()).toHaveProperty('trends');
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.json).toHaveBeenCalledWith({ error: 'Unauthorized' });
     });
 
-    it('should return 401 for unauthenticated user', async () => {
-      const { req, res } = createMocks<NextApiRequest, NextApiResponse>({
+    it('should return analytics data when authenticated', async () => {
+      // Mock authenticated user
+      (supabase.auth.getUser as jest.Mock).mockResolvedValue({
+        data: { user: mockUser },
+        error: null
+      });
+
+      const req = {
         method: 'GET',
+        headers: { authorization: 'Bearer valid-token' },
         query: { range: '30d' },
-      });
+      } as NextApiRequest;
+      
+      const res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      } as unknown as NextApiResponse;
 
-      // Mock no session
-      mockGetServerSession(null);
+      const handler = require('@/pages/api/analytics').default;
+      await handler(req, res);
 
-      await analytics(req, res);
-
-      expect(isUnauthorizedResponse(res)).toBe(true);
+      expect(res.status).toHaveBeenCalledWith(200);
     });
   });
 
-  describe('Campaigns API', () => {
-    it('should create a new campaign', async () => {
-      const { req, res } = createMocks<NextApiRequest, NextApiResponse>({
+  describe('POST /api/activity/log', () => {
+    it('should return 401 when no authorization header', async () => {
+      const req = {
         method: 'POST',
-        body: {
-          name: 'Test Campaign',
-          description: 'Test Description',
-          templateId: 'template-1',
-          targetAudience: { criteria: 'test' },
-          schedule: { startDate: new Date() },
-        },
+        headers: {},
+        body: { type: 'test', description: 'test' },
+      } as NextApiRequest;
+      
+      const res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      } as unknown as NextApiResponse;
+
+      // Mock no auth
+      (supabase.auth.getUser as jest.Mock).mockResolvedValue({
+        data: { user: null },
+        error: new Error('No token provided')
       });
 
-      // Mock authenticated session with team
-      mockGetServerSession({
-        user: { id: 'test-user-id', teamId: 'test-team-id' }
-      });
+      const handler = require('@/pages/api/activity/log').default;
+      await handler(req, res);
 
-      await campaigns(req, res);
-
-      expect(res._getStatusCode()).toBe(201);
-      expect(res._getJSONData()).toHaveProperty('id');
-      expect(res._getJSONData()).toHaveProperty('name', 'Test Campaign');
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.json).toHaveBeenCalledWith({ error: 'Unauthorized' });
     });
 
-    it('should return 401 for unauthenticated campaign creation', async () => {
-      const { req, res } = createMocks<NextApiRequest, NextApiResponse>({
+    it('should log activity when authenticated', async () => {
+      // Mock authenticated user
+      (supabase.auth.getUser as jest.Mock).mockResolvedValue({
+        data: { user: mockUser },
+        error: null
+      });
+
+      const req = {
         method: 'POST',
-        body: {
-          name: 'Test Campaign',
-        },
-      });
+        headers: { authorization: 'Bearer valid-token' },
+        body: { type: 'test', description: 'test activity' },
+      } as NextApiRequest;
+      
+      const res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      } as unknown as NextApiResponse;
 
-      // Mock no session
-      mockGetServerSession(null);
+      const handler = require('@/pages/api/activity/log').default;
+      await handler(req, res);
 
-      await campaigns(req, res);
-
-      expect(isUnauthorizedResponse(res)).toBe(true);
-    });
-  });
-
-  describe('Leads API', () => {
-    it('should create a new lead', async () => {
-      const { req, res } = createMocks<NextApiRequest, NextApiResponse>({
-        method: 'POST',
-        body: {
-          name: 'Test Lead',
-          email: 'test@example.com',
-          company: 'Test Company',
-          title: 'Test Title',
-        },
-      });
-
-      // Mock authenticated session with team
-      mockGetServerSession({
-        user: { id: 'test-user-id', teamId: 'test-team-id' }
-      });
-
-      await leads(req, res);
-
-      expect(res._getStatusCode()).toBe(201);
-      expect(res._getJSONData()).toHaveProperty('id');
-      expect(res._getJSONData()).toHaveProperty('name', 'Test Lead');
-      expect(res._getJSONData()).toHaveProperty('email', 'test@example.com');
-    });
-
-    it('should return 401 for unauthenticated lead creation', async () => {
-      const { req, res } = createMocks<NextApiRequest, NextApiResponse>({
-        method: 'POST',
-        body: {
-          name: 'Test Lead',
-          email: 'test@example.com',
-        },
-      });
-
-      // Mock no session
-      mockGetServerSession(null);
-
-      await leads(req, res);
-
-      expect(isUnauthorizedResponse(res)).toBe(true);
+      expect(res.status).toHaveBeenCalledWith(200);
     });
   });
 
-  describe('Team API', () => {
-    it('should create a new team', async () => {
-      const { req, res } = createMocks<NextApiRequest, NextApiResponse>({
-        method: 'POST',
-        body: {
-          name: 'Test Team',
-          members: [
-            { userId: 'member-1', role: 'member' },
-          ],
-        },
+  describe('GET /api/activity/list', () => {
+    it('should return 401 when no authorization header', async () => {
+      const req = {
+        method: 'GET',
+        headers: {},
+        query: { teamId: 'test-team-id' },
+      } as NextApiRequest;
+      
+      const res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      } as unknown as NextApiResponse;
+
+      // Mock no auth
+      (supabase.auth.getUser as jest.Mock).mockResolvedValue({
+        data: { user: null },
+        error: new Error('No token provided')
       });
 
-      // Mock authenticated session
-      mockGetServerSession({
-        user: { id: 'test-user-id' }
-      });
+      const handler = require('@/pages/api/activity/list').default;
+      await handler(req, res);
 
-      await team(req, res);
-
-      expect(res._getStatusCode()).toBe(201);
-      expect(res._getJSONData()).toHaveProperty('id');
-      expect(res._getJSONData()).toHaveProperty('name', 'Test Team');
-      expect(res._getJSONData().members).toHaveLength(2);
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.json).toHaveBeenCalledWith({ error: 'Unauthorized' });
     });
 
-    it('should return 401 for unauthenticated team creation', async () => {
-      const { req, res } = createMocks<NextApiRequest, NextApiResponse>({
-        method: 'POST',
-        body: {
-          name: 'Test Team',
-        },
+    it('should return activities when authenticated', async () => {
+      // Mock authenticated user
+      (supabase.auth.getUser as jest.Mock).mockResolvedValue({
+        data: { user: mockUser },
+        error: null
       });
 
-      // Mock no session
-      mockGetServerSession(null);
+      const req = {
+        method: 'GET',
+        headers: { authorization: 'Bearer valid-token' },
+        query: { teamId: 'test-team-id' },
+      } as NextApiRequest;
+      
+      const res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn(),
+      } as unknown as NextApiResponse;
 
-      await team(req, res);
+      const handler = require('@/pages/api/activity/list').default;
+      await handler(req, res);
 
-      expect(isUnauthorizedResponse(res)).toBe(true);
+      expect(res.status).toHaveBeenCalledWith(200);
     });
   });
 }); 

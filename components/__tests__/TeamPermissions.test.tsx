@@ -1,30 +1,52 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
-import { TeamPermissions } from '../TeamPermissions';
-import { useSession } from 'next-auth/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { useAuth } from '@/contexts/AuthContext';
+import { TeamPermissions } from '@/components/TeamPermissions';
 
-// Mock next-auth/react
-jest.mock('next-auth/react', () => ({
-  useSession: jest.fn(),
+// Mock useAuth
+jest.mock('@/contexts/AuthContext', () => ({
+  useAuth: jest.fn(),
 }));
 
-// Mock fetch
-global.fetch = jest.fn();
+// Mock PermissionsContext
+jest.mock('@/contexts/PermissionsContext', () => ({
+  usePermissions: () => ({
+    state: { permissions: [] },
+    dispatch: jest.fn(),
+  }),
+}));
 
 describe('TeamPermissions', () => {
+  const mockUser = {
+    id: 'user-1',
+    email: 'test@example.com',
+    name: 'Test User',
+  };
+
   beforeEach(() => {
-    (useSession as jest.Mock).mockReturnValue({
-      data: {
-        user: {
-          id: 'test-user-id',
-          email: 'test@example.com',
-        },
-      },
-      status: 'authenticated',
+    (useAuth as jest.Mock).mockReturnValue({
+      user: mockUser,
+      loading: false,
+    });
+
+    // Mock fetch
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve([]),
     });
   });
 
-  it('displays loading state initially', () => {
+  it('renders team members heading', () => {
+    render(<TeamPermissions />);
+    expect(screen.getByText('Team Members')).toBeInTheDocument();
+  });
+
+  it('shows loading state when user is loading', () => {
+    (useAuth as jest.Mock).mockReturnValue({
+      user: null,
+      loading: true,
+    });
+
     render(<TeamPermissions />);
     expect(screen.getByText('Loading team...')).toBeInTheDocument();
   });
@@ -59,9 +81,9 @@ describe('TeamPermissions', () => {
   });
 
   it('handles unauthorized state', () => {
-    (useSession as jest.Mock).mockReturnValue({
-      data: null,
-      status: 'unauthenticated',
+    (useAuth as jest.Mock).mockReturnValue({
+      user: null,
+      loading: false,
     });
 
     render(<TeamPermissions />);

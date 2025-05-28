@@ -1,51 +1,86 @@
+import React from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { TeamPermissions } from '@/components/TeamPermissions';
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/router';
 
-// Mock next-auth
-jest.mock('next-auth/react', () => ({
-  useSession: jest.fn(),
+// Mock useAuth
+jest.mock('@/contexts/AuthContext', () => ({
+  useAuth: jest.fn(),
 }));
 
-// Mock next/router
-jest.mock('next/router', () => ({
-  useRouter: jest.fn(),
+// Mock PermissionsContext
+jest.mock('@/contexts/PermissionsContext', () => ({
+  usePermissions: () => ({
+    state: { permissions: [] },
+    dispatch: jest.fn(),
+  }),
 }));
 
-// Mock toast
-jest.mock('react-hot-toast', () => ({
-  toast: {
-    success: jest.fn(),
-    error: jest.fn(),
-  },
-}));
+// Mock fetch
+global.fetch = jest.fn();
 
 describe('TeamPermissions', () => {
+  const mockUser = {
+    id: 'user-1',
+    email: 'test@example.com',
+    name: 'Test User',
+  };
+
   beforeEach(() => {
-    // Reset all mocks before each test
     jest.clearAllMocks();
     
-    // Mock useSession to return a logged-in user
-    (useSession as jest.Mock).mockReturnValue({
-      data: {
-        user: {
-          id: '1',
-          email: 'test@example.com',
-        },
-      },
-      status: 'authenticated',
+    // Mock useAuth to return a logged-in user
+    (useAuth as jest.Mock).mockReturnValue({
+      user: mockUser,
+      loading: false,
     });
 
-    // Mock useRouter
-    (useRouter as jest.Mock).mockReturnValue({
-      push: jest.fn(),
+    // Mock fetch responses
+    (global.fetch as jest.Mock).mockImplementation((url) => {
+      if (url.includes('/api/team/members')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve([
+            {
+              id: 'user-1',
+              name: 'Test User',
+              email: 'test@example.com',
+              role: 'admin',
+              permissions: ['read', 'write'],
+            },
+            {
+              id: 'user-2',
+              name: 'Another User',
+              email: 'another@example.com',
+              role: 'member',
+              permissions: ['read'],
+            },
+          ]),
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({}),
+      });
     });
   });
 
-  it('renders the component', () => {
+  it('renders team members list', async () => {
     render(<TeamPermissions />);
-    expect(screen.getByText('Team Members')).toBeInTheDocument();
+    
+    await waitFor(() => {
+      expect(screen.getByText('Team Members')).toBeInTheDocument();
+    });
+  });
+
+  it('shows loading state initially', () => {
+    (useAuth as jest.Mock).mockReturnValue({
+      user: null,
+      loading: true,
+    });
+
+    render(<TeamPermissions />);
+    expect(screen.getByText('Loading team...')).toBeInTheDocument();
   });
 
   it('displays team members when loaded', async () => {
@@ -184,4 +219,5 @@ describe('TeamPermissions', () => {
       );
     });
   });
+}); 
 }); 

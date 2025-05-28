@@ -1,26 +1,28 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/contexts/AuthContext';
 import Navigation from '@/components/Navigation';
 
 export default function CreateTeam() {
+  const { user, loading } = useAuth();
   const router = useRouter();
-  const { data: session, status } = useSession();
   const [teamName, setTeamName] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState('');
 
-  // Redirect if not authenticated
-  React.useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login');
-    }
-  }, [status, router]);
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!user) {
+    router.push('/auth/signin');
+    return null;
+  }
 
   const handleSubmit = async (e: React.FormEvent | undefined, type: string) => {
     e?.preventDefault();
-    setLoading(true);
+    setIsCreating(true);
     setError('');
 
     try {
@@ -47,17 +49,9 @@ export default function CreateTeam() {
       console.error('Error creating team:', error);
       setError(error instanceof Error ? error.message : 'Failed to create team');
     } finally {
-      setLoading(false);
+      setIsCreating(false);
     }
   };
-
-  if (status === 'loading') {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="animate-pulse text-white">Loading...</div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-black">
@@ -94,10 +88,10 @@ export default function CreateTeam() {
                 </p>
                 <button
                   onClick={() => handleSubmit(undefined, 'personal')}
-                  disabled={loading}
+                  disabled={isCreating}
                   className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
                 >
-                  {loading ? 'Setting up...' : 'Start as Individual'}
+                  {isCreating ? 'Setting up...' : 'Start as Individual'}
                 </button>
               </div>
 
@@ -128,10 +122,10 @@ export default function CreateTeam() {
 
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={isCreating}
                   className="w-full flex justify-center py-2 px-4 border border-gray-700 rounded-md shadow-sm text-sm font-medium text-gray-200 bg-gray-800 hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 transition-colors"
                 >
-                  {loading ? 'Creating...' : 'Create Team Account'}
+                  {isCreating ? 'Creating...' : 'Create Team Account'}
                 </button>
               </form>
             </div>

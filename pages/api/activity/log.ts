@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { getServerSession } from 'next-auth';
+import { supabase } from '@/lib/supabase';
 
 export default async function handler(
   req: NextApiRequest,
@@ -10,8 +10,14 @@ export default async function handler(
   }
 
   try {
-    const session = await getServerSession(req, res, { providers: [] });
-    if (!session?.user) {
+    // Get session from Authorization header
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
@@ -26,7 +32,7 @@ export default async function handler(
       type,
       description,
       leadId,
-      userId: session.user.id,
+      userId: user.id,
       teamId: teamId as string,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),

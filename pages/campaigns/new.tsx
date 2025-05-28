@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
-import { useAuth } from '@/components/AuthProvider';
+import { useAuth } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabase';
 import { CreateCampaignInput } from '@/types/campaign';
 import { Loader } from '@/components/ui/Loader';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
-import { showErrorToast } from '@/lib/error';
+import { showErrorToast, AppError } from '@/lib/error';
 
 const steps = [
   { id: 'basics', name: 'Basic Info' },
@@ -62,7 +62,7 @@ export default function NewCampaign() {
 
       router.push(`/campaigns/${data.id}`);
     } catch (err) {
-      showErrorToast('Failed to create campaign');
+      showErrorToast(new AppError('Failed to create campaign', 'api_error'));
       console.error('Campaign creation error:', err);
     } finally {
       setIsLoading(false);
@@ -106,7 +106,7 @@ export default function NewCampaign() {
             <Select
               label="Email Template"
               value={campaign.templateId}
-              onChange={(value) => setCampaign({ ...campaign, templateId: value })}
+              onChange={(e) => setCampaign({ ...campaign, templateId: e.target.value })}
               options={[
                 { value: 'template1', label: 'Welcome Email' },
                 { value: 'template2', label: 'Newsletter' },
@@ -114,7 +114,7 @@ export default function NewCampaign() {
               ]}
             />
             <Button
-              variant="secondary"
+              variant="outline"
               onClick={() => router.push('/templates/new')}
             >
               Create New Template
@@ -128,7 +128,7 @@ export default function NewCampaign() {
             <Select
               label="Target Segment"
               value={campaign.segmentId}
-              onChange={(value) => setCampaign({ ...campaign, segmentId: value })}
+              onChange={(e) => setCampaign({ ...campaign, segmentId: e.target.value })}
               options={[
                 { value: 'segment1', label: 'All Users' },
                 { value: 'segment2', label: 'Active Users' },
@@ -136,7 +136,7 @@ export default function NewCampaign() {
               ]}
             />
             <Button
-              variant="secondary"
+              variant="outline"
               onClick={() => router.push('/segments/new')}
             >
               Create New Segment
@@ -150,11 +150,11 @@ export default function NewCampaign() {
             <Select
               label="Schedule Type"
               value={campaign.schedule.type}
-              onChange={(value) => setCampaign({
+              onChange={(e) => setCampaign({
                 ...campaign,
                 schedule: {
                   ...campaign.schedule,
-                  type: value as 'immediate' | 'scheduled'
+                  type: e.target.value as 'immediate' | 'scheduled'
                 }
               })}
               options={[
@@ -285,7 +285,7 @@ export default function NewCampaign() {
             {!isFirstStep && (
               <Button
                 type="button"
-                variant="secondary"
+                variant="outline"
                 onClick={() => setCurrentStep(steps[currentStepIndex - 1].id)}
               >
                 Previous
@@ -295,7 +295,7 @@ export default function NewCampaign() {
             {isLastStep ? (
               <Button
                 type="submit"
-                variant="primary"
+                variant="default"
                 disabled={isLoading}
               >
                 {isLoading ? <Loader size="sm" /> : 'Create Campaign'}
@@ -303,7 +303,7 @@ export default function NewCampaign() {
             ) : (
               <Button
                 type="button"
-                variant="primary"
+                variant="default"
                 onClick={() => setCurrentStep(steps[currentStepIndex + 1].id)}
               >
                 Next
