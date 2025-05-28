@@ -5,7 +5,7 @@ export const signInWithEmail = async (email: string) => {
     const { data, error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: `${window.location.origin}/dashboard`,
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
         shouldCreateUser: true,
       },
     });
@@ -27,7 +27,7 @@ export const signInWithMagicLink = async (email: string) => {
     const { data, error } = await supabase.auth.signInWithOtp({
       email: encodeURIComponent(email),
       options: {
-        emailRedirectTo: `${window.location.origin}/dashboard`,
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
         data: {
           email: email // Store original email in user metadata
         }
@@ -46,7 +46,7 @@ export const signInWithGoogle = async () => {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/dashboard`,
+        redirectTo: `${window.location.origin}/auth/callback`,
       },
     });
 
