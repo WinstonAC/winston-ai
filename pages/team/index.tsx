@@ -211,11 +211,8 @@ TeamPage.defaultProps = {
 
 // TODO: Replace with Supabase implementation for MVP
 export async function getServerSideProps(context: GetServerSidePropsContext) {
-  // TODO: Replace with Supabase implementation
-  // const user = await prisma.user.findUnique({
-  //   where: { id: context.params?.id as string },
-  //   include: { team: true }
-  // });
+  // TODO: Implement with Supabase auth and database queries
+  // Example: const { data: user } = await supabase.from('users').select('*').eq('id', userId).single();
 
   // For MVP, return mock data
   return {

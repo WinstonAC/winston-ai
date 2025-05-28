@@ -340,21 +340,12 @@ const commandCache = new Cache<Command>({
    ```typescript
    // Efficient querying
    const getRecentInteractions = async (userId: string, limit: number, context?: 'general' | 'analytics') => {
-     return prisma.chatbotInteraction.findMany({
-       where: { 
-         userId,
-         context: context || undefined
-       },
-       orderBy: { timestamp: 'desc' },
-       take: limit,
-       select: {
-         id: true,
-         command: true,
-         timestamp: true,
-         success: true,
-         context: true
-       }
-     });
+     return supabase
+       .from('chatbot_interactions')
+       .select('*')
+       .eq('user_id', userId)
+       .order('created_at', { ascending: false })
+       .limit(limit);
    };
    ```
 

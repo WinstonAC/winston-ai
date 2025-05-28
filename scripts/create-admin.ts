@@ -1,52 +1,64 @@
-import bcrypt from 'bcryptjs';
+import { createClient } from '@supabase/supabase-js';
 
-async function main() {
-  const email = process.argv[2];
-  const password = process.argv[3];
-  const name = process.argv[4] || 'Admin User';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!email || !password) {
-    console.error('Please provide email and password as arguments');
-    console.error('Usage: ts-node scripts/create-admin.ts <email> <password> [name]');
-    process.exit(1);
-  }
+if (!supabaseUrl || !supabaseServiceKey) {
+  console.error('Missing required environment variables:');
+  console.error('- NEXT_PUBLIC_SUPABASE_URL');
+  console.error('- SUPABASE_SERVICE_ROLE_KEY');
+  process.exit(1);
+}
 
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+async function createAdminUser() {
   try {
+    console.log('Creating admin user with Supabase...');
+    
     // Check if any users exist
-    const existingUsers = await prisma.user.findMany();
-    if (existingUsers.length > 0) {
-      console.error('Users already exist in the database. This script is for first-time setup only.');
-      process.exit(1);
+    const { data: existingUsers, error: fetchError } = await supabase
+      .from('users')
+      .select('id')
+      .limit(1);
+    
+    if (fetchError) {
+      throw fetchError;
     }
 
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    if (existingUsers && existingUsers.length > 0) {
+      console.log('Users already exist in the database. Skipping admin creation.');
+      return;
+    }
 
-    // Create the admin user
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        role: 'ADMIN',
-        settings: {
-          create: {
-            emailNotifications: true,
-            theme: 'dark',
-          },
-        },
-      },
+    // Create admin user via Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email: 'admin@winston-ai.com',
+      password: 'admin123',
+      email_confirm: true,
+      user_metadata: {
+        full_name: 'Winston AI Admin',
+        role: 'admin'
+      }
     });
 
-    console.log('Admin user created successfully!');
-    console.log('Email:', user.email);
-    console.log('Name:', user.name);
-    console.log('Role:', user.role);
+    if (authError) {
+      throw authError;
+    }
+
+    console.log('✅ Admin user created successfully!');
+    console.log('📧 Email: admin@winston-ai.com');
+    console.log('🔑 Password: admin123');
+    console.log('⚠️  Please change the password after first login');
+
   } catch (error) {
-    console.error('Error creating admin user:', error);
-  } finally {
-    await prisma.$disconnect();
+    console.error('❌ Error creating admin user:', error);
+    process.exit(1);
   }
 }
 
-main(); 
+createAdminUser()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  }); 

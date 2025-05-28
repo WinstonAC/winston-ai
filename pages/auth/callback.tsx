@@ -1,43 +1,65 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '@/lib/supabase'
 
 export default function AuthCallback() {
   const router = useRouter()
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        // Get the session after OAuth callback
+        // Handle OAuth callback - Supabase automatically processes the URL fragments
         const { data: { session }, error } = await supabase.auth.getSession()
         
         if (error) {
           console.error('Auth callback error:', error)
-          router.push('/auth/signin?error=callback_error')
+          setError(error.message)
+          // Redirect with error after a delay
+          setTimeout(() => {
+            router.push('/auth/signin?error=callback_error')
+          }, 2000)
           return
         }
 
         if (session) {
+          console.log('OAuth success, redirecting to dashboard')
           // User is authenticated, redirect to dashboard
           router.push('/dashboard')
         } else {
           // No session found, redirect to login
-          router.push('/auth/signin?error=no_session')
+          setTimeout(() => {
+            router.push('/auth/signin?error=no_session')
+          }, 2000)
         }
       } catch (error) {
         console.error('Callback handling error:', error)
-        router.push('/auth/signin?error=callback_failed')
+        setError(error instanceof Error ? error.message : 'Authentication failed')
+        setTimeout(() => {
+          router.push('/auth/signin?error=callback_failed')
+        }, 2000)
       }
     }
 
-    handleAuthCallback()
+    // Only run if we're in the browser
+    if (typeof window !== 'undefined') {
+      // Add a small delay to ensure URL processing is complete
+      setTimeout(handleAuthCallback, 100)
+    }
   }, [router])
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-black">
       <div className="text-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#32CD32] mx-auto"></div>
-        <p className="mt-4 text-lg text-white font-mono">Processing authentication...</p>
+        <p className="mt-4 text-lg text-white font-mono">
+          {error ? 'Authentication failed...' : 'Processing authentication...'}
+        </p>
+        {error && (
+          <p className="mt-2 text-red-400 text-sm">
+            {error}
+          </p>
+        )}
       </div>
     </div>
   )

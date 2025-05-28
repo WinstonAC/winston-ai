@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { useRouter } from 'next/router';
-import { supabase } from '@/lib/supabase';
+import { supabase, checkSupabaseConfig } from '@/lib/supabase';
 
 interface AuthContextType {
   user: SupabaseUser | null;
@@ -19,6 +19,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const router = useRouter();
 
   useEffect(() => {
+    // Check Supabase configuration first
+    const config = checkSupabaseConfig();
+    if (!config.configured) {
+      console.warn('Supabase not configured. Auth will not work properly.');
+      setError('Authentication service not configured');
+      setLoading(false);
+      return;
+    }
+
     // Check for existing session
     const checkSession = async () => {
       try {
@@ -30,7 +39,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Set up auth state change listener
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
           setUser(session?.user ?? null);
-          if (!session?.user && !router.pathname.startsWith('/auth/')) {
+          if (!session?.user && !router.pathname.startsWith('/auth/') && router.pathname !== '/' && router.pathname !== '/landing') {
             router.push('/auth/signin');
           }
         });
@@ -41,6 +50,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (err) {
         console.error('Session check error:', err);
         setError(err instanceof Error ? err.message : 'Failed to check authentication status');
+        
+        // In development, provide a fallback
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('Auth error in development mode. Continuing without auth.');
+          setError(null);
+        }
       } finally {
         setLoading(false);
       }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useRouter } from 'next/router';
 import { 
   RocketLaunchIcon, 
   EnvelopeIcon, 
@@ -12,7 +13,10 @@ import {
   CheckIcon,
   PencilIcon,
   XMarkIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  CheckCircleIcon,
+  ChevronDownIcon,
+  ChevronUpIcon
 } from '@heroicons/react/24/outline';
 import Modal from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
@@ -21,15 +25,19 @@ import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 import Loader from '@/components/Loader';
 import { api } from '@/lib/api';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   Campaign, 
   CampaignCreatorProps, 
   CreateCampaignInput,
   UpdateCampaignInput
 } from '@/types/campaign';
+import { Lead } from '@/types/lead';
+import { Template } from '@/types/template';
 import toast from 'react-hot-toast';
 import { AppError, handleError, showErrorToast } from '../lib/error';
+import { supabase } from '@/lib/supabase';
+import { emailSchema, nameSchema, validateInput } from '@/lib/validation';
 
 interface ValidationErrors {
   name?: string;

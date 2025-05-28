@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
+import { PlusIcon } from '@heroicons/react/24/outline';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -11,8 +12,8 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { useRouter } from 'next/router';
-import { PlusIcon } from '@heroicons/react/24/outline';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 
 ChartJS.register(
   CategoryScale,
@@ -45,25 +46,26 @@ type Analytics = {
 
 function CampaignsContent() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [analytics, setAnalytics] = useState<Analytics[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (authLoading) return;
+    
+    if (!user) {
+      router.push('/auth/signin');
+      return;
+    }
+
     const fetchData = async () => {
       try {
-        // Get current session
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.user) {
-          router.push('/auth/signin');
-          return;
-        }
-
         // Fetch campaigns
         const { data: campaignsData, error: campaignsError } = await supabase
           .from('campaigns')
           .select('*')
-          .eq('user_id', session.user.id)
+          .eq('user_id', user.id)
           .order('created_at', { ascending: false });
 
         if (campaignsError) throw campaignsError;
@@ -86,7 +88,7 @@ function CampaignsContent() {
     };
 
     fetchData();
-  }, [router]);
+  }, [user, authLoading, router]);
 
   const chartData = {
     labels: analytics.map(a => new Date(a.date).toLocaleDateString()),

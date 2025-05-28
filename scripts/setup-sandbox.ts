@@ -1,175 +1,138 @@
-import bcrypt from 'bcrypt';
-import { faker } from '@faker-js/faker';
-import { EmailTemplate, defaultTemplates } from '../lib/templates';
+import { createClient } from '@supabase/supabase-js';
 
-// Constants for sample data generation
-const SAMPLE_LEADS_PER_USER = 15;
-const COMPANY_DOMAINS = ['acme.com', 'techcorp.com', 'innovate.io', 'startup.co', 'enterprise.com'];
-const LEAD_STATUSES = ['Pending', 'Sent', 'Opened', 'Clicked', 'Booked', 'Bounced'] as const;
-const CLASSIFICATIONS = ['Interested', 'Not Interested', 'Needs Info', null] as const;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// Helper functions for data generation
-const generateCompanyEmail = (name: string, domain: string) => {
-  const cleanName = name.toLowerCase().replace(/[^a-z]/g, '');
-  return `${cleanName}@${domain}`;
-};
-
-const getRandomDate = (start: Date, end: Date) => {
-  return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
-};
-
-const getRandomElement = <T>(array: readonly T[]): T => {
-  return array[Math.floor(Math.random() * array.length)];
-};
-
-async function createTeam(name: string) {
-  return prisma.team.create({
-    data: {
-      name,
-      settings: {
-        create: {
-          maxUsers: 10,
-          plan: 'FREE',
-        },
-      },
-    },
-  });
+if (!supabaseUrl || !supabaseServiceKey) {
+  console.error('Missing required environment variables for sandbox setup:');
+  console.error('- NEXT_PUBLIC_SUPABASE_URL');
+  console.error('- SUPABASE_SERVICE_ROLE_KEY');
+  process.exit(1);
 }
 
-async function createSampleUser(
-  prisma: PrismaClient,
-  email: string,
-  password: string,
-  role: 'ADMIN' | 'USER' = 'USER'
-) {
-  const hashedPassword = await bcrypt.hash(password, 10);
-  
-  const user = await prisma.user.create({
-    data: {
-      email,
-      password: hashedPassword,
-      role,
-      settings: {
-        create: {
-          emailTemplate: defaultTemplates[0] as EmailTemplate,
-        },
-      },
-    },
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+async function createSampleUser(email: string, password: string, role: string = 'user') {
+  const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: {
+      full_name: email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+      role
+    }
   });
 
-  return user;
-}
-
-async function createSampleLeads(userId: string, count: number) {
-  const leads = [];
-  const startDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000); // 90 days ago
-
-  for (let i = 0; i < count; i++) {
-    const companyDomain = getRandomElement(COMPANY_DOMAINS);
-    const firstName = faker.person.firstName();
-    const lastName = faker.person.lastName();
-    const companyName = faker.company.name();
-    const status = getRandomElement(LEAD_STATUSES);
-    const classification = getRandomElement(CLASSIFICATIONS);
-
-    leads.push({
-      name: `${firstName} ${lastName}`,
-      email: generateCompanyEmail(`${firstName}.${lastName}`, companyDomain),
-      company: companyName,
-      status,
-      classification,
-      userId,
-      sentAt: status !== 'Pending' ? getRandomDate(startDate, new Date()) : null,
-      createdAt: getRandomDate(startDate, new Date()),
-      notes: faker.lorem.paragraph(),
-      phone: faker.phone.number(),
-      position: faker.person.jobTitle(),
-      emailHistory: status !== 'Pending' ? {
-        create: {
-          subject: faker.lorem.sentence(),
-          body: faker.lorem.paragraphs(2),
-          sentAt: getRandomDate(startDate, new Date()),
-          templateId: defaultTemplates[Math.floor(Math.random() * defaultTemplates.length)].id,
-        },
-      } : undefined,
-    });
+  if (authError && !authError.message.includes('already registered')) {
+    throw authError;
   }
 
-  return prisma.lead.createMany({ data: leads });
+  return authData.user;
 }
 
-async function main() {
-  console.log('🚀 Setting up sandbox environment...');
+async function createSampleCampaigns(userId: string) {
+  const campaigns = [
+    {
+      user_id: userId,
+      name: 'Welcome Series',
+      status: 'active',
+      created_at: new Date().toISOString()
+    },
+    {
+      user_id: userId,
+      name: 'Product Demo Follow-up',
+      status: 'draft',
+      created_at: new Date().toISOString()
+    },
+    {
+      user_id: userId,
+      name: 'Customer Feedback',
+      status: 'paused',
+      created_at: new Date().toISOString()
+    }
+  ];
 
+  const { error } = await supabase
+    .from('campaigns')
+    .upsert(campaigns, { onConflict: 'name,user_id' });
+
+  if (error) {
+    console.warn('Warning: Could not create sample campaigns:', error.message);
+  }
+
+  return campaigns;
+}
+
+async function createSampleLeads(campaignIds: string[] = []) {
+  const leads = [
+    { email: 'john.doe@example.com', status: 'new', campaign_id: campaignIds[0] || null },
+    { email: 'jane.smith@example.com', status: 'contacted', campaign_id: campaignIds[0] || null },
+    { email: 'bob.johnson@example.com', status: 'replied', campaign_id: campaignIds[1] || null },
+    { email: 'alice.brown@example.com', status: 'bounced', campaign_id: campaignIds[1] || null },
+    { email: 'charlie.wilson@example.com', status: 'unsubscribed', campaign_id: campaignIds[2] || null },
+  ];
+
+  const { error } = await supabase
+    .from('leads')
+    .upsert(leads, { onConflict: 'email' });
+
+  if (error) {
+    console.warn('Warning: Could not create sample leads:', error.message);
+  }
+
+  return leads;
+}
+
+async function setupSandboxEnvironment() {
   try {
-    // Clean existing data
-    console.log('🧹 Cleaning existing data...');
-    await prisma.emailHistory.deleteMany();
-    await prisma.lead.deleteMany();
-    await prisma.userSettings.deleteMany();
-    await prisma.session.deleteMany();
-    await prisma.account.deleteMany();
-    await prisma.teamInvite.deleteMany();
-    await prisma.teamSettings.deleteMany();
-    await prisma.team.deleteMany();
-    await prisma.user.deleteMany();
-
-    // Create demo team
-    console.log('👥 Creating demo team...');
-    const demoTeam = await createTeam('Demo Team');
+    console.log('🏗️  Setting up Winston AI sandbox environment...');
 
     // Create demo users
     console.log('👥 Creating demo users...');
-    const adminUser = await createSampleUser(prisma, 'admin@winston-ai.com', 'demo123', 'ADMIN');
-    const demoUser = await createSampleUser(prisma, 'demo@winston-ai.com', 'demo123', 'USER');
-    const testUser = await createSampleUser(prisma, 'test@winston-ai.com', 'demo123', 'USER');
+    const adminUser = await createSampleUser('admin@winston-ai.com', 'demo123', 'admin');
+    const demoUser = await createSampleUser('demo@winston-ai.com', 'demo123', 'user');
+    const testUser = await createSampleUser('test@winston-ai.com', 'demo123', 'user');
 
-    // Create sample leads for each user
-    console.log('📊 Creating sample leads...');
-    await createSampleLeads(adminUser.id, SAMPLE_LEADS_PER_USER);
-    await createSampleLeads(demoUser.id, SAMPLE_LEADS_PER_USER);
-    await createSampleLeads(testUser.id, SAMPLE_LEADS_PER_USER);
+    // Create sample campaigns
+    console.log('📧 Creating sample campaigns...');
+    const campaigns = await createSampleCampaigns(demoUser?.id || '');
 
-    console.log('\n✅ Sandbox setup complete!');
-    console.log('\n📝 Login Credentials:');
-    console.log('------------------------');
-    console.log('Admin User:');
-    console.log('Email: admin@winston-ai.com');
-    console.log('Password: demo123');
-    console.log('Role: Team Admin');
-    console.log('\nDemo User:');
-    console.log('Email: demo@winston-ai.com');
-    console.log('Password: demo123');
-    console.log('Role: Team Member');
-    console.log('\nTest User:');
-    console.log('Email: test@winston-ai.com');
-    console.log('Password: demo123');
-    console.log('Role: Team Member');
-    console.log('------------------------');
-    
-    // Print some statistics
-    const totalLeads = await prisma.lead.count();
-    const totalUsers = await prisma.user.count();
-    const totalEmails = await prisma.emailHistory.count();
-    const totalTeams = await prisma.team.count();
-    console.log('\n📊 Sandbox Statistics:');
-    console.log(`Total Teams: ${totalTeams}`);
-    console.log(`Total Users: ${totalUsers}`);
-    console.log(`Total Leads: ${totalLeads}`);
-    console.log(`Total Emails: ${totalEmails}`);
-    console.log('\n🌟 You can now start testing the application!');
+    // Create sample leads
+    console.log('👤 Creating sample leads...');
+    const leads = await createSampleLeads();
+
+    // Get statistics
+    const { data: totalUsers } = await supabase
+      .from('users')
+      .select('id', { count: 'exact' });
+
+    const { data: totalCampaigns } = await supabase
+      .from('campaigns')
+      .select('id', { count: 'exact' });
+
+    const { data: totalLeads } = await supabase
+      .from('leads')
+      .select('id', { count: 'exact' });
+
+    console.log('\n✅ Sandbox environment setup complete!');
+    console.log('📊 Statistics:');
+    console.log(`   Users: ${totalUsers?.length || 0}`);
+    console.log(`   Campaigns: ${totalCampaigns?.length || 0}`);
+    console.log(`   Leads: ${totalLeads?.length || 0}`);
+    console.log('\n🔐 Demo Accounts:');
+    console.log('   Admin: admin@winston-ai.com / demo123');
+    console.log('   Demo:  demo@winston-ai.com / demo123');
+    console.log('   Test:  test@winston-ai.com / demo123');
+    console.log('\n🚀 Ready to launch!');
 
   } catch (error) {
-    console.error('❌ Error setting up sandbox:', error);
+    console.error('❌ Error setting up sandbox environment:', error);
     process.exit(1);
   }
 }
 
-main()
+setupSandboxEnvironment()
   .catch((e) => {
-    console.error('Error:', e);
+    console.error(e);
     process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
   }); 

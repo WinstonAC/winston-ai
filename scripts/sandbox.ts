@@ -1,172 +1,66 @@
-import { hash } from 'bcryptjs';
+import { createClient } from '@supabase/supabase-js';
 
-async function main() {
-  // Create test team
-  const team = await prisma.team.create({
-    data: {
-      name: 'Demo Team',
-      settings: {
-        create: {
-          maxUsers: 10,
-          plan: 'PRO'
-        }
-      }
-    }
-  });
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  // Create test users
-  const users = await Promise.all([
-    prisma.user.create({
-      data: {
-        name: 'Admin User',
-        email: 'admin@winston-ai.com',
-        password: await hash('demo123', 10),
-        role: 'ADMIN',
-        team: {
-          connect: { id: team.id }
-        },
-        teamRole: 'OWNER',
-        userSettings: {
-          create: {
-            emailSignature: 'Best regards,\nAdmin User'
-          }
-        }
-      }
-    }),
-    prisma.user.create({
-      data: {
-        name: 'Demo User',
-        email: 'demo@winston-ai.com',
-        password: await hash('demo123', 10),
-        role: 'USER',
-        team: {
-          connect: { id: team.id }
-        },
-        teamRole: 'MEMBER',
-        userSettings: {
-          create: {
-            emailSignature: 'Best regards,\nDemo User'
-          }
-        }
-      }
-    }),
-    prisma.user.create({
-      data: {
-        name: 'Test User',
-        email: 'test@winston-ai.com',
-        password: await hash('demo123', 10),
-        role: 'USER',
-        team: {
-          connect: { id: team.id }
-        },
-        teamRole: 'MEMBER',
-        userSettings: {
-          create: {
-            emailSignature: 'Best regards,\nTest User'
-          }
-        }
-      }
-    })
-  ]);
-
-  // Create sample leads
-  const leads = await Promise.all([
-    ...Array(10).fill(null).map((_, i) => 
-      prisma.lead.create({
-        data: {
-          name: `Lead ${i + 1}`,
-          email: `lead${i + 1}@example.com`,
-          status: ['Sent', 'Opened', 'Clicked', 'Replied'][Math.floor(Math.random() * 4)],
-          classification: ['Hot', 'Warm', 'Cold'][Math.floor(Math.random() * 3)],
-          team: {
-            connect: { id: team.id }
-          },
-          user: {
-            connect: { id: users[0].id }
-          },
-          activities: {
-            create: {
-              type: 'lead_created',
-              team: {
-                connect: { id: team.id }
-              }
-            }
-          }
-        }
-      })
-    )
-  ]);
-
-  // Create email templates
-  const templates = await Promise.all([
-    prisma.template.create({
-      data: {
-        name: 'Welcome Email',
-        subject: 'Welcome to Our Service',
-        body: 'Dear {{name}},\n\nThank you for your interest in our service...',
-        isPublic: true,
-        createdBy: users[0].id,
-        assets: {
-          create: {
-            type: 'image',
-            url: 'https://example.com/welcome.jpg',
-            name: 'Welcome Image',
-            size: 1024,
-            mimeType: 'image/jpeg'
-          }
-        }
-      }
-    }),
-    prisma.template.create({
-      data: {
-        name: 'Follow-up Email',
-        subject: 'Following Up on Our Conversation',
-        body: 'Hi {{name}},\n\nI hope this email finds you well...',
-        isPublic: true,
-        createdBy: users[0].id
-      }
-    })
-  ]);
-
-  // Share templates with team
-  await Promise.all([
-    ...templates.map(template =>
-      prisma.templateShare.create({
-        data: {
-          templateId: template.id,
-          userId: users[1].id,
-          permission: 'view'
-        }
-      })
-    )
-  ]);
-
-  // Create sample email history
-  await Promise.all([
-    ...leads.map(lead =>
-      prisma.emailHistory.create({
-        data: {
-          leadId: lead.id,
-          subject: 'Welcome Email',
-          body: 'Dear {{name}},\n\nThank you for your interest...',
-          templateId: templates[0].id,
-          sentAt: new Date(),
-          openedAt: Math.random() > 0.5 ? new Date() : null,
-          clickedAt: Math.random() > 0.7 ? new Date() : null,
-          bounced: false
-        }
-      })
-    )
-  ]);
-
-  console.log('Sandbox data created successfully!');
+if (!supabaseUrl || !supabaseServiceKey) {
+  console.error('Missing required environment variables:');
+  console.error('- NEXT_PUBLIC_SUPABASE_URL');
+  console.error('- SUPABASE_SERVICE_ROLE_KEY');
+  process.exit(1);
 }
 
-main()
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+async function checkSandboxStatus() {
+  try {
+    console.log('🔍 Checking Winston AI sandbox status...');
+
+    // Check database connection
+    const { data: users, error: usersError } = await supabase
+      .from('users')
+      .select('id', { count: 'exact' })
+      .limit(1);
+
+    if (usersError) {
+      throw usersError;
+    }
+
+    const { data: campaigns, error: campaignsError } = await supabase
+      .from('campaigns')
+      .select('id', { count: 'exact' })
+      .limit(1);
+
+    if (campaignsError) {
+      throw campaignsError;
+    }
+
+    const { data: leads, error: leadsError } = await supabase
+      .from('leads')
+      .select('id', { count: 'exact' })
+      .limit(1);
+
+    if (leadsError) {
+      throw leadsError;
+    }
+
+    console.log('✅ Sandbox is running!');
+    console.log('📊 Current data:');
+    console.log(`   Users: ${users?.length || 0}`);
+    console.log(`   Campaigns: ${campaigns?.length || 0}`);
+    console.log(`   Leads: ${leads?.length || 0}`);
+    console.log('\n🌐 Access your sandbox at: http://localhost:3000');
+    console.log('🔐 Demo login: demo@winston-ai.com / demo123');
+
+  } catch (error) {
+    console.error('❌ Sandbox check failed:', error);
+    console.log('\n💡 Try running: npm run sandbox:setup');
+    process.exit(1);
+  }
+}
+
+checkSandboxStatus()
   .catch((e) => {
     console.error(e);
     process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
   }); 

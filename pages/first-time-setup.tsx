@@ -173,8 +173,8 @@ export default function FirstTimeSetup() {
 // This function runs on the server to check if setup is needed
 // TODO: Replace with Supabase implementation for MVP
 export async function getServerSideProps() {
-  // TODO: Replace with Supabase implementation
-  // const users = await prisma.user.findMany();
+  // TODO: Implement with Supabase to check if setup is needed
+  // Example: const { data: users } = await supabase.from('users').select('id').limit(1);
   
   // For MVP, assume no users exist to allow setup
   const users: any[] = [];
