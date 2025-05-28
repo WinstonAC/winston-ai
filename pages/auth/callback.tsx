@@ -9,11 +9,10 @@ export default function AuthCallback() {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        // Check if we have URL parameters that need processing
+        // Parse both URL query parameters and hash fragments
         const urlParams = new URLSearchParams(window.location.search)
         const urlHash = new URLSearchParams(window.location.hash.substring(1))
         
-        const code = urlParams.get('code')
         const error_code = urlParams.get('error') || urlHash.get('error')
         const error_description = urlParams.get('error_description') || urlHash.get('error_description')
 
@@ -27,49 +26,53 @@ export default function AuthCallback() {
           return
         }
 
-        // Check for hash-based tokens (magic links, OAuth)
+        // Handle hash-based tokens (Magic Links)
         const access_token = urlHash.get('access_token')
         const refresh_token = urlHash.get('refresh_token')
 
         if (access_token && refresh_token) {
-          console.log('Processing hash-based tokens...')
+          console.log('Processing hash-based magic link tokens...')
           const { data, error } = await supabase.auth.setSession({
             access_token,
             refresh_token,
           })
           
           if (error) {
-            console.error('Session set error:', error)
+            console.error('Magic link session set error:', error)
             setError(error.message)
             setTimeout(() => {
-              router.push('/auth/signin?error=session_set_failed')
+              router.push('/auth/signin?error=magic_link_failed')
             }, 2000)
             return
           }
 
           if (data.session) {
-            console.log('Session set successful, redirecting to dashboard')
+            console.log('Magic link authentication successful, redirecting to dashboard')
+            console.log("Session:", data.session)
             window.location.href = '/dashboard'
             return
           }
         }
 
-        // If we have a code, try to exchange it for a session (PKCE flow)
+        // Handle query-based code (OAuth PKCE flow)
+        const code = urlParams.get('code')
+
         if (code) {
-          console.log('Processing PKCE auth code...')
+          console.log('Processing OAuth PKCE code...')
           const { data, error } = await supabase.auth.exchangeCodeForSession(code)
           
           if (error) {
-            console.error('Code exchange error:', error)
+            console.error('OAuth code exchange error:', error)
             setError(error.message)
             setTimeout(() => {
-              router.push('/auth/signin?error=code_exchange_failed')
+              router.push('/auth/signin?error=oauth_failed')
             }, 2000)
             return
           }
 
           if (data.session) {
-            console.log('PKCE authentication successful, redirecting to dashboard')
+            console.log('OAuth authentication successful, redirecting to dashboard')
+            console.log("Session:", data.session)
             window.location.href = '/dashboard'
             return
           }
@@ -89,6 +92,7 @@ export default function AuthCallback() {
 
         if (session) {
           console.log('Existing session found, redirecting to dashboard')
+          console.log("Session:", session)
           window.location.href = '/dashboard'
         } else {
           // No session found, redirect to login

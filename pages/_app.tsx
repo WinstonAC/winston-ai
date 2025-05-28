@@ -10,6 +10,7 @@ import ErrorBoundary from '../components/ErrorBoundary';
 import { AuthProvider } from '../contexts/AuthContext';
 import { createPagesBrowserClient } from '@supabase/auth-helpers-nextjs';
 import { SessionContextProvider } from '@supabase/auth-helpers-react';
+import { supabase } from '../lib/supabase';
 
 export default function App({ 
   Component, 
@@ -19,16 +20,17 @@ export default function App({
   const router = useRouter();
   const isAuthPage = ['/auth/signin', '/auth/callback'].includes(router.pathname);
 
-  // Debug session token in development
+  // Debug session token in development using unified client
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
-      supabaseClient.auth.getSession().then(({ data }) => {
+      supabase.auth.getSession().then(({ data }) => {
         console.log("[DEBUG] Supabase session:", data?.session?.access_token);
         console.log("[DEBUG] Session user:", data?.session?.user?.email);
         console.log("[DEBUG] Session expires at:", data?.session?.expires_at);
+        console.log("Session:", data?.session);
       });
     }
-  }, [supabaseClient]);
+  }, []);
 
   return (
     <SessionContextProvider 
