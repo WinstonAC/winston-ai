@@ -15,6 +15,7 @@ const Navbar: React.FC = () => {
             <Link href="/" className="text-[#32CD32] font-mono tracking-widest hover:underline">
               WINSTON_AI_
             </Link>
+            <span className="ml-2 px-2 py-1 bg-yellow-500 text-black text-xs font-bold rounded-full">BETA</span>
           </div>
           
           <div className="flex items-center space-x-4">

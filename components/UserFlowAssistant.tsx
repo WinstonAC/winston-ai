@@ -60,7 +60,7 @@ const UserFlowAssistant: React.FC = () => {
           <div className="flex justify-between items-start mb-2">
             {currentMessage && (
               <h3 className="text-lg font-semibold text-gray-900">
-                {currentMessage.title}
+                {currentMessage?.title}
               </h3>
             )}
             <button
@@ -70,8 +70,8 @@ const UserFlowAssistant: React.FC = () => {
               <XMarkIcon className="h-5 w-5" />
             </button>
           </div>
-          <p className="text-gray-600 mb-4">{currentMessage.content}</p>
-          {currentMessage.action && (
+          <p className="text-gray-600 mb-4">{currentMessage?.content}</p>
+          {currentMessage?.action && (
             <a
               href={currentMessage.action.href}
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
