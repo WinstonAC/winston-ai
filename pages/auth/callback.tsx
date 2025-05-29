@@ -8,32 +8,37 @@ export default function Callback() {
 
   useEffect(() => {
     const handleAuth = async () => {
-      const hashParams = new URLSearchParams(window.location.hash.substring(1))
-      const access_token = hashParams.get('access_token')
-      const refresh_token = hashParams.get('refresh_token')
-      const queryParams = new URLSearchParams(window.location.search)
-      const code = queryParams.get('code')
+      const hash = window.location.hash.substring(1)
+      const params = new URLSearchParams(hash)
+      const access_token = params.get('access_token')
+      const refresh_token = params.get('refresh_token')
 
-      try {
-        if (access_token && refresh_token) {
-          const { error } = await supabase.auth.setSession({
-            access_token,
-            refresh_token,
-          })
-          if (error) throw error
-        } else if (code) {
-          const { error } = await supabase.auth.exchangeCodeForSession(code)
-          if (error) throw error
+      if (access_token && refresh_token) {
+        const { error } = await supabase.auth.setSession({ access_token, refresh_token })
+        if (error) {
+          console.error('Error setting session:', error)
+          setError(true)
         } else {
-          throw new Error('No token or code found.')
+          router.push('/dashboard')
         }
-
-        router.push('/dashboard')
-      } catch (err) {
-        console.error('[Callback Error]', err)
-        setError(true)
-        setTimeout(() => router.push('/auth/signin'), 3000)
+        return
       }
+
+      // Handle PKCE flow (Google OAuth style) with ?code param
+      const urlParams = new URLSearchParams(window.location.search)
+      const code = urlParams.get('code')
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code)
+        if (error) {
+          console.error('Error exchanging code:', error)
+          setError(true)
+        } else {
+          router.push('/dashboard')
+        }
+        return
+      }
+
+      setError(true)
     }
 
     handleAuth()
@@ -41,10 +46,7 @@ export default function Callback() {
 
   return (
     <div className="text-white p-8 text-center">
-      <h2 className="text-2xl font-semibold">
-        {error ? 'Authentication failed. Redirecting...' : 'Logging you in...'}
-      </h2>
-      {!error && <p className="text-gray-400 mt-2">Please wait while we verify your session.</p>}
+      <h2>{error ? 'Authentication failed' : 'Logging you in...'}</h2>
     </div>
   )
 } 
