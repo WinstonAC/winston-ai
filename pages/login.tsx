@@ -134,6 +134,19 @@ export default function Login() {
                 SIGN IN
               </h2>
             </div>
+            <button onClick={handleGoogleLogin} className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg text-sm font-mono tracking-wider text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 mb-6">
+              Sign in with Google
+            </button>
+            <div className="relative mb-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-700"></div>
+              </div>
+              <div className="relative flex justify-center">
+                <span className="px-4 text-sm text-gray-500 bg-black">
+                  Or sign in with email
+                </span>
+              </div>
+            </div>
             <form className="mt-8 space-y-6" onSubmit={handleEmailLogin}>
               {registered && (
                 <div className="mb-4 p-4 bg-[#32CD32]/10 text-[#32CD32] rounded-md text-sm border border-[#32CD32]/20 font-mono">
