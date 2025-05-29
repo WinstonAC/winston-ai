@@ -96,21 +96,6 @@ export default function LoginPage() {
             </div>
           )}
 
-          <button onClick={handleGoogleLogin}>
-            Sign in with Google
-          </button>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-[#2B3548]"></div>
-            </div>
-            <div className="relative flex justify-center">
-              <span className="px-4 text-[13px] text-gray-500 bg-black">
-                Or continue with email
-              </span>
-            </div>
-          </div>
-
           <form onSubmit={handleEmailLogin} className="space-y-4">
             <div>
               <label htmlFor="email" className="sr-only">
@@ -137,6 +122,13 @@ export default function LoginPage() {
               {isLoading ? 'Sending link...' : 'Send magic link'}
             </button>
           </form>
+
+          <button
+            onClick={handleGoogleLogin}
+            className="mt-4 w-full bg-white text-black font-semibold py-2 px-4 rounded shadow hover:bg-gray-200"
+          >
+            Sign in with Google
+          </button>
         </div>
       </div>
       <Chatbot />
