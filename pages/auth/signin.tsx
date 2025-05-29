@@ -9,16 +9,17 @@ console.log("[ENV] Supabase URL", process.env.NEXT_PUBLIC_SUPABASE_URL)
 console.log("[ENV] Anon Key", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.slice(0, 6), "...")
 
 export default function LoginPage() {
-  // ✅ Cursor fix: Applying new useRouter pattern
-  const router = typeof window !== "undefined" ? useRouter() : null;
+  const router = useRouter();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   const [email, setEmail] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
-
-  // useEffect for router was previously here, now router is conditionally null
-  // Any logic that absolutely needs the router should be in a useEffect that checks `if (!router) return;`
-  // Since router was not directly used here outside event handlers, no further changes to effects needed for this file based on previous analysis.
 
   // Updated to use environment variable for site URL
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';

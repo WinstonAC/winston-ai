@@ -3,7 +3,13 @@ import { useRouter } from 'next/router';
 import { ArrowUpTrayIcon } from '@heroicons/react/24/outline';
 
 export default function CampaignImport() {
-  const router = typeof window !== "undefined" ? useRouter() : null;
+  const router = useRouter();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

@@ -3,8 +3,13 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 
 export default function FirstTimeSetup() {
-  // ✅ Cursor fix: Applying new useRouter pattern
-  const router = typeof window !== "undefined" ? useRouter() : null;
+  const router = useRouter();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -52,7 +57,7 @@ export default function FirstTimeSetup() {
       }
 
       // Redirect to login page
-      if (router) { // Check if router is not null
+      if (router) { // Check if router is not null (it won't be if isClient is true and effect ran)
         router.push('/login?setup=success');
       }
     } catch (err) {
