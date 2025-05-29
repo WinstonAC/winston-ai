@@ -47,20 +47,19 @@ export const signInWithGoogle = async () => {
   try {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: {
-        redirectTo: `${siteUrl}/auth/callback`,
-      },
     });
 
     if (error) {
-      console.error('Google auth error:', error);
-      throw error;
+      console.error('Google auth error:', error.message);
+      // Potentially alert or throw error here if desired, 
+      // but the calling components will now handle alerts.
+      throw error; // Keep throwing for now so callers know it failed
     }
 
     return data;
   } catch (error) {
-    console.error('Google auth error:', error);
-    throw error;
+    console.error('Google auth error:', error.message);
+    throw error; // Re-throw to ensure calling code knows about the failure
   }
 };
 

@@ -29,7 +29,8 @@ const Login: React.FC = () => {
     try {
       await signInWithGoogle();
     } catch (err) {
-      console.error('Google sign-in error:', err);
+      console.error('Google sign-in error:', (err as Error).message);
+      alert('Google login failed');
       showErrorToast(new AppError('Google login failed. Please try again.', 'authentication'));
     } finally {
       setIsLoading(false);
@@ -61,19 +62,8 @@ const Login: React.FC = () => {
         {/* Login Form */}
         <div className="w-full space-y-6">
           {/* Google Login */}
-          <button
-            onClick={handleGoogleLogin}
-            disabled={isLoading}
-            className="w-full bg-white hover:bg-gray-50 text-[15px] text-gray-900 px-4 py-3 flex items-center justify-center space-x-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Image
-              src="/assets/google-logo.svg"
-              alt="Google"
-              width={20}
-              height={20}
-              priority
-            />
-            <span>{isLoading ? 'Signing in...' : 'Continue with Google'}</span>
+          <button onClick={handleGoogleLogin}>
+            Sign in with Google
           </button>
 
           {/* Divider */}

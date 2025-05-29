@@ -67,24 +67,13 @@ export default function Login() {
   };
 
   const handleGoogleLogin = async () => {
-    setIsLoading(true);
-    setError(null);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+    });
 
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          // Replaced hardcoded URL with environment variable
-          redirectTo: `${siteUrl}/auth/callback`,
-        },
-      });
-
-      if (error) throw error;
-    } catch (err) {
-      console.error('Google login error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to login with Google');
-    } finally {
-      setIsLoading(false);
+    if (error) {
+      console.error('Google login error:', error.message);
+      alert('Google login failed');
     }
   };
 

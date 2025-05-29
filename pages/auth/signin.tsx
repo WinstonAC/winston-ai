@@ -51,32 +51,15 @@ export default function LoginPage() {
   }
 
   const handleGoogleLogin = async () => {
-    setIsLoading(true)
-    setError(null)
-    setMessage(null)
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+    });
 
-    console.log("[OAuth] Starting Google OAuth with implicit flow")
-
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${siteUrl}/auth/callback`,
-          scopes: 'email profile',
-        },
-      })
-
-      if (error) {
-        console.error("[OAuth] signInWithOAuth failed", error.message)
-        throw error
-      }
-    } catch (err) {
-      console.error("[OAuth] Fatal crash", err)
-      setError(err instanceof Error ? err.message : 'Failed to login with Google')
-    } finally {
-      setIsLoading(false)
+    if (error) {
+      console.error('Google login error:', error.message);
+      alert('Google login failed');
     }
-  }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-black py-12 px-4 sm:px-6 lg:px-8">
@@ -113,20 +96,8 @@ export default function LoginPage() {
             </div>
           )}
 
-          <button
-            onClick={handleGoogleLogin}
-            disabled={isLoading}
-            className="w-full bg-white hover:bg-gray-50 text-[15px] text-gray-900 px-4 py-3 flex items-center justify-center space-x-3 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Image
-              src="/assets/google-logo.svg"
-              alt="Google"
-              width={20}
-              height={20}
-              priority
-              className="w-5 h-5"
-            />
-            <span>{isLoading ? 'Signing in...' : 'Continue with Google'}</span>
+          <button onClick={handleGoogleLogin}>
+            Sign in with Google
           </button>
 
           <div className="relative">
