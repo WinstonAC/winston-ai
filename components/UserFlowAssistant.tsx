@@ -58,7 +58,11 @@ const UserFlowAssistant: React.FC = () => {
       {isOpen ? (
         <div className="bg-white rounded-lg shadow-xl w-80 p-4">
           <div className="flex justify-between items-start mb-2">
-            <h3 className="text-lg font-semibold text-gray-900">{currentMessage.title}</h3>
+            {currentMessage && (
+              <h3 className="text-lg font-semibold text-gray-900">
+                {currentMessage.title}
+              </h3>
+            )}
             <button
               onClick={() => setIsOpen(false)}
               className="text-gray-400 hover:text-gray-500"
