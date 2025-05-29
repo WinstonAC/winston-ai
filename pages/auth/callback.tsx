@@ -20,6 +20,8 @@ export default function AuthCallback() {
         // Parse both URL query parameters and hash fragments
         const urlParams = new URLSearchParams(window.location.search)
         const urlHash = new URLSearchParams(window.location.hash.substring(1))
+        console.log('[Callback] URL Query Parameters:', Object.fromEntries(urlParams.entries()));
+        console.log('[Callback] URL Hash Parameters:', Object.fromEntries(urlHash.entries()));
         
         const error_code = urlParams.get('error') || urlHash.get('error')
         const error_description = urlParams.get('error_description') || urlHash.get('error_description')
@@ -37,9 +39,11 @@ export default function AuthCallback() {
         // For implicit flow, let Supabase handle the session automatically
         console.log('[Callback] Checking for existing session...')
         const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-        
+        console.log('[Callback] supabase.auth.getSession() response:', { session, sessionError });
+
         if (sessionError) {
           console.error('[Callback] Session check error:', sessionError)
+          console.log('[Callback] Redirecting to /auth/signin due to sessionError.');
           setError(sessionError.message)
           setTimeout(() => {
             window.location.href = '/auth/signin?error=session_error'
@@ -48,9 +52,18 @@ export default function AuthCallback() {
         }
 
         if (session) {
-          console.log('[Callback] Session found, redirecting to dashboard')
-          console.log('[Callback] Session user:', session.user?.email)
-          window.location.href = '/dashboard'
+          console.log('[Callback] Session object analysis:', {
+            isNull: session === null,
+            isExpired: session?.expires_at ? (session.expires_at * 1000 < Date.now()) : 'N/A',
+            isValid: session !== null && (session?.expires_at ? (session.expires_at * 1000 >= Date.now()) : true)
+          });
+          if (session !== null && (session?.expires_at ? (session.expires_at * 1000 >= Date.now()) : true)) {
+            console.log('[Callback] Valid session found. Redirecting to /dashboard.');
+            console.log('[Callback] Session user:', session.user?.email);
+            window.location.href = '/dashboard'
+          } else {
+            console.log('[Callback] Session is null or expired. Proceeding to token/code check.');
+          }
           return
         }
 
@@ -64,6 +77,7 @@ export default function AuthCallback() {
             access_token,
             refresh_token: refresh_token || '',
           })
+          console.log('[Callback] supabase.auth.setSession() response:', { data, error });
           
           if (error) {
             console.error('[Callback] Token session set error:', error)
@@ -79,6 +93,13 @@ export default function AuthCallback() {
             console.log('[Callback] Session user:', data.session.user?.email)
             window.location.href = '/dashboard'
             return
+          } else {
+            console.log('[Callback] Token authentication failed or no session returned. Redirecting to /auth/signin.');
+            setError('Token authentication failed');
+            setTimeout(() => {
+              window.location.href = '/auth/signin?error=token_failed_no_session';
+            }, 2000);
+            return;
           }
         }
 
@@ -88,6 +109,7 @@ export default function AuthCallback() {
         if (code) {
           console.log('[Callback] Processing OAuth code...')
           const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+          console.log('[Callback] supabase.auth.exchangeCodeForSession() response:', { data, error });
           
           if (error) {
             console.error('[Callback] OAuth code exchange error:', error)
@@ -104,17 +126,25 @@ export default function AuthCallback() {
             console.log('[Callback] Session user:', data.session.user?.email)
             window.location.href = '/dashboard'
             return
+          } else {
+            console.log('[Callback] OAuth authentication failed or no session returned. Redirecting to /auth/signin.');
+            setError('OAuth authentication failed');
+            setTimeout(() => {
+              window.location.href = '/auth/signin?error=oauth_failed_no_session';
+            }, 2000);
+            return;
           }
         }
 
         // No session found, redirect to login
-        console.log('[Callback] No session found, redirecting to signin')
+        console.log('[Callback] No session, token, or code processed. Redirecting to /auth/signin (no_session).')
         setTimeout(() => {
           window.location.href = '/auth/signin?error=no_session'
         }, 2000)
 
       } catch (error) {
         console.error('[Callback] Fatal error:', error)
+        console.log('[Callback] Redirecting to /auth/signin due to fatal error.');
         setError(error instanceof Error ? error.message : 'Authentication failed')
         setTimeout(() => {
           window.location.href = '/auth/signin?error=callback_failed'
