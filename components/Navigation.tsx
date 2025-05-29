@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
@@ -7,8 +7,20 @@ import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 export default function Navigation() {
   const { user, signOut } = useAuth();
   const router = useRouter();
+  const [currentPathname, setCurrentPathname] = useState('');
   const [showAdminMenu, setShowAdminMenu] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (isClient && router.isReady) {
+      setCurrentPathname(router.pathname);
+    }
+  }, [isClient, router.isReady, router.pathname]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -16,7 +28,7 @@ export default function Navigation() {
   };
 
   const isActive = (path: string) => {
-    return router.pathname === path;
+    return currentPathname === path;
   };
 
   const navLinks = [

@@ -28,9 +28,12 @@ async function testResponsiveness() {
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
   
+  // Updated to use environment variable for site URL
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+
   // Login first if required
   if (process.env.TEST_EMAIL && process.env.TEST_PASSWORD) {
-    await page.goto('http://localhost:3000/login');
+    await page.goto(`${siteUrl}/login`);
     await page.type('input[type="email"]', process.env.TEST_EMAIL);
     await page.type('input[type="password"]', process.env.TEST_PASSWORD);
     await page.click('button[type="submit"]');
@@ -49,7 +52,7 @@ async function testResponsiveness() {
       });
 
       try {
-        await page.goto(`http://localhost:3000${pageConfig.path}`);
+        await page.goto(`${siteUrl}${pageConfig.path}`);
         await page.waitForTimeout(2000); // Wait for animations
 
         // Take screenshot

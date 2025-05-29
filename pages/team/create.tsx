@@ -1,22 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { useAuth } from '@/contexts/AuthContext';
 import Navigation from '@/components/Navigation';
 
 export default function CreateTeam() {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [teamName, setTeamName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState('');
+  const [isClient, setIsClient] = useState(false);
 
-  if (loading) {
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (isClient && router.isReady && !authLoading && !user) {
+      router.push('/auth/signin');
+    }
+  }, [isClient, router, authLoading, user]);
+
+  if (authLoading) {
     return <div>Loading...</div>;
   }
 
-  if (!user) {
-    router.push('/auth/signin');
+  if (!isClient || !router.isReady) {
+    return <div>Loading...</div>;
+  }
+
+  if (isClient && router.isReady && !authLoading && !user) {
     return null;
   }
 

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useRouter } from 'next/router';
 import { ArrowRightIcon } from '@heroicons/react/24/outline';
 import { showErrorToast, AppError } from '../lib/error';
 import Image from 'next/image';
@@ -9,7 +8,6 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
-  const router = useRouter();
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();

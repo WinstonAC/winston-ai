@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 
 export default function FirstTimeSetup() {
-  const router = useRouter();
+  // ✅ Cursor fix: Applying new useRouter pattern
+  const router = typeof window !== "undefined" ? useRouter() : null;
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -51,7 +52,9 @@ export default function FirstTimeSetup() {
       }
 
       // Redirect to login page
-      router.push('/login?setup=success');
+      if (router) { // Check if router is not null
+        router.push('/login?setup=success');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Setup failed');
     } finally {

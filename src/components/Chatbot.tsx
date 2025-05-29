@@ -129,14 +129,28 @@ const Chatbot: React.FC<ChatbotProps> = ({ initialContext = 'general', onClose }
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showQuickActions, setShowQuickActions] = useState(true);
   const [showWelcomeNotification, setShowWelcomeNotification] = useState(true);
-  const [currentPage, setCurrentPage] = useState(router.pathname);
+  const [currentPage, setCurrentPage] = useState('');
+  const [isLandingPage, setIsLandingPage] = useState(false);
   const [showPageHelp, setShowPageHelp] = useState(false);
   const [showHelpBubble, setShowHelpBubble] = useState(false);
-  const isLandingPage = router.pathname === '/';
   const userId = user?.id;
+  const [isClient, setIsClient] = useState(false);
 
-  // Initialize messages based on context and page
   useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (isClient && router.isReady) {
+      const currentPath = router.pathname;
+      setCurrentPage(currentPath);
+      setIsLandingPage(currentPath === '/');
+    }
+  }, [isClient, router.isReady, router.pathname]);
+
+  useEffect(() => {
+    if (!isClient || !router.isReady) return;
+
     if (isLandingPage) {
       setMessages([{
         id: '1',
@@ -156,16 +170,14 @@ const Chatbot: React.FC<ChatbotProps> = ({ initialContext = 'general', onClose }
         timestamp: new Date(),
       }]);
     }
-  }, [context, isLandingPage, setMessages]);
+  }, [isClient, context, isLandingPage, setMessages, router.isReady]);
 
-  // Scroll to bottom when messages change
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
 
-  // Handle keyboard events
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
@@ -178,7 +190,6 @@ const Chatbot: React.FC<ChatbotProps> = ({ initialContext = 'general', onClose }
   }, [isOpen, onClose, setIsOpen]);
 
   useEffect(() => {
-    // Show welcome notification for 5 seconds
     const timer = setTimeout(() => {
       setShowWelcomeNotification(false);
     }, 5000);
@@ -186,8 +197,9 @@ const Chatbot: React.FC<ChatbotProps> = ({ initialContext = 'general', onClose }
     return () => clearTimeout(timer);
   }, [setShowWelcomeNotification]);
 
-  // Handle route changes
   useEffect(() => {
+    if (!isClient || !router.isReady) return;
+
     const handleRouteChange = (url: string) => {
       const path = url.split('?')[0];
       setCurrentPage(path);
@@ -202,13 +214,14 @@ const Chatbot: React.FC<ChatbotProps> = ({ initialContext = 'general', onClose }
 
     router.events.on('routeChangeComplete', handleRouteChange);
     return () => {
-      router.events.off('routeChangeComplete', handleRouteChange);
+      if (router.isReady) {
+        router.events.off('routeChangeComplete', handleRouteChange);
+      }
     };
-  }, [router.events, setCurrentPage, setShowHelpBubble, setShowPageHelp, isOpen, showHelpBubble]);
+  }, [isClient, router.isReady, router.events, setCurrentPage, setShowHelpBubble, setShowPageHelp, isOpen, showHelpBubble]);
 
-  // Enhanced context-aware responses
   const getContextResponses = () => {
-    const path = router.pathname;
+    const path = currentPage;
     const userRole = user?.role || 'USER';
 
     const baseResponses = {
@@ -248,18 +261,15 @@ const Chatbot: React.FC<ChatbotProps> = ({ initialContext = 'general', onClose }
     return baseResponses[path as keyof typeof baseResponses] || baseResponses['/dashboard'];
   };
 
-  // Enhanced command matching
   const matchCommand = (input: string) => {
     const normalizedInput = input.toLowerCase().trim();
     
-    // Check for exact matches first
     for (const [key, variations] of Object.entries(COMMAND_VARIATIONS)) {
       if (variations.includes(normalizedInput)) {
         return key;
       }
     }
 
-    // Check for fuzzy matches
     for (const [key, variations] of Object.entries(COMMAND_VARIATIONS)) {
       for (const variation of variations) {
         if (normalizedInput.includes(variation)) {
@@ -268,7 +278,6 @@ const Chatbot: React.FC<ChatbotProps> = ({ initialContext = 'general', onClose }
       }
     }
 
-    // Check for intent patterns
     for (const [intent, patterns] of Object.entries(INTENT_PATTERNS)) {
       for (const pattern of patterns) {
         if (pattern.test(normalizedInput)) {
@@ -280,7 +289,6 @@ const Chatbot: React.FC<ChatbotProps> = ({ initialContext = 'general', onClose }
     return null;
   };
 
-  // Handle analytics-specific queries
   const handleAnalyticsQuery = (input: string): string => {
     const lowerInput = input.toLowerCase();
 
@@ -323,7 +331,6 @@ What specific feature would you like to know more about?`;
     e.preventDefault();
     if (!input.trim()) return;
 
-    // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
       text: input,
@@ -335,7 +342,6 @@ What specific feature would you like to know more about?`;
     setInput('');
     setIsTyping(true);
 
-    // Process input
     const command = matchCommand(input);
     const multiStepResponse = command ? handleMultiStep(command) : null;
 
@@ -350,7 +356,6 @@ What specific feature would you like to know more about?`;
       return;
     }
 
-    // Generate response
     setTimeout(() => {
       let response: string;
       
@@ -472,7 +477,6 @@ What specific feature would you like to know more about?`;
 
   return (
     <>
-      {/* Welcome Notification - Only show on non-landing pages */}
       {showWelcomeNotification && !isLandingPage && (
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
@@ -493,7 +497,6 @@ What specific feature would you like to know more about?`;
         </motion.div>
       )}
 
-      {/* Chatbot Window */}
       {isOpen && (
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }}
@@ -502,7 +505,6 @@ What specific feature would you like to know more about?`;
           className="fixed bottom-16 right-4 z-50 w-80 bg-[#0A0A0A] border-2 border-[#32CD32]
                     font-mono text-white rounded-lg shadow-xl max-h-[60vh] flex flex-col overflow-hidden"
         >
-          {/* Chat Header */}
           <div className="p-3 border-b-2 border-[#32CD32] bg-black/80 relative">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
@@ -540,7 +542,6 @@ What specific feature would you like to know more about?`;
             </div>
           </div>
 
-          {/* Quick Actions */}
           {showQuickActions && (
             <div className="p-4 border-b-2 border-[#32CD32] bg-black/70">
               <div className="grid grid-cols-2 gap-3">
@@ -561,7 +562,6 @@ What specific feature would you like to know more about?`;
             </div>
           )}
 
-          {/* Chat Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-black/60 to-black/40">
             {messages.map((message) => (
               <motion.div
@@ -601,7 +601,6 @@ What specific feature would you like to know more about?`;
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Chat Input */}
           <div className="border-t-2 border-[#32CD32] p-4 bg-black/80">
             <form onSubmit={handleSubmit} className="flex space-x-3">
               <input
@@ -628,7 +627,6 @@ What specific feature would you like to know more about?`;
         </motion.div>
       )}
 
-      {/* Help Bubble */}
       {showHelpBubble && !isOpen && !isLandingPage && (
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
@@ -672,7 +670,6 @@ What specific feature would you like to know more about?`;
         </motion.div>
       )}
 
-      {/* Page Help Prompt */}
       {showPageHelp && (
         <div className="fixed top-20 right-4 z-50 bg-black border-2 border-[#32CD32] p-4 w-64
                       font-mono text-white animate-fade-in-down">
@@ -706,7 +703,6 @@ What specific feature would you like to know more about?`;
         </div>
       )}
 
-      {/* Chatbot Toggle Button */}
       <motion.button
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}

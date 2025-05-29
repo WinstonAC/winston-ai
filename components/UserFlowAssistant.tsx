@@ -17,6 +17,11 @@ const UserFlowAssistant: React.FC = () => {
   const [currentMessage, setCurrentMessage] = useState<AssistantMessage | null>(null);
   const router = useRouter();
   const { user, loading } = useAuth();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const messages = useMemo<Record<string, AssistantMessage>>(() => ({
     '/': {
@@ -34,14 +39,19 @@ const UserFlowAssistant: React.FC = () => {
   }), []);
 
   useEffect(() => {
-    const path = router.pathname;
-    if (messages[path]) {
-      setCurrentMessage(messages[path]);
-      setIsOpen(true);
+    if (isClient && router.isReady) {
+      const path = router.pathname;
+      if (messages[path]) {
+        setCurrentMessage(messages[path]);
+        setIsOpen(true);
+      } else {
+        setIsOpen(false);
+        setCurrentMessage(null);
+      }
     }
-  }, [messages, router.pathname]);
+  }, [isClient, messages, router.isReady, router.pathname]);
 
-  if (!currentMessage) return null;
+  if (!currentMessage && !isOpen && !loading) return null;
 
   return (
     <div className="fixed bottom-4 right-4 z-50">

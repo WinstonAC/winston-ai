@@ -1,4 +1,4 @@
-import React, { Suspense, useState } from 'react';
+import React, { Suspense, useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import dynamic from 'next/dynamic';
@@ -16,7 +16,7 @@ const SandboxSettings = dynamic(() => import('@/components/SandboxSettings'), {
 });
 
 export default function Sandbox() {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [agentState, setAgentState] = useState<AgentState>({
@@ -28,6 +28,11 @@ export default function Sandbox() {
     successCount: 0,
     errorCount: 0,
   });
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const addLog = (message: string, type: LogEntry['type'] = 'info', details?: Record<string, any>) => {
     setLogs(prev => [
@@ -67,12 +72,21 @@ export default function Sandbox() {
     }
   };
 
-  if (loading) {
+  useEffect(() => {
+    if (isClient && router.isReady && !authLoading && !user) {
+      router.push('/auth/signin');
+    }
+  }, [isClient, router, authLoading, user]);
+
+  if (authLoading) {
     return <Loader />;
   }
 
-  if (!user) {
-    router.push('/auth/signin');
+  if (!isClient || !router.isReady) {
+    return <Loader />;
+  }
+  
+  if (isClient && router.isReady && !authLoading && !user) {
     return null;
   }
 

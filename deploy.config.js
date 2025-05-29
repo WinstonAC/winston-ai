@@ -1,8 +1,11 @@
+// Updated to use environment variable for site URL
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+
 module.exports = {
   environments: {
     development: {
       name: 'development',
-      domain: 'localhost:3000',
+      domain: 'localhost:3000', // This domain is for local reference, not for CORS
       database: {
         host: process.env.DEV_DB_HOST,
         user: process.env.DEV_DB_USER,
@@ -39,7 +42,7 @@ module.exports = {
         logLevel: 'debug'
       },
       security: {
-        corsOrigin: 'http://localhost:3000',
+        corsOrigin: siteUrl,
         rateLimit: {
           window: 15,
           max: 100
@@ -59,7 +62,7 @@ module.exports = {
     },
     staging: {
       name: 'staging',
-      domain: 'staging.winston-ai.com',
+      domain: 'staging.winston-ai.com', // This domain is for local reference, not for CORS
       database: {
         host: process.env.STAGING_DB_HOST,
         user: process.env.STAGING_DB_USER,
@@ -116,7 +119,7 @@ module.exports = {
     },
     production: {
       name: 'production',
-      domain: 'app.winston-ai.com',
+      domain: 'app.winston-ai.com', // This domain is for local reference, not for CORS
       database: {
         host: process.env.PROD_DB_HOST,
         user: process.env.PROD_DB_USER,

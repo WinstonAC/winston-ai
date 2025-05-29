@@ -9,24 +9,39 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    if (!loading && !user) {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isClient || !router.isReady || authLoading) {
+      return;
+    }
+
+    if (!user) {
       router.push({
         pathname: '/auth/signin',
         query: { returnUrl: router.asPath }
       });
-    }
-
-    if (user && requiredRole && user.role !== requiredRole) {
+    } else if (requiredRole && user.role !== requiredRole) {
       setError('You do not have permission to access this page');
     }
-  }, [user, loading, router, requiredRole]);
+  }, [isClient, user, authLoading, router, requiredRole]);
 
-  if (loading) {
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader size="lg" />
+      </div>
+    );
+  }
+
+  if (!isClient || !router.isReady) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader size="lg" />

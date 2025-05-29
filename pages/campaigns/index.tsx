@@ -50,9 +50,14 @@ function CampaignsContent() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [analytics, setAnalytics] = useState<Analytics[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    if (authLoading) return;
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isClient || !router.isReady || authLoading) return;
     
     if (!user) {
       router.push('/auth/signin');
@@ -88,7 +93,7 @@ function CampaignsContent() {
     };
 
     fetchData();
-  }, [user, authLoading, router]);
+  }, [isClient, user, authLoading, router]);
 
   const chartData = {
     labels: analytics.map(a => new Date(a.date).toLocaleDateString()),

@@ -1,11 +1,14 @@
 import { supabase } from './supabase';
 
+// Updated to use environment variable for site URL
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+
 export const signInWithEmail = async (email: string) => {
   try {
     const { data, error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: `${siteUrl}/auth/callback`,
         shouldCreateUser: true,
       },
     });
@@ -27,7 +30,7 @@ export const signInWithMagicLink = async (email: string) => {
     const { data, error } = await supabase.auth.signInWithOtp({
       email: encodeURIComponent(email),
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: `${siteUrl}/auth/callback`,
         data: {
           email: email // Store original email in user metadata
         }
@@ -46,7 +49,7 @@ export const signInWithGoogle = async () => {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${siteUrl}/auth/callback`,
       },
     });
 

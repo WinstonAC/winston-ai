@@ -5,8 +5,17 @@ import { supabase } from '@/lib/supabase';
 export default function HomePage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isClient || !router.isReady) {
+      return;
+    }
+
     const checkSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -28,10 +37,10 @@ export default function HomePage() {
     };
 
     checkSession();
-  }, [router]);
+  }, [isClient, router, router.isReady]);
 
-  // Render loading state instead of null
-  if (isLoading) {
+  // Render loading state
+  if (!isClient || !router.isReady || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black">
         <div className="text-center">

@@ -51,7 +51,7 @@ async function fetchWithRetry(url: string, options: RequestInit = {}, retries = 
 }
 
 export default function DashboardPage() {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -59,70 +59,71 @@ export default function DashboardPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [activities, setActivities] = useState<any[]>([]);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    if (loading) return;
-    
-    if (!user) {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (isClient && router.isReady && !authLoading && !user) {
       router.push('/auth/signin');
       return;
     }
 
-    // Fetch dashboard data
-    const fetchData = async () => {
-      try {
-        const { data, error } = await supabase.auth.getSession();
-        if (error) throw error;
+    if (isClient && router.isReady && !authLoading && user) {
+      const fetchData = async () => {
+        try {
+          // Mock data for MVP
+          setLeads([
+            {
+              id: '1',
+              name: 'John Doe',
+              email: 'john@example.com',
+              company: 'Acme Corp',
+              title: 'CEO',
+              status: 'new',
+              lastContacted: '2024-01-15'
+            },
+            {
+              id: '2', 
+              name: 'Jane Smith',
+              email: 'jane@example.com',
+              company: 'Tech Inc',
+              title: 'CTO',
+              status: 'contacted',
+              lastContacted: '2024-01-14'
+            }
+          ]);
 
-        // Mock data for MVP
-        setLeads([
-          {
-            id: '1',
-            name: 'John Doe',
-            email: 'john@example.com',
-            company: 'Acme Corp',
-            title: 'CEO',
-            status: 'new',
-            lastContacted: '2024-01-15'
-          },
-          {
-            id: '2', 
-            name: 'Jane Smith',
-            email: 'jane@example.com',
-            company: 'Tech Inc',
-            title: 'CTO',
-            status: 'contacted',
-            lastContacted: '2024-01-14'
-          }
-        ]);
+          setCampaigns([
+            {
+              id: '1',
+              name: 'Q1 Outreach',
+              status: 'active',
+              leads: 150,
+              responses: 23
+            }
+          ]);
 
-        setCampaigns([
-          {
-            id: '1',
-            name: 'Q1 Outreach',
-            status: 'active',
-            leads: 150,
-            responses: 23
-          }
-        ]);
+          setActivities([
+            {
+              id: '1',
+              type: 'email_sent',
+              description: 'Welcome email sent to John Doe',
+              timestamp: '2024-01-15T10:30:00Z'
+            }
+          ]);
+        } catch (error) {
+          console.error('Error fetching dashboard data:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
 
-        setActivities([
-          {
-            id: '1',
-            type: 'email_sent',
-            description: 'Welcome email sent to John Doe',
-            timestamp: '2024-01-15T10:30:00Z'
-          }
-        ]);
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [user, loading, router]);
+      fetchData();
+    }
+  }, [isClient, user, authLoading, router]);
 
   const fetchDashboardData = async () => {
     try {
@@ -157,7 +158,6 @@ export default function DashboardPage() {
     } catch (err) {
       console.error('Dashboard data error:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch dashboard data');
-      // Retry after 5 seconds if there's an error
       setTimeout(fetchDashboardData, 5000);
     } finally {
       setIsLoading(false);
@@ -174,7 +174,19 @@ export default function DashboardPage() {
     }
   };
 
-  if (loading || isLoading) {
+  if (authLoading) {
+    return <Loader />;
+  }
+
+  if (!isClient || !router.isReady) {
+    return <Loader />;
+  }
+
+  if (isClient && router.isReady && !authLoading && !user) {
+    return null;
+  }
+
+  if (isLoading) {
     return <Loader />;
   }
 

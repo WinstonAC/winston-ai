@@ -5,6 +5,11 @@ import { supabase } from '@/lib/supabase'
 export default function AuthCallback() {
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   useEffect(() => {
     const handleAuthCallback = async () => {
@@ -117,12 +122,12 @@ export default function AuthCallback() {
       }
     }
 
-    // Only run if we're in the browser and router is ready
-    if (typeof window !== 'undefined' && router.isReady) {
+    // Only run if we're on the client and router is ready
+    if (isClient && router.isReady) {
       // Add a small delay to ensure URL processing is complete
       setTimeout(handleAuthCallback, 100)
     }
-  }, [router, router.isReady])
+  }, [isClient, router, router.isReady])
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-black">

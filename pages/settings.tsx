@@ -4,7 +4,7 @@ import Head from 'next/head';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function Settings() {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -15,6 +15,11 @@ export default function Settings() {
     newPassword: '',
     confirmPassword: '',
   });
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Update form data when session loads
   useEffect(() => {
@@ -27,14 +32,15 @@ export default function Settings() {
     }
   }, [user]);
 
-  // Redirect if not authenticated
-  if (!user && !loading) {
-    router.push('/login');
-    return null;
-  }
+  useEffect(() => {
+    // Wait for client-side, router readiness, and auth state resolution
+    if (isClient && router.isReady && !authLoading && !user) {
+      router.push('/login');
+    }
+  }, [isClient, router, authLoading, user]); // router.isReady is implicitly handled by router object dependency
 
-  // Show loading state while checking authentication
-  if (loading) {
+  // Show loader while auth is loading
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
@@ -43,6 +49,25 @@ export default function Settings() {
         </div>
       </div>
     );
+  }
+
+  // Handle SSR or client-side hydration before router is ready
+  if (!isClient || !router.isReady) {
+    // On the server, isClient is false. On the client, if router is not ready.
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto"></div>
+          <p className="mt-2 text-sm text-gray-500">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // If on client, router is ready, auth is not loading, but still no user.
+  // This implies a redirect should happen or user is truly not logged in.
+  if (isClient && router.isReady && !authLoading && !user) {
+    return null; // Or a loader if preferred during redirect
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -1,8 +1,10 @@
 import { test, expect } from '@playwright/test';
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+
 test.describe('Winston AI Application Tests', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('http://localhost:3000');
+    await page.goto(siteUrl);
   });
 
   test('Authentication Flow', async ({ page }) => {

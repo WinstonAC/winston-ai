@@ -10,21 +10,35 @@ import { ChevronDownIcon } from '@heroicons/react/24/outline';
 
 export default function Login() {
   const router = useRouter();
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { registered } = router.query;
+  const [registered, setRegistered] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const dropdownRefs = React.useRef<Record<string, HTMLDivElement | null>>({});
+  const [isClient, setIsClient] = useState(false);
+
+  // Updated to use environment variable for site URL
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
   useEffect(() => {
-    if (!loading && user) {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (isClient && router.isReady) {
+      setRegistered(router.query.registered === 'true');
+    }
+  }, [isClient, router.isReady, router.query]);
+
+  useEffect(() => {
+    if (isClient && router.isReady && !authLoading && user) {
       router.push('/dashboard');
     }
-  }, [user, loading, router]);
+  }, [isClient, user, authLoading, router]);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,7 +49,8 @@ export default function Login() {
       const { error } = await supabase.auth.signInWithOtp({
         email: email.trim(),
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          // Replaced hardcoded URL with environment variable
+          emailRedirectTo: `${siteUrl}/auth/callback`,
         },
       });
 
@@ -59,7 +74,8 @@ export default function Login() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          // Replaced hardcoded URL with environment variable
+          redirectTo: `${siteUrl}/auth/callback`,
         },
       });
 
@@ -93,8 +109,23 @@ export default function Login() {
     setActiveDropdown(activeDropdown === name ? null : name);
   };
 
-  if (loading) {
+  // Show loader while auth is loading or client/router is not ready
+  if (authLoading) { 
     return <div>Loading...</div>;
+  }
+
+  // During SSR or if router isn't ready on client, show loading. 
+  // This prevents attempting to redirect or use router.query too early.
+  if (!isClient || !router.isReady) {
+      return <div>Loading...</div>; 
+  }
+  
+  // If user is already logged in (and client/router are ready, auth not loading), 
+  // the redirect effect above should handle it. If it hasn't fired yet, 
+  // or for an extra guard, we can return null or loader here to prevent login page flash.
+  // This condition might be hit if the redirect is in progress.
+  if (isClient && router.isReady && !authLoading && user) {
+      return <div>Loading...</div>; // Or null
   }
 
   return (

@@ -1,5 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+
 export default defineConfig({
   testDir: './__tests__/e2e',
   timeout: 30000,
@@ -9,7 +11,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: siteUrl,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     contextOptions: {
@@ -35,7 +37,7 @@ export default defineConfig({
   ],
   webServer: {
     command: 'npm run dev',
-    url: 'http://localhost:3000',
+    url: siteUrl,
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
   },

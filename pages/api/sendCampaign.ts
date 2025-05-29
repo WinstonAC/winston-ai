@@ -20,6 +20,7 @@ interface Response {
 
 // Email template function
 const generateEmailContent = (lead: Lead) => {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://yourdomain.com'; // Fallback if not set
   return {
     subject: `${lead.name}, quick question about your business`,
     html: `
@@ -31,7 +32,7 @@ const generateEmailContent = (lead: Lead) => {
         
         <p>Would you be interested in seeing a quick demo of how it works?</p>
         
-        <p><a href="https://yourdomain.com/demo" 
+        <p><a href="${siteUrl}/demo" 
           style="display: inline-block; padding: 10px 20px; background-color: black; 
           color: white; text-decoration: none; margin: 20px 0;">
           Watch 2-Minute Demo

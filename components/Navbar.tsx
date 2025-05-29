@@ -1,11 +1,11 @@
 import React from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/router';
+// import { useRouter } from 'next/router';
 // import { supabase } from '@/lib/supabase';
 // import type { User } from '@supabase/supabase-js';
 
 const Navbar: React.FC = () => {
-  const router = useRouter();
+  // const router = useRouter();
 
   return (
     <nav className="fixed top-0 left-0 right-0 bg-[#111111] border-b border-[#222222] z-50">

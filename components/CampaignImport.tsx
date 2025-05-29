@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { ArrowUpTrayIcon } from '@heroicons/react/24/outline';
 
 export default function CampaignImport() {
-  const router = useRouter();
+  const router = typeof window !== "undefined" ? useRouter() : null;
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,7 +36,9 @@ export default function CampaignImport() {
       }
 
       // Redirect to campaigns page after successful import
-      router.push('/campaigns');
+      if (router) {
+        router.push('/campaigns');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to import campaigns');
     } finally {
