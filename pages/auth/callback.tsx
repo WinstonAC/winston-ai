@@ -29,7 +29,7 @@ export default function AuthCallback() {
         // Handle error from auth provider
         if (error_code) {
           console.error('[Callback] Auth provider error:', error_description || error_code)
-          setError(error_description || error_code)
+          setError("Session invalid or expired. Please log in again.")
           setTimeout(() => {
             window.location.href = '/auth/signin?error=auth_provider_error'
           }, 2000)
@@ -44,7 +44,7 @@ export default function AuthCallback() {
         if (sessionError) {
           console.error('[Callback] Session check error:', sessionError)
           console.log('[Callback] Redirecting to /auth/signin due to sessionError.');
-          setError(sessionError.message)
+          setError("Session invalid or expired. Please log in again.")
           setTimeout(() => {
             window.location.href = '/auth/signin?error=session_error'
           }, 2000)
@@ -81,7 +81,7 @@ export default function AuthCallback() {
           
           if (error) {
             console.error('[Callback] Token session set error:', error)
-            setError(error.message)
+            setError("Session invalid or expired. Please log in again.")
             setTimeout(() => {
               window.location.href = '/auth/signin?error=token_failed'
             }, 2000)
@@ -95,7 +95,7 @@ export default function AuthCallback() {
             return
           } else {
             console.log('[Callback] Token authentication failed or no session returned. Redirecting to /auth/signin.');
-            setError('Token authentication failed');
+            setError("Session invalid or expired. Please log in again.");
             setTimeout(() => {
               window.location.href = '/auth/signin?error=token_failed_no_session';
             }, 2000);
@@ -115,6 +115,7 @@ export default function AuthCallback() {
             console.error('[Callback] OAuth code exchange error:', error)
             // If PKCE fails, redirect to try implicit flow
             console.log('[Callback] PKCE failed, redirecting to retry with implicit flow')
+            setError("Session invalid or expired. Please log in again.")
             setTimeout(() => {
               window.location.href = '/auth/signin?error=oauth_retry'
             }, 2000)
@@ -128,7 +129,7 @@ export default function AuthCallback() {
             return
           } else {
             console.log('[Callback] OAuth authentication failed or no session returned. Redirecting to /auth/signin.');
-            setError('OAuth authentication failed');
+            setError("Session invalid or expired. Please log in again.");
             setTimeout(() => {
               window.location.href = '/auth/signin?error=oauth_failed_no_session';
             }, 2000);
@@ -145,7 +146,7 @@ export default function AuthCallback() {
       } catch (error) {
         console.error('[Callback] Fatal error:', error)
         console.log('[Callback] Redirecting to /auth/signin due to fatal error.');
-        setError(error instanceof Error ? error.message : 'Authentication failed')
+        setError("Session invalid or expired. Please log in again.")
         setTimeout(() => {
           window.location.href = '/auth/signin?error=callback_failed'
         }, 2000)
