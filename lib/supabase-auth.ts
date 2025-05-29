@@ -50,7 +50,7 @@ export const signInWithGoogle = async () => {
     });
 
     if (error) {
-      console.error('Google auth error:', error.message);
+      console.error('Google auth error:', error instanceof Error ? error.message : String(error));
       // Potentially alert or throw error here if desired, 
       // but the calling components will now handle alerts.
       throw error; // Keep throwing for now so callers know it failed
@@ -58,7 +58,7 @@ export const signInWithGoogle = async () => {
 
     return data;
   } catch (error) {
-    console.error('Google auth error:', error.message);
+    console.error('Google auth error:', error instanceof Error ? error.message : String(error));
     throw error; // Re-throw to ensure calling code knows about the failure
   }
 };
