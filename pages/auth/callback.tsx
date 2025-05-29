@@ -7,41 +7,35 @@ export default function Callback() {
   const [error, setError] = useState(false)
 
   useEffect(() => {
-    const handleAuth = async () => {
-      const hash = window.location.hash.substring(1)
+    const login = async () => {
+      const url = new URL(window.location.href)
+      const hash = url.hash.substring(1)
       const params = new URLSearchParams(hash)
+
       const access_token = params.get('access_token')
       const refresh_token = params.get('refresh_token')
+      const code = url.searchParams.get('code')
 
-      if (access_token && refresh_token) {
-        const { error } = await supabase.auth.setSession({ access_token, refresh_token })
-        if (error) {
-          console.error('Error setting session:', error)
-          setError(true)
+      try {
+        if (code) {
+          const { error } = await supabase.auth.exchangeCodeForSession(code)
+          if (error) throw error
+        } else if (access_token && refresh_token) {
+          const { error } = await supabase.auth.setSession({ access_token, refresh_token })
+          if (error) throw error
         } else {
-          router.push('/dashboard')
+          throw new Error('No token found')
         }
-        return
-      }
 
-      // Handle PKCE flow (Google OAuth style) with ?code param
-      const urlParams = new URLSearchParams(window.location.search)
-      const code = urlParams.get('code')
-      if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code)
-        if (error) {
-          console.error('Error exchanging code:', error)
-          setError(true)
-        } else {
-          router.push('/dashboard')
-        }
-        return
+        router.push('/dashboard')
+      } catch (err) {
+        console.error('Auth error:', err)
+        setError(true)
+        router.push('/auth/signin')
       }
-
-      setError(true)
     }
 
-    handleAuth()
+    login()
   }, [])
 
   return (
