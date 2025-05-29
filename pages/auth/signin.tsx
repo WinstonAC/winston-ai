@@ -53,6 +53,9 @@ export default function LoginPage() {
   const handleGoogleLogin = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
+      options: {
+        redirectTo: 'https://winstonai.io/auth/callback'
+      }
     });
 
     if (error) {
