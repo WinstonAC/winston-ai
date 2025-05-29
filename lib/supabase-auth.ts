@@ -8,8 +8,7 @@ export const signInWithEmail = async (email: string) => {
     const { data, error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: `${siteUrl}/auth/callback`,
-        shouldCreateUser: true,
+        emailRedirectTo: 'https://winstonai.io/auth/callback',
       },
     });
 
@@ -30,7 +29,7 @@ export const signInWithMagicLink = async (email: string) => {
     const { data, error } = await supabase.auth.signInWithOtp({
       email: encodeURIComponent(email),
       options: {
-        emailRedirectTo: `${siteUrl}/auth/callback`,
+        emailRedirectTo: 'https://winstonai.io/auth/callback',
         data: {
           email: email // Store original email in user metadata
         }
@@ -90,4 +89,20 @@ export const getSession = async () => {
     console.error('Session error:', error);
     throw error;
   }
-}; 
+};
+
+export async function sendMagicLink(email: string, redirectPath?: string) {
+  const { data, error } = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      emailRedirectTo: `https://winstonai.io${redirectPath || '/auth/callback'}`,
+    },
+  });
+
+  if (error) {
+    console.error('Magic link error:', error);
+    throw error;
+  }
+
+  return data;
+} 

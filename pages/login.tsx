@@ -50,7 +50,7 @@ export default function Login() {
         email: email.trim(),
         options: {
           // Replaced hardcoded URL with environment variable
-          emailRedirectTo: `${siteUrl}/auth/callback`,
+          emailRedirectTo: 'https://winstonai.io/auth/callback',
         },
       });
 
