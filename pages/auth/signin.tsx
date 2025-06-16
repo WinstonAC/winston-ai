@@ -3,6 +3,7 @@ import { useRouter } from 'next/router'
 import { supabase } from '@/lib/supabase'
 import Chatbot from '@/components/Chatbot'
 import Image from 'next/image'
+import { getURL } from '@/utils/getURL'
 
 // Debug logging for Supabase client initialization
 console.log("[ENV] Supabase URL", process.env.NEXT_PUBLIC_SUPABASE_URL)
@@ -31,10 +32,11 @@ export default function LoginPage() {
     setMessage(null)
 
     try {
+      // Ensure the magic link redirects back to Winston AI after login
       const { error } = await supabase.auth.signInWithOtp({
         email: email.trim(),
         options: {
-          emailRedirectTo: 'https://winstonai.io/auth/callback',
+          emailRedirectTo: `${getURL()}auth/callback`,
         },
       })
 
