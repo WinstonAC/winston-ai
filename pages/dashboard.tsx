@@ -9,6 +9,7 @@ import Loader from '@/components/Loader';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import Chatbot from '@/components/Chatbot';
+import type { Session } from '@supabase/supabase-js';
 
 // Dynamically import the Dashboard component to avoid SSR issues
 const DashboardComponent = dynamic(() => import('@/components/Dashboard'), {
@@ -60,18 +61,21 @@ export default function DashboardPage() {
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [activities, setActivities] = useState<any[]>([]);
   const [isClient, setIsClient] = useState(false);
+  const [session, setSession] = useState<Session | null>(null);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
   useEffect(() => {
-    if (isClient && router.isReady && !authLoading && !user) {
-      router.push('/auth/signin');
-      return;
-    }
+    // Demo mode - skip session checks
+    setIsLoading(false);
+    setSession({ user: { id: "demo-user-123" } } as any);
+  }, [router]);
 
-    if (isClient && router.isReady && !authLoading && user) {
+  useEffect(() => {
+    // Demo mode - always allow access, skip auth checks
+    if (isClient && router.isReady && !authLoading) {
       const fetchData = async () => {
         try {
           // Mock data for MVP
@@ -182,12 +186,17 @@ export default function DashboardPage() {
     return <Loader />;
   }
 
-  if (isClient && router.isReady && !authLoading && !user) {
-    return null;
-  }
+  // Demo mode - always allow access
 
   if (isLoading) {
-    return <Loader />;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-black">
+        <div className="text-center">
+          <h2 className="text-xl font-mono text-[#32CD32] mb-4">Loading...</h2>
+          <p className="text-gray-400">Please wait while we load your dashboard.</p>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
@@ -209,6 +218,8 @@ export default function DashboardPage() {
       </div>
     );
   }
+
+  if (!session) return null;
 
   return (
     <div className="min-h-screen bg-black text-white">

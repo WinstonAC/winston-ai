@@ -3,72 +3,81 @@ import { supabase } from '@/lib/supabase'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    // Check authentication
-    const authHeader = req.headers.authorization
-    if (!authHeader) {
-      return res.status(401).json({ error: 'Unauthorized' })
-    }
-
-    const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-    
-    if (authError || !user) {
-      return res.status(401).json({ error: 'Unauthorized' })
-    }
+    // Demo user - bypass authentication for demo purposes
+    const user = { id: "demo-user-123" }
 
     switch (req.method) {
       case 'GET':
-        // Get leads for campaigns owned by the authenticated user
-        const { data: leads, error: fetchError } = await supabase
-          .from('leads')
-          .select(`
-            *,
-            campaigns!inner(user_id)
-          `)
-          .eq('campaigns.user_id', user.id)
-          .order('created_at', { ascending: false })
-
-        if (fetchError) {
-          // If campaigns table doesn't exist or join fails, get all leads for MVP
-          const { data: allLeads, error: simpleError } = await supabase
-            .from('leads')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .limit(50)
-
-          if (simpleError) {
-            throw simpleError
+        // Return demo leads data
+        const demoLeads = [
+          {
+            id: '1',
+            name: 'John Smith',
+            email: 'john.smith@techcorp.com',
+            company: 'TechCorp',
+            title: 'CEO',
+            status: 'new',
+            lastContacted: '2024-01-15',
+            created_at: '2024-01-15T10:00:00Z'
+          },
+          {
+            id: '2',
+            name: 'Sarah Johnson',
+            email: 'sarah.j@innovateio.com',
+            company: 'InnovateIO',
+            title: 'CTO',
+            status: 'contacted',
+            lastContacted: '2024-01-14',
+            created_at: '2024-01-14T15:30:00Z'
+          },
+          {
+            id: '3',
+            name: 'Mike Chen',
+            email: 'mike@futuretech.ai',
+            company: 'FutureTech AI',
+            title: 'Founder',
+            status: 'qualified',
+            lastContacted: '2024-01-13',
+            created_at: '2024-01-13T09:15:00Z'
+          },
+          {
+            id: '4',
+            name: 'Emily Davis',
+            email: 'emily.davis@startuphub.com',
+            company: 'StartupHub',
+            title: 'Product Manager',
+            status: 'new',
+            created_at: '2024-01-12T14:20:00Z'
           }
+        ];
 
-          return res.status(200).json(allLeads || [])
-        }
-
-        return res.status(200).json(leads || [])
+        return res.status(200).json(demoLeads)
 
       case 'POST':
-        // Create new lead
-        const { email, campaign_id, status = 'new' } = req.body
+        // For demo purposes, accept the POST but just return success
+        const { leads: leadsArray, email, name, status = 'new' } = req.body
         
-        if (!email) {
-          return res.status(400).json({ error: 'Email is required' })
-        }
-
-        const { data: newLead, error: createError } = await supabase
-          .from('leads')
-          .insert({
+        if (leadsArray && Array.isArray(leadsArray)) {
+          // Bulk upload from CSV
+          console.log(`Demo: Received ${leadsArray.length} leads for upload`)
+          return res.status(201).json({ 
+            message: `Successfully uploaded ${leadsArray.length} leads`,
+            count: leadsArray.length 
+          })
+        } else if (email) {
+          // Single lead creation
+          const newLead = {
+            id: Date.now().toString(),
             email,
-            campaign_id,
+            name: name || 'Unknown',
             status,
             created_at: new Date().toISOString()
-          })
-          .select()
-          .single()
-
-        if (createError) {
-          throw createError
+          }
+          console.log('Demo: Created new lead:', newLead)
+          return res.status(201).json(newLead)
+        } else {
+          return res.status(400).json({ error: 'Email is required' })
         }
-
-        return res.status(201).json(newLead)
 
       default:
         return res.status(405).json({ error: 'Method not allowed' })

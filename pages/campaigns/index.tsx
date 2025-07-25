@@ -59,11 +59,7 @@ function CampaignsContent() {
   useEffect(() => {
     if (!isClient || !router.isReady || authLoading) return;
     
-    if (!user) {
-      router.push('/auth/signin');
-      return;
-    }
-
+    // Demo mode - skip auth check
     const fetchData = async () => {
       try {
         // Fetch campaigns

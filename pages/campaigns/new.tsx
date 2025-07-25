@@ -1,15 +1,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/contexts/AuthContext';
-import ProtectedRoute from '@/components/ProtectedRoute';
-import { supabase } from '@/lib/supabase';
-import { CreateCampaignInput } from '@/types/campaign';
-import { Loader } from '@/components/ui/Loader';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Select } from '@/components/ui/Select';
-import { Textarea } from '@/components/ui/Textarea';
-import { showErrorToast, AppError } from '@/lib/error';
 
 const steps = [
   { id: 'basics', name: 'Basic Info' },
@@ -24,20 +15,15 @@ export default function NewCampaign() {
   const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState('basics');
   const [isLoading, setIsLoading] = useState(false);
-  const [campaign, setCampaign] = useState<CreateCampaignInput>({
+  const [campaign, setCampaign] = useState({
     name: '',
     description: '',
     templateId: '',
     segmentId: '',
-    targetAudience: {
-      segment: '',
-      filters: {}
-    },
     schedule: {
       type: 'immediate',
-      date: undefined,
-      time: undefined,
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+      date: '',
+      time: ''
     }
   });
 
@@ -46,24 +32,31 @@ export default function NewCampaign() {
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase
-        .from('campaigns')
-        .insert([
-          {
-            ...campaign,
-            userId: user?.id,
-            status: 'draft'
-          }
-        ])
-        .select()
-        .single();
+      // Demo: Create campaign via API
+      const response = await fetch('/api/campaigns', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: campaign.name,
+          description: campaign.description,
+          status: 'draft'
+        }),
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to create campaign');
+      }
 
-      router.push(`/campaigns/${data.id}`);
+      const data = await response.json();
+      console.log('Demo: Campaign created:', data);
+      
+      // For demo, redirect to campaigns list
+      router.push('/campaigns');
     } catch (err) {
-      showErrorToast(new AppError('Failed to create campaign', 'api_error'));
       console.error('Campaign creation error:', err);
+      alert('Error creating campaign. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -75,26 +68,28 @@ export default function NewCampaign() {
         return (
           <div className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-200">
+              <label className="block text-sm font-medium text-gray-200 mb-2">
                 Campaign Name
               </label>
-              <Input
+              <input
                 type="text"
                 value={campaign.name}
                 onChange={(e) => setCampaign({ ...campaign, name: e.target.value })}
                 placeholder="Enter campaign name"
                 required
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-200">
+              <label className="block text-sm font-medium text-gray-200 mb-2">
                 Description
               </label>
-              <Textarea
+              <textarea
                 value={campaign.description}
                 onChange={(e) => setCampaign({ ...campaign, description: e.target.value })}
                 placeholder="Describe your campaign"
                 rows={4}
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400"
               />
             </div>
           </div>
@@ -103,90 +98,104 @@ export default function NewCampaign() {
       case 'template':
         return (
           <div className="space-y-6">
-            <Select
-              label="Email Template"
-              value={campaign.templateId}
-              onChange={(e) => setCampaign({ ...campaign, templateId: e.target.value })}
-              options={[
-                { value: 'template1', label: 'Welcome Email' },
-                { value: 'template2', label: 'Newsletter' },
-                { value: 'template3', label: 'Promotional' }
-              ]}
-            />
-            <Button
-              variant="outline"
-              onClick={() => router.push('/templates/new')}
-            >
-              Create New Template
-            </Button>
+            <div>
+              <label className="block text-sm font-medium text-gray-200 mb-2">
+                Email Template
+              </label>
+              <select
+                value={campaign.templateId}
+                onChange={(e) => setCampaign({ ...campaign, templateId: e.target.value })}
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white"
+              >
+                <option value="">Select template</option>
+                <option value="template1">Welcome Email</option>
+                <option value="template2">Product Demo</option>
+                <option value="template3">Follow-up Email</option>
+              </select>
+            </div>
           </div>
         );
 
       case 'audience':
         return (
           <div className="space-y-6">
-            <Select
-              label="Target Segment"
-              value={campaign.segmentId}
-              onChange={(e) => setCampaign({ ...campaign, segmentId: e.target.value })}
-              options={[
-                { value: 'segment1', label: 'All Users' },
-                { value: 'segment2', label: 'Active Users' },
-                { value: 'segment3', label: 'Inactive Users' }
-              ]}
-            />
-            <Button
-              variant="outline"
-              onClick={() => router.push('/segments/new')}
-            >
-              Create New Segment
-            </Button>
+            <div>
+              <label className="block text-sm font-medium text-gray-200 mb-2">
+                Target Segment
+              </label>
+              <select
+                value={campaign.segmentId}
+                onChange={(e) => setCampaign({ ...campaign, segmentId: e.target.value })}
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white"
+              >
+                <option value="">Select segment</option>
+                <option value="segment1">All Leads</option>
+                <option value="segment2">New Leads</option>
+                <option value="segment3">Qualified Leads</option>
+              </select>
+            </div>
           </div>
         );
 
       case 'schedule':
         return (
           <div className="space-y-6">
-            <Select
-              label="Schedule Type"
-              value={campaign.schedule.type}
-              onChange={(e) => setCampaign({
-                ...campaign,
-                schedule: {
-                  ...campaign.schedule,
-                  type: e.target.value as 'immediate' | 'scheduled'
-                }
-              })}
-              options={[
-                { value: 'immediate', label: 'Send Immediately' },
-                { value: 'scheduled', label: 'Schedule for Later' }
-              ]}
-            />
+            <div>
+              <label className="block text-sm font-medium text-gray-200 mb-2">
+                Schedule Type
+              </label>
+              <select
+                value={campaign.schedule.type}
+                onChange={(e) => setCampaign({
+                  ...campaign,
+                  schedule: {
+                    ...campaign.schedule,
+                    type: e.target.value
+                  }
+                })}
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white"
+              >
+                <option value="immediate">Send Immediately</option>
+                <option value="scheduled">Schedule for Later</option>
+              </select>
+            </div>
             {campaign.schedule.type === 'scheduled' && (
               <>
-                <Input
-                  type="date"
-                  value={campaign.schedule.date}
-                  onChange={(e) => setCampaign({
-                    ...campaign,
-                    schedule: {
-                      ...campaign.schedule,
-                      date: e.target.value
-                    }
-                  })}
-                  min={new Date().toISOString().split('T')[0]}
-                />
-                <Input
-                  type="time"
-                  value={campaign.schedule.time}
-                  onChange={(e) => setCampaign({
-                    ...campaign,
-                    schedule: {
-                      ...campaign.schedule,
-                      time: e.target.value
-                    }
-                  })}
-                />
+                <div>
+                  <label className="block text-sm font-medium text-gray-200 mb-2">
+                    Date
+                  </label>
+                  <input
+                    type="date"
+                    value={campaign.schedule.date}
+                    onChange={(e) => setCampaign({
+                      ...campaign,
+                      schedule: {
+                        ...campaign.schedule,
+                        date: e.target.value
+                      }
+                    })}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-200 mb-2">
+                    Time
+                  </label>
+                  <input
+                    type="time"
+                    value={campaign.schedule.time}
+                    onChange={(e) => setCampaign({
+                      ...campaign,
+                      schedule: {
+                        ...campaign.schedule,
+                        time: e.target.value
+                      }
+                    })}
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white"
+                  />
+                </div>
               </>
             )}
           </div>
@@ -235,7 +244,7 @@ export default function NewCampaign() {
   const isLastStep = currentStepIndex === steps.length - 1;
 
   return (
-    <ProtectedRoute>
+    <div className="min-h-screen bg-black text-white">
       <div className="max-w-4xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white">Create New Campaign</h1>
@@ -283,35 +292,35 @@ export default function NewCampaign() {
 
           <div className="flex justify-between pt-8">
             {!isFirstStep && (
-              <Button
+              <button
                 type="button"
-                variant="outline"
                 onClick={() => setCurrentStep(steps[currentStepIndex - 1].id)}
+                className="px-4 py-2 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-700"
               >
                 Previous
-              </Button>
+              </button>
             )}
             <div className="flex-1" />
             {isLastStep ? (
-              <Button
+              <button
                 type="submit"
-                variant="default"
                 disabled={isLoading}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
               >
-                {isLoading ? <Loader size="sm" /> : 'Create Campaign'}
-              </Button>
+                {isLoading ? 'Creating...' : 'Create Campaign'}
+              </button>
             ) : (
-              <Button
+              <button
                 type="button"
-                variant="default"
                 onClick={() => setCurrentStep(steps[currentStepIndex + 1].id)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
                 Next
-              </Button>
+              </button>
             )}
           </div>
         </form>
       </div>
-    </ProtectedRoute>
+    </div>
   );
 } 

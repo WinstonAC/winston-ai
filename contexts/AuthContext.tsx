@@ -1,5 +1,4 @@
 import React, { createContext, useContext } from 'react';
-import { useSession, useSupabaseClient } from '@supabase/auth-helpers-react';
 import { useRouter } from 'next/router';
 
 interface AuthContextType {
@@ -11,24 +10,30 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Demo user for bypass authentication
+const DEMO_USER = {
+  id: "demo-user-123",
+  email: "demo@winston-ai.com",
+  user_metadata: {
+    full_name: "Demo User"
+  }
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const session = useSession();
-  const supabase = useSupabaseClient();
   const router = useRouter();
 
   const signOut = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      router.push('/auth/signin');
+      // For demo purposes, just redirect to home
+      router.push('/');
     } catch (err) {
       console.error('Sign out error:', err);
     }
   };
 
   const value = {
-    user: session?.user ?? null,
-    loading: false, // SessionContextProvider handles loading
+    user: DEMO_USER, // Always return demo user
+    loading: false,
     error: null,
     signOut
   };

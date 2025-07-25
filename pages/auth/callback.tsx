@@ -1,27 +1,27 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '@/lib/supabase'
 
 /**
  * Auth Callback Page
  * 
- * This page handles the redirect after a user clicks a magic link or completes OAuth.
+ * This page handles the redirect after a user clicks a magic link.
  * It attempts to get the session from the URL and:
  * - On success: Redirects to the dashboard
  * - On failure: Redirects back to login with an error
  */
 export default function AuthCallback() {
   const router = useRouter()
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        // Get the session from the URL (handles both magic links and OAuth)
-        const { data: { session }, error } = await supabase.auth.getSessionFromUrl()
+        // Get the session from the URL (handles magic links)
+        const { data: { session }, error } = await supabase.auth.getSession()
 
         if (error) {
           console.error('Auth callback error:', error.message)
-          // Redirect to login with error parameter
           router.replace('/auth/signin?error=magic_link_failed')
           return
         }
@@ -29,10 +29,15 @@ export default function AuthCallback() {
         if (session) {
           // Successful authentication, redirect to dashboard
           router.replace('/dashboard')
+        } else {
+          // No session found, redirect to login
+          router.replace('/auth/signin?error=no_session')
         }
       } catch (err) {
         console.error('Unexpected error during auth callback:', err)
         router.replace('/auth/signin?error=magic_link_failed')
+      } finally {
+        setIsLoading(false)
       }
     }
 

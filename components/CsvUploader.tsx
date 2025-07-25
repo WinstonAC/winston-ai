@@ -43,7 +43,7 @@ const CsvUploader: React.FC = () => {
           throw new Error('No valid leads found in CSV. Please ensure your CSV has "name" and "email" columns.');
         }
 
-        // Upload leads to the API
+        // Upload leads to the API (demo mode - no auth headers needed)
         const response = await fetch('/api/leads', {
           method: 'POST',
           headers: {

@@ -124,13 +124,47 @@ const mockLeads = [
 ];
 
 const LeadTable: React.FC<LeadTableProps> = ({ leads, loading }) => {
+  const handleExportCSV = () => {
+    const csvData = leads.map(lead => ({
+      Name: lead.name,
+      Email: lead.email,
+      Company: lead.company,
+      Title: lead.title,
+      Status: lead.status,
+      'Last Contacted': lead.lastContacted || 'Never',
+      Classification: lead.classification || 'Not classified'
+    }));
+
+    const csv = Papa.unparse(csvData);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `winston-leads-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (loading) {
     return <LoadingState />;
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-800/50">
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-mono text-gray-300">Leads</h3>
+        <button
+          onClick={handleExportCSV}
+          className="px-4 py-2 bg-gray-800 text-gray-300 border border-gray-600 rounded-lg
+                   hover:bg-gray-700 hover:text-white transition-colors font-mono text-sm"
+        >
+          Export CSV
+        </button>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-800/50">
         <thead className="bg-gray-900/50">
           <tr>
             <th className="px-6 py-4 text-left text-xs font-mono text-gray-400 uppercase tracking-wider">
@@ -177,6 +211,7 @@ const LeadTable: React.FC<LeadTableProps> = ({ leads, loading }) => {
           <p className="text-gray-400 font-mono">No leads found</p>
         </div>
       )}
+      </div>
     </div>
   );
 };
