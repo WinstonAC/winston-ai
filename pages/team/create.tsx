@@ -17,9 +17,10 @@ export default function CreateTeam() {
   }, []);
 
   useEffect(() => {
-    if (isClient && router.isReady && !authLoading && !user) {
-      router.push('/auth/signin');
-    }
+    // Demo mode: skip auth check, allow team creation access  
+    // if (isClient && router.isReady && !authLoading && !user) {
+    //   router.push('/auth/signin');
+    // }
   }, [isClient, router, authLoading, user]);
 
   if (authLoading) {

@@ -1,55 +1,20 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { supabase } from '@/lib/supabase';
 
-export default function HomePage() {
+export default function Home() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
-  const [isClient, setIsClient] = useState(false);
-
+  
   useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  useEffect(() => {
-    if (!isClient || !router.isReady) {
-      return;
-    }
-
-    const checkSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session) {
-          // If user is logged in, redirect to dashboard
-          router.push('/dashboard');
-        } else {
-          // If not logged in, show landing page
-          router.push('/landing');
-        }
-      } catch (error) {
-        console.error('Session check error:', error);
-        // On error, redirect to landing
-        router.push('/landing');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkSession();
-  }, [isClient, router, router.isReady]);
-
-  // Render loading state
-  if (!isClient || !router.isReady || isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-black">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#32CD32] mx-auto"></div>
-          <p className="mt-4 text-lg text-white font-mono">Loading...</p>
-        </div>
+    // Demo mode: directly redirect to dashboard without auth checks
+    router.push('/dashboard');
+  }, [router]);
+  
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-black">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#32CD32] mx-auto"></div>
+        <p className="mt-4 text-lg text-white font-mono">Loading Dashboard...</p>
       </div>
-    );
-  }
-
-  return null;
+    </div>
+  );
 }

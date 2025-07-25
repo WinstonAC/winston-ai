@@ -170,9 +170,8 @@ export default function DashboardPage() {
 
   const handleSignOut = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      router.push('/auth/signin');
+      // Demo mode: just redirect to home
+      router.push('/');
     } catch (error) {
       console.error('Error signing out:', error);
     }
