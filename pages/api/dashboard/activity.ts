@@ -35,7 +35,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Combine and format activity data
-    const activities = [];
+    const activities: Array<{
+      id: string;
+      type: string;
+      leadName: string;
+      createdAt: string;
+      status?: string;
+      details?: any;
+    }> = [];
 
     // Add lead activities
     if (leadsResult.data) {
