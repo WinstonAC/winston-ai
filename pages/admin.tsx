@@ -29,55 +29,56 @@ export default function Admin() {
       setLoading(true);
       setError(null);
 
-      // Try to get users from the users table first
+      // Fetch real users from Supabase
       const { data: usersData, error: usersError } = await supabase
         .from('users')
         .select('*')
         .order('created_at', { ascending: false });
 
-             if (usersData && usersData.length > 0) {
-         setUsers(usersData);
-       } else {
-         // If no users in users table, show fallback demo data
-         const mockUsers = [
-           {
-             id: 'demo-user-123',
-             email: 'demo@winston-ai.com',
-             role: 'admin',
-             created_at: new Date().toISOString(),
-             user_metadata: {
-               full_name: 'Demo User',
-               role: 'admin'
-             }
-           },
-           {
-             id: 'admin-user-456', 
-             email: 'admin@winston-ai.com',
-             role: 'admin',
-             created_at: new Date(Date.now() - 86400000).toISOString(),
-             user_metadata: {
-               full_name: 'Winston AI Admin',
-               role: 'admin'
-             }
-           },
-           {
-             id: 'user-789',
-             email: 'user@example.com',
-             role: 'member',
-             created_at: new Date(Date.now() - 172800000).toISOString(),
-             user_metadata: {
-               full_name: 'Sample User',
-               role: 'member'
-             }
-           }
-         ];
-         setUsers(mockUsers);
-         setError('Note: Showing demo data. Connect to live Supabase for real users.');
-       }
-
-      if (usersError && !usersData) {
+      if (usersError) {
         console.error('Error fetching users:', usersError);
         setError('Unable to fetch users. This may require admin privileges.');
+        return;
+      }
+
+      if (usersData && usersData.length > 0) {
+        setUsers(usersData);
+      } else {
+        // Fallback demo data if no users found
+        const mockUsers = [
+          {
+            id: 'demo-user-123',
+            email: 'demo@winston-ai.com',
+            role: 'admin',
+            created_at: new Date().toISOString(),
+            user_metadata: {
+              full_name: 'Demo User',
+              role: 'admin'
+            }
+          },
+          {
+            id: 'admin-user-456', 
+            email: 'admin@winston-ai.com',
+            role: 'admin',
+            created_at: new Date(Date.now() - 86400000).toISOString(),
+            user_metadata: {
+              full_name: 'Winston AI Admin',
+              role: 'admin'
+            }
+          },
+          {
+            id: 'user-789',
+            email: 'user@example.com',
+            role: 'member',
+            created_at: new Date(Date.now() - 172800000).toISOString(),
+            user_metadata: {
+              full_name: 'Sample User',
+              role: 'member'
+            }
+          }
+        ];
+        setUsers(mockUsers);
+        setError('Note: Showing demo data. Connect to live Supabase for real users.');
       }
     } catch (error) {
       console.error('Error:', error);

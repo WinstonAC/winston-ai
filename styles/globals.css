@@ -62,4 +62,14 @@ body {
 
 .brutalist-container {
   @apply bg-[#171C28] min-h-screen;
+}
+
+/* Scrollbar utilities */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 } 

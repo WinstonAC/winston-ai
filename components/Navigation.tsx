@@ -36,6 +36,7 @@ export default function Navigation() {
     { href: '/campaigns', label: 'Campaigns' },
     { href: '/contacts', label: 'Contacts' },
     { href: '/analytics', label: 'Analytics' },
+    { href: '/scraper', label: 'Scraper' },
     { href: '/settings', label: 'Settings' },
     { href: '/admin', label: 'Admin' },
   ];
@@ -56,7 +57,7 @@ export default function Navigation() {
             </Link>
             </div>
             {user && (
-              <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+              <div className="hidden sm:ml-6 sm:flex sm:space-x-8 overflow-x-auto scrollbar-hide">
                 {navLinks.map((link) => (
                   <Link
                     key={link.href}
@@ -65,7 +66,7 @@ export default function Navigation() {
                       isActive(link.href)
                         ? 'border-[#32CD32] text-white'
                         : 'border-transparent text-gray-400 hover:border-gray-700 hover:text-gray-300'
-                    } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-mono tracking-wider`}
+                    } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-mono tracking-wider whitespace-nowrap flex-shrink-0`}
                   >
                     {link.label.toUpperCase()}
                   </Link>

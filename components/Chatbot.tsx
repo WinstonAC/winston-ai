@@ -100,7 +100,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ initialContext = 'general', onClose }
   if (!isClient) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-40">
+    <div className="fixed bottom-4 right-4 z-50">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="bg-[#32CD32] hover:bg-[#32CD32]/90 text-black font-mono font-bold py-3 px-4 rounded-full shadow-lg transition-colors text-sm"
@@ -108,7 +108,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ initialContext = 'general', onClose }
         Chat with Winston
       </button>
       {isOpen && (
-        <div className="fixed bottom-20 right-4 w-80 max-w-[calc(100vw-2rem)] bg-black border-2 border-[#32CD32] rounded-lg shadow-xl">
+        <div className="fixed bottom-20 right-4 w-80 max-w-[calc(100vw-2rem)] bg-black border-2 border-[#32CD32] rounded-lg shadow-xl z-50">
           <div className="flex justify-between items-center p-4 border-b border-[#32CD32]">
             <h3 className="font-mono font-bold text-[#32CD32] text-sm">Winston AI Assistant</h3>
             <button

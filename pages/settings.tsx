@@ -179,8 +179,10 @@ export default function Settings() {
                         id="email"
                         value={formData.email}
                         onChange={handleChange}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                        disabled
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm bg-gray-100 text-gray-500"
                       />
+                      <p className="mt-1 text-xs text-gray-500">Email cannot be changed in demo mode</p>
                     </div>
 
                     <div className="space-y-6">
@@ -194,8 +196,10 @@ export default function Settings() {
                           id="currentPassword"
                           value={formData.currentPassword}
                           onChange={handleChange}
-                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                          disabled
+                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm bg-gray-100 text-gray-500"
                         />
+                        <p className="mt-1 text-xs text-gray-500">Password changes disabled in demo mode</p>
                       </div>
 
                       <div>

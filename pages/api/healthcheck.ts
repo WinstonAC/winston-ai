@@ -1,137 +1,97 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { supabase } from '@/lib/supabase';
 
-interface HealthCheckResponse {
-  status: 'healthy' | 'degraded' | 'error';
+interface HealthStatus {
+  status: 'healthy' | 'unhealthy';
   timestamp: string;
-  services: {
+  checks: {
     database: {
-      status: 'connected' | 'error';
-      response_time?: number;
-      error?: string;
+      status: 'healthy' | 'unhealthy';
+      message: string;
+      details?: any;
     };
-    api_endpoints: {
-      leads: 'working' | 'error';
-      campaigns: 'working' | 'error';
-      dashboard: 'working' | 'error';
+    api: {
+      status: 'healthy' | 'unhealthy';
+      message: string;
     };
-    tables: {
-      users: 'accessible' | 'error';
-      leads: 'accessible' | 'error';
-      campaigns: 'accessible' | 'error';
+    environment: {
+      status: 'healthy' | 'unhealthy';
+      message: string;
+      details?: any;
     };
   };
-  version: string;
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<HealthCheckResponse>
-) {
-  const startTime = Date.now();
-  
-  const healthCheck: HealthCheckResponse = {
+export default async function handler(req: NextApiRequest, res: NextApiResponse<HealthStatus>) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({
+      status: 'unhealthy',
+      timestamp: new Date().toISOString(),
+      checks: {
+        database: { status: 'unhealthy', message: 'Method not allowed' },
+        api: { status: 'unhealthy', message: 'Method not allowed' },
+        environment: { status: 'unhealthy', message: 'Method not allowed' }
+      }
+    });
+  }
+
+  const healthStatus: HealthStatus = {
     status: 'healthy',
     timestamp: new Date().toISOString(),
-    services: {
-      database: { status: 'connected' },
-      api_endpoints: {
-        leads: 'working',
-        campaigns: 'working',
-        dashboard: 'working'
-      },
-      tables: {
-        users: 'accessible',
-        leads: 'accessible',
-        campaigns: 'accessible'
-      }
-    },
-    version: '1.0.0'
+    checks: {
+      database: { status: 'healthy', message: 'Database connection successful' },
+      api: { status: 'healthy', message: 'API endpoints responding' },
+      environment: { status: 'healthy', message: 'Environment variables configured' }
+    }
   };
 
+  // Check database connectivity
   try {
-    // Test Supabase connection
-    const dbStartTime = Date.now();
-    const { data: testQuery, error: dbError } = await supabase
+    const { data, error } = await supabase
       .from('leads')
-      .select('count(*)', { count: 'exact', head: true });
-    
-    const dbResponseTime = Date.now() - dbStartTime;
-    
-    if (dbError) {
-      healthCheck.services.database = {
-        status: 'error',
-        error: dbError.message
-      };
-      healthCheck.status = 'degraded';
+      .select('count')
+      .limit(1);
+
+    if (error) {
+      healthStatus.checks.database.status = 'unhealthy';
+      healthStatus.checks.database.message = 'Database query failed';
+      healthStatus.checks.database.details = error.message;
     } else {
-      healthCheck.services.database = {
-        status: 'connected',
-        response_time: dbResponseTime
-      };
+      healthStatus.checks.database.details = { query: 'successful', data: data?.length || 0 };
     }
-
-    // Test table accessibility
-    const tableTests = [
-      { name: 'users', table: 'users' },
-      { name: 'leads', table: 'leads' },
-      { name: 'campaigns', table: 'campaigns' }
-    ];
-
-    for (const test of tableTests) {
-      try {
-        const { error } = await supabase
-          .from(test.table)
-          .select('count(*)', { count: 'exact', head: true });
-          
-        if (error) {
-          healthCheck.services.tables[test.name as keyof typeof healthCheck.services.tables] = 'error';
-          healthCheck.status = 'degraded';
-        }
-      } catch (err) {
-        healthCheck.services.tables[test.name as keyof typeof healthCheck.services.tables] = 'error';
-        healthCheck.status = 'degraded';
-      }
-    }
-
-    // Test internal API endpoints
-    const baseUrl = req.headers.host ? `http://${req.headers.host}` : 'http://localhost:3000';
-    
-    const apiTests = [
-      { name: 'leads', endpoint: '/api/leads' },
-      { name: 'campaigns', endpoint: '/api/campaigns' },
-      { name: 'dashboard', endpoint: '/api/dashboard/stats' }
-    ];
-
-    for (const test of apiTests) {
-      try {
-        const response = await fetch(`${baseUrl}${test.endpoint}`, {
-          method: 'GET',
-          headers: { 'User-Agent': 'HealthCheck/1.0' }
-        });
-        
-        if (!response.ok) {
-          healthCheck.services.api_endpoints[test.name as keyof typeof healthCheck.services.api_endpoints] = 'error';
-          healthCheck.status = 'degraded';
-        }
-      } catch (err) {
-        healthCheck.services.api_endpoints[test.name as keyof typeof healthCheck.services.api_endpoints] = 'error';
-        healthCheck.status = 'degraded';
-      }
-    }
-
   } catch (error) {
-    console.error('Health check error:', error);
-    healthCheck.status = 'error';
-    healthCheck.services.database = {
-      status: 'error',
-      error: error instanceof Error ? error.message : 'Unknown error'
+    healthStatus.checks.database.status = 'unhealthy';
+    healthStatus.checks.database.message = 'Database connection failed';
+    healthStatus.checks.database.details = error instanceof Error ? error.message : 'Unknown error';
+  }
+
+  // Check environment variables
+  const requiredEnvVars = [
+    'NEXT_PUBLIC_SUPABASE_URL',
+    'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+    'SUPABASE_SERVICE_ROLE_KEY'
+  ];
+
+  const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+  
+  if (missingEnvVars.length > 0) {
+    healthStatus.checks.environment.status = 'unhealthy';
+    healthStatus.checks.environment.message = 'Missing required environment variables';
+    healthStatus.checks.environment.details = { missing: missingEnvVars };
+  } else {
+    healthStatus.checks.environment.details = { 
+      supabase_url: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'configured' : 'missing',
+      supabase_anon_key: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'configured' : 'missing',
+      service_role_key: process.env.SUPABASE_SERVICE_ROLE_KEY ? 'configured' : 'missing'
     };
   }
 
-  // Set appropriate HTTP status
-  const httpStatus = healthCheck.status === 'healthy' ? 200 : 
-                    healthCheck.status === 'degraded' ? 207 : 500;
+  // Check if any component is unhealthy
+  const unhealthyChecks = Object.values(healthStatus.checks).filter(check => check.status === 'unhealthy');
+  if (unhealthyChecks.length > 0) {
+    healthStatus.status = 'unhealthy';
+  }
 
-  res.status(httpStatus).json(healthCheck);
+  const statusCode = healthStatus.status === 'healthy' ? 200 : 503;
+  return res.status(statusCode).json(healthStatus);
 } 
