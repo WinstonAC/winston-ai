@@ -34,6 +34,7 @@ export default function Navigation() {
   const navLinks = [
     { href: '/dashboard', label: 'Dashboard' },
     { href: '/campaigns', label: 'Campaigns' },
+    { href: '/contacts', label: 'Contacts' },
     { href: '/analytics', label: 'Analytics' },
     { href: '/settings', label: 'Settings' },
   ];
