@@ -400,6 +400,14 @@ const Dashboard: React.FC<DashboardProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Get today's date in a clean format
+  const today = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric', 
+    month: 'long',
+    day: 'numeric'
+  });
 
   useEffect(() => {
     fetchLeads();
@@ -484,6 +492,11 @@ const Dashboard: React.FC<DashboardProps> = ({
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      {/* Date Display */}
+      <div className="text-center mb-6">
+        <p className="text-lg text-gray-400 font-mono">Today is {today}</p>
+      </div>
+
       {/* Sandbox Indicator */}
       {isSandbox && (
         <div className="flex items-center justify-center bg-blue-900/20 border border-blue-800/50 rounded-lg p-4 mb-8">

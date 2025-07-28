@@ -1,20 +1,15 @@
-import { useEffect } from 'react';
-import { useRouter } from 'next/router';
+import Head from 'next/head';
+import NewLandingPage from '@/components/NewLandingPage';
 
 export default function Home() {
-  const router = useRouter();
-  
-  useEffect(() => {
-    // Demo mode: directly redirect to dashboard without auth checks
-    router.push('/dashboard');
-  }, [router]);
-  
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#32CD32] mx-auto"></div>
-        <p className="mt-4 text-lg text-white font-mono">Loading Dashboard...</p>
-      </div>
-    </div>
+    <>
+      <Head>
+        <title>Winston AI - Your AI Work Assistant</title>
+        <meta name="description" content="Winston is the AI agent that does the work you dread. Cold emails, replies, and demo booking — handled." />
+        <link rel="icon" href="/favicon.ico" sizes="32x32" />
+      </Head>
+      <NewLandingPage />
+    </>
   );
 }
