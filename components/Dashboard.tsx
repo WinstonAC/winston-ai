@@ -429,6 +429,21 @@ const Dashboard: React.FC<DashboardProps> = ({
     }
   };
 
+  // Calculate real lead counts by status
+  const getLeadCounts = () => {
+    const counts = {
+      total: leads.length,
+      new: leads.filter(lead => lead.status === 'new').length,
+      contacted: leads.filter(lead => lead.status === 'contacted').length,
+      qualified: leads.filter(lead => lead.status === 'qualified').length,
+      converted: leads.filter(lead => lead.status === 'converted').length,
+      unqualified: leads.filter(lead => lead.status === 'unqualified').length
+    };
+    return counts;
+  };
+
+  const leadCounts = getLeadCounts();
+
   const handleUploadClick = () => {
     fileInputRef.current?.click();
   };
@@ -509,8 +524,8 @@ const Dashboard: React.FC<DashboardProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Total Leads"
-          value={stats.totalLeads || 0}
-          change="+12% from last month"
+          value={leadCounts.total}
+          change="Live from Supabase"
           icon={UserGroupIcon}
         />
         <StatCard
@@ -531,6 +546,37 @@ const Dashboard: React.FC<DashboardProps> = ({
           change="+3 from last week"
           icon={CalendarIcon}
         />
+      </div>
+
+      {/* Lead Status Breakdown */}
+      <div className="bg-gray-900/50 backdrop-blur rounded-lg border border-gray-800/50 p-6">
+        <h3 className="text-lg font-mono text-[#32CD32] mb-4 tracking-wider uppercase">Lead Status Breakdown</h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-white">{leadCounts.new}</div>
+            <div className="text-sm text-gray-400 font-mono">New</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-blue-400">{leadCounts.contacted}</div>
+            <div className="text-sm text-gray-400 font-mono">Contacted</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-green-400">{leadCounts.qualified}</div>
+            <div className="text-sm text-gray-400 font-mono">Qualified</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-purple-400">{leadCounts.converted}</div>
+            <div className="text-sm text-gray-400 font-mono">Converted</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-red-400">{leadCounts.unqualified}</div>
+            <div className="text-sm text-gray-400 font-mono">Unqualified</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-[#32CD32]">{leadCounts.total}</div>
+            <div className="text-sm text-gray-400 font-mono">Total</div>
+          </div>
+        </div>
       </div>
 
       {/* Two Column Layout */}

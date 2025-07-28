@@ -75,56 +75,7 @@ export default function DashboardPage() {
   useEffect(() => {
     // Demo mode - always allow access, skip auth checks
     if (isClient && router.isReady && !authLoading) {
-      const fetchData = async () => {
-        try {
-          // Mock data for MVP
-          setLeads([
-            {
-              id: '1',
-              name: 'John Doe',
-              email: 'john@example.com',
-              company: 'Acme Corp',
-              title: 'CEO',
-              status: 'new',
-              lastContacted: '2024-01-15'
-            },
-            {
-              id: '2', 
-              name: 'Jane Smith',
-              email: 'jane@example.com',
-              company: 'Tech Inc',
-              title: 'CTO',
-              status: 'contacted',
-              lastContacted: '2024-01-14'
-            }
-          ]);
-
-          setCampaigns([
-            {
-              id: '1',
-              name: 'Q1 Outreach',
-              status: 'active',
-              leads: 150,
-              responses: 23
-            }
-          ]);
-
-          setActivities([
-            {
-              id: '1',
-              type: 'email_sent',
-              description: 'Welcome email sent to John Doe',
-              timestamp: '2024-01-15T10:30:00Z'
-            }
-          ]);
-        } catch (error) {
-          console.error('Error fetching dashboard data:', error);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-
-      fetchData();
+      fetchDashboardData();
     }
   }, [isClient, user, authLoading, router]);
 
@@ -133,12 +84,16 @@ export default function DashboardPage() {
       setIsLoading(true);
       setError(null);
 
-      const [statsRes, activityRes, leadsRes] = await Promise.all([
+      // Fetch all data in parallel
+      const [statsRes, activityRes, leadsRes, campaignsRes, activitiesRes] = await Promise.all([
         fetch('/api/dashboard/stats'),
         fetch('/api/dashboard/activity'),
-        fetch('/api/leads')
+        fetch('/api/leads'),
+        supabase.from('campaigns').select('*').eq('user_id', 'demo-user-123'),
+        supabase.from('analytics_events').select('*').eq('user_id', 'demo-user-123').order('created_at', { ascending: false }).limit(10)
       ]);
 
+      // Handle API responses
       if (!statsRes.ok || !activityRes.ok || !leadsRes.ok) {
         const errorData = await Promise.all([
           statsRes.ok ? null : statsRes.json(),
@@ -156,12 +111,59 @@ export default function DashboardPage() {
         leadsRes.json()
       ]);
 
+      // Handle Supabase responses
+      const campaignsData = campaignsRes.data || [];
+      const analyticsData = activitiesRes.data || [];
+
       setDashboardData({ stats, recentActivity: activity });
       setLeads(leadsData);
+      setCampaigns(campaignsData);
+      setActivities(analyticsData);
+
     } catch (err) {
       console.error('Dashboard data error:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch dashboard data');
-      setTimeout(fetchDashboardData, 5000);
+      
+      // Fallback to demo data if API fails
+      setLeads([
+        {
+          id: '1',
+          name: 'John Doe',
+          email: 'john@example.com',
+          company: 'Acme Corp',
+          title: 'CEO',
+          status: 'new',
+          lastContacted: '2024-01-15'
+        },
+        {
+          id: '2', 
+          name: 'Jane Smith',
+          email: 'jane@example.com',
+          company: 'Tech Inc',
+          title: 'CTO',
+          status: 'contacted',
+          lastContacted: '2024-01-14'
+        }
+      ]);
+      
+      setCampaigns([
+        {
+          id: '1',
+          name: 'Q1 Outreach',
+          status: 'active',
+          leads: 150,
+          responses: 23
+        }
+      ]);
+      
+      setActivities([
+        {
+          id: '1',
+          type: 'email_sent',
+          description: 'Welcome email sent to John Doe',
+          timestamp: '2024-01-15T10:30:00Z'
+        }
+      ]);
     } finally {
       setIsLoading(false);
     }

@@ -36,6 +36,7 @@ export default function Contacts() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [newContact, setNewContact] = useState({
@@ -60,12 +61,16 @@ export default function Contacts() {
 
       if (error) {
         console.error('Error fetching contacts:', error);
+        // Show user-friendly error message
+        setError('Failed to load contacts. Please try refreshing the page.');
         return;
       }
 
       setContacts(data || []);
+      setError(null); // Clear any previous errors
     } catch (error) {
       console.error('Error fetching contacts:', error);
+      setError('An unexpected error occurred while loading contacts.');
     } finally {
       setLoading(false);
     }
@@ -290,6 +295,13 @@ export default function Contacts() {
                 Upload CSV
               </button>
               <button
+                onClick={fetchContacts}
+                disabled={loading}
+                className="bg-gray-800 text-white px-4 py-2 font-mono font-bold hover:bg-gray-700 transition-colors disabled:opacity-50"
+              >
+                {loading ? 'Loading...' : 'Refresh'}
+              </button>
+              <button
                 onClick={() => setShowAddModal(true)}
                 className="bg-[#32CD32] text-black px-6 py-2 font-mono font-bold hover:bg-green-400 transition-colors"
               >
@@ -297,6 +309,21 @@ export default function Contacts() {
               </button>
             </div>
           </div>
+
+          {/* Error Display */}
+          {error && (
+            <div className="bg-red-900/50 border border-red-500 rounded-lg p-4 mb-6">
+              <div className="flex justify-between items-center">
+                <p className="text-red-300 font-mono">{error}</p>
+                <button
+                  onClick={() => setError(null)}
+                  className="text-red-400 hover:text-red-300"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Contacts List */}
           {contacts.length === 0 ? (
