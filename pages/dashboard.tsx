@@ -3,7 +3,6 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/contexts/AuthContext';
-import Navigation from '@/components/Navigation';
 import LeadTable, { Lead } from '@/components/LeadTable';
 import Loader from '@/components/Loader';
 import Link from 'next/link';
@@ -201,7 +200,6 @@ export default function DashboardPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-black text-white">
-        <Navigation />
         <div className="container mx-auto px-4 py-8">
           <div className="bg-red-900/50 border border-red-500 rounded-lg p-4">
             <h2 className="text-xl font-bold mb-2">Error</h2>
@@ -221,40 +219,33 @@ export default function DashboardPage() {
   if (!session) return null;
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <>
       <Head>
         <title>Dashboard - Winston AI</title>
       </Head>
-      <Navigation />
-
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-[#32CD32] text-4xl font-mono">Dashboard</h1>
-          <button
-            onClick={handleSignOut}
-            className="bg-[#32CD32] text-black font-mono px-6 py-2 rounded-md
-                     hover:bg-[#32CD32]/90 transition-colors"
-          >
-            Sign out
-          </button>
-        </div>
-        <div className="bg-white/5 border-2 border-[#32CD32] rounded-lg p-6">
-          <h2 className="text-[#32CD32] text-2xl font-mono mb-4">Welcome to your dashboard</h2>
-          <p className="text-white font-mono">You are now signed in and can access protected content.</p>
-        </div>
-      </div>
-
-      {dashboardData && (
-        <DashboardComponent 
-          stats={dashboardData.stats}
-          recentActivity={dashboardData.recentActivity}
-        />
-      )}
       
-      <div className="container mx-auto px-4 py-8">
-        <LeadTable leads={leads} />
+      <div className="min-h-screen bg-black text-white">
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex justify-between items-center mb-8">
+            <h1 className="text-[#32CD32] text-4xl font-mono">Dashboard</h1>
+          </div>
+          <div className="bg-white/5 border-2 border-[#32CD32] rounded-lg p-6">
+            <h2 className="text-[#32CD32] text-2xl font-mono mb-4">Welcome to your dashboard</h2>
+            <p className="text-white font-mono">You are now signed in and can access protected content.</p>
+          </div>
+        </div>
+
+        {dashboardData && (
+          <DashboardComponent 
+            stats={dashboardData.stats}
+            recentActivity={dashboardData.recentActivity}
+          />
+        )}
+        
+        <div className="container mx-auto px-4 py-8">
+          <LeadTable leads={leads} />
+        </div>
       </div>
-      <Chatbot />
-    </div>
+    </>
   );
 } 
