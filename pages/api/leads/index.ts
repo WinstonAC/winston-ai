@@ -8,50 +8,73 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     switch (req.method) {
       case 'GET':
-        // Return demo leads data
-        const demoLeads = [
-          {
-            id: '1',
-            name: 'John Smith',
-            email: 'john.smith@techcorp.com',
-            company: 'TechCorp',
-            title: 'CEO',
-            status: 'new',
-            lastContacted: '2024-01-15',
-            created_at: '2024-01-15T10:00:00Z'
-          },
-          {
-            id: '2',
-            name: 'Sarah Johnson',
-            email: 'sarah.j@innovateio.com',
-            company: 'InnovateIO',
-            title: 'CTO',
-            status: 'contacted',
-            lastContacted: '2024-01-14',
-            created_at: '2024-01-14T15:30:00Z'
-          },
-          {
-            id: '3',
-            name: 'Mike Chen',
-            email: 'mike@futuretech.ai',
-            company: 'FutureTech AI',
-            title: 'Founder',
-            status: 'qualified',
-            lastContacted: '2024-01-13',
-            created_at: '2024-01-13T09:15:00Z'
-          },
-          {
-            id: '4',
-            name: 'Emily Davis',
-            email: 'emily.davis@startuphub.com',
-            company: 'StartupHub',
-            title: 'Product Manager',
-            status: 'new',
-            created_at: '2024-01-12T14:20:00Z'
-          }
-        ];
+        // Fetch real leads from Supabase
+        const { data: leads, error } = await supabase
+          .from('leads')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
 
-        return res.status(200).json(demoLeads)
+        if (error) {
+          console.error('Error fetching leads:', error);
+          // Fallback to demo data if Supabase fails
+          const demoLeads = [
+            {
+              id: '1',
+              name: 'John Smith',
+              email: 'john.smith@techcorp.com',
+              company: 'TechCorp',
+              title: 'CEO',
+              status: 'new',
+              lastContacted: '2024-01-15',
+              created_at: '2024-01-15T10:00:00Z'
+            },
+            {
+              id: '2',
+              name: 'Sarah Johnson',
+              email: 'sarah.j@innovateio.com',
+              company: 'InnovateIO',
+              title: 'CTO',
+              status: 'contacted',
+              lastContacted: '2024-01-14',
+              created_at: '2024-01-14T15:30:00Z'
+            },
+            {
+              id: '3',
+              name: 'Mike Chen',
+              email: 'mike@futuretech.ai',
+              company: 'FutureTech AI',
+              title: 'Founder',
+              status: 'qualified',
+              lastContacted: '2024-01-13',
+              created_at: '2024-01-13T09:15:00Z'
+            },
+            {
+              id: '4',
+              name: 'Emily Davis',
+              email: 'emily.davis@startuphub.com',
+              company: 'StartupHub',
+              title: 'Product Manager',
+              status: 'new',
+              created_at: '2024-01-12T14:20:00Z'
+            }
+          ];
+          return res.status(200).json(demoLeads);
+        }
+
+        // Transform Supabase data to match expected format
+        const transformedLeads = leads?.map(lead => ({
+          id: lead.id,
+          name: lead.full_name || 'Unknown',
+          email: lead.email,
+          company: lead.company || '',
+          title: lead.title || '',
+          status: lead.status || 'new',
+          lastContacted: lead.last_contacted || lead.created_at,
+          created_at: lead.created_at
+        })) || [];
+
+        return res.status(200).json(transformedLeads)
 
       case 'POST':
         // For demo purposes, accept the POST but just return success

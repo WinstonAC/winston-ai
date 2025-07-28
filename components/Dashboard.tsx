@@ -436,7 +436,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       new: leads.filter(lead => lead.status === 'new').length,
       contacted: leads.filter(lead => lead.status === 'contacted').length,
       qualified: leads.filter(lead => lead.status === 'qualified').length,
-      converted: leads.filter(lead => lead.status === 'converted').length,
+      converted: leads.filter(lead => (lead.status as string) === 'converted').length,
       unqualified: leads.filter(lead => lead.status === 'unqualified').length
     };
     return counts;
