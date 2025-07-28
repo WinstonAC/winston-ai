@@ -7,7 +7,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const user = { 
       id: 'demo-user-123', 
       email: 'demo@winston-ai.com',
-      user_metadata: { full_name: 'Demo User' }
+      user_metadata: { full_name: 'Demo User' },
+      created_at: '2024-01-01T10:00:00Z'
     }
 
     switch (req.method) {
