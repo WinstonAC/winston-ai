@@ -12,8 +12,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const demoCampaigns = [
           {
             id: '1',
-            name: 'Q1 Outreach Campaign',
-            description: 'Tech company outreach for Q1 2024',
+            name: 'Q3 2025 Outreach Campaign',
+            description: 'Tech company outreach for Q3 2025',
             status: 'active',
             user_id: user.id,
             metrics: {
@@ -25,13 +25,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               replied: 18,
               meetings: 6
             },
-            createdAt: '2024-01-10T10:00:00Z',
-            updatedAt: '2024-01-15T14:30:00Z'
+            createdAt: '2025-07-01T10:00:00Z',
+            updatedAt: '2025-07-28T14:30:00Z'
           },
           {
             id: '2',
-            name: 'SaaS Demo Campaign',
-            description: 'Software demo requests campaign',
+            name: 'Summer SaaS Demo Campaign',
+            description: 'Software demo requests for Q3 2025',
             status: 'completed',
             user_id: user.id,
             metrics: {
@@ -43,17 +43,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               replied: 12,
               meetings: 4
             },
-            createdAt: '2024-01-01T09:00:00Z',
-            updatedAt: '2024-01-08T16:00:00Z'
+            createdAt: '2025-07-01T09:00:00Z',
+            updatedAt: '2025-07-15T16:00:00Z'
           },
           {
             id: '3',
-            name: 'Enterprise Leads',
-            description: 'Large enterprise prospects',
+            name: 'Q3 Enterprise Leads',
+            description: 'Large enterprise prospects for Q3 2025',
             status: 'draft',
             user_id: user.id,
-            createdAt: '2024-01-12T11:00:00Z',
-            updatedAt: '2024-01-12T11:00:00Z'
+            createdAt: '2025-07-20T11:00:00Z',
+            updatedAt: '2025-07-20T11:00:00Z'
           }
         ];
 

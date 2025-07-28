@@ -82,11 +82,11 @@ function CampaignsContent() {
 
         // For demo purposes, create mock analytics data
         const mockAnalytics = [
-          { date: '2024-01-01', impressions: 1200, clicks: 45, conversions: 8, spend: 150, campaign_id: '1' },
-          { date: '2024-01-02', impressions: 1350, clicks: 52, conversions: 12, spend: 180, campaign_id: '1' },
-          { date: '2024-01-03', impressions: 1100, clicks: 38, conversions: 6, spend: 120, campaign_id: '1' },
-          { date: '2024-01-04', impressions: 1600, clicks: 67, conversions: 15, spend: 220, campaign_id: '1' },
-          { date: '2024-01-05', impressions: 1400, clicks: 58, conversions: 11, spend: 190, campaign_id: '1' },
+          { date: '2025-07-24', impressions: 1200, clicks: 45, conversions: 8, spend: 150, campaign_id: '1' },
+          { date: '2025-07-25', impressions: 1350, clicks: 52, conversions: 12, spend: 180, campaign_id: '1' },
+          { date: '2025-07-26', impressions: 1100, clicks: 38, conversions: 6, spend: 120, campaign_id: '1' },
+          { date: '2025-07-27', impressions: 1600, clicks: 67, conversions: 15, spend: 220, campaign_id: '1' },
+          { date: '2025-07-28', impressions: 1400, clicks: 58, conversions: 11, spend: 190, campaign_id: '1' },
         ];
         setAnalytics(mockAnalytics);
       } catch (error) {
@@ -95,18 +95,18 @@ function CampaignsContent() {
         setCampaigns([
           {
             id: '1',
-            name: 'Q1 Outreach Campaign',
-            description: 'Tech company outreach for Q1 2024',
+            name: 'Q3 2025 Outreach Campaign',
+            description: 'Tech company outreach for Q3 2025',
             status: 'active',
             user_id: user.id,
             metrics: { sent: 150, delivered: 145, opened: 98, clicked: 24, bounced: 5, replied: 18, meetings: 6 },
-            createdAt: '2024-01-10T10:00:00Z',
-            updatedAt: '2024-01-15T14:30:00Z'
+            createdAt: '2025-07-01T10:00:00Z',
+            updatedAt: '2025-07-28T14:30:00Z'
           }
         ]);
         setAnalytics([
-          { date: '2024-01-01', impressions: 1200, clicks: 45, conversions: 8, spend: 150, campaign_id: '1' },
-          { date: '2024-01-02', impressions: 1350, clicks: 52, conversions: 12, spend: 180, campaign_id: '1' },
+          { date: '2025-07-27', impressions: 1200, clicks: 45, conversions: 8, spend: 150, campaign_id: '1' },
+          { date: '2025-07-28', impressions: 1350, clicks: 52, conversions: 12, spend: 180, campaign_id: '1' },
         ]);
       } finally {
         setLoading(false);
