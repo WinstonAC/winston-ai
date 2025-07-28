@@ -17,7 +17,7 @@ interface Lead {
   email: string;
   company: string;
   title: string;
-  status: 'new' | 'contacted' | 'qualified' | 'unqualified';
+  status: 'new' | 'contacted' | 'qualified' | 'converted' | 'unqualified';
   lastContacted?: string;
   notes?: string;
   classification?: 'Interested' | 'Not Interested' | 'Needs Info';
@@ -33,6 +33,8 @@ const StatusBadge: React.FC<{ status: Lead['status'] }> = ({ status }) => {
     switch (status) {
       case 'qualified':
         return 'bg-green-400/20 text-green-400 border-green-400/50';
+      case 'converted':
+        return 'bg-purple-400/20 text-purple-400 border-purple-400/50';
       case 'contacted':
         return 'bg-blue-400/20 text-blue-400 border-blue-400/50';
       case 'unqualified':
