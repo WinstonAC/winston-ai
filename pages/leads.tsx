@@ -1,6 +1,5 @@
 import React from 'react';
 import Head from 'next/head';
-import Navigation from '@/components/Navigation';
 
 export default function LeadsPage() {
   return (
@@ -9,8 +8,6 @@ export default function LeadsPage() {
         <title>Leads - Winston AI</title>
         <meta name="description" content="Manage your leads" />
       </Head>
-
-      <Navigation />
 
       <main className="pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

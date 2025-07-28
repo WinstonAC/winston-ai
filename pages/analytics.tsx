@@ -1,7 +1,6 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { ChartBarIcon, ArrowsRightLeftIcon, DocumentArrowDownIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
-import Navigation from '@/components/Navigation';
 import Head from 'next/head';
 
 const Analytics = () => {
@@ -15,8 +14,6 @@ const Analytics = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       
-      <Navigation />
-
       <div className="min-h-screen bg-black text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-8 text-center">

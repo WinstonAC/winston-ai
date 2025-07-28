@@ -1,6 +1,5 @@
 import React from 'react';
 import Head from 'next/head';
-import Navigation from '@/components/Navigation';
 import ExpandableDocs from '@/components/ExpandableDocs';
 
 export default function SolutionsPage() {
@@ -10,8 +9,6 @@ export default function SolutionsPage() {
         <title>Solutions - Winston AI</title>
         <meta name="description" content="Discover Winston AI's powerful solutions for automated lead management and analytics" />
       </Head>
-
-      <Navigation />
 
       <main className="pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

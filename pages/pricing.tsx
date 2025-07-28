@@ -1,6 +1,5 @@
 import React from 'react';
 import Head from 'next/head';
-import Navigation from '@/components/Navigation';
 
 export default function Pricing() {
   return (
@@ -10,9 +9,7 @@ export default function Pricing() {
         <meta name="description" content="Simple, transparent pricing for Winston AI" />
       </Head>
 
-      <div className="min-h-screen bg-black">
-        <Navigation />
-        
+      <div className="min-h-screen bg-black">        
         <main className="pt-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <h1 className="text-3xl font-mono text-white mb-12 text-center">PRICING</h1>

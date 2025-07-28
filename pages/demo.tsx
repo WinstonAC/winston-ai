@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
-import Navigation from '@/components/Navigation';
 
 export default function DemoPage() {
   const [name, setName] = useState('');
@@ -31,8 +30,6 @@ export default function DemoPage() {
           <title>Request Demo - Winston AI</title>
           <meta name="description" content="Schedule a demo of Winston AI's automated lead management system" />
         </Head>
-
-        <Navigation />
 
         {/* Background gradient */}
         <div className="absolute inset-0 bg-gradient-radial from-gray-900 to-black"></div>
