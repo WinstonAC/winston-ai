@@ -1,14 +1,11 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import OpenAI from 'openai';
 
-if (!process.env.OPENAI_API_KEY) {
-  throw new Error('Missing OpenAI API key');
-}
-
-const openai = new OpenAI({
+// Graceful handling of missing OpenAI API key for demo mode
+const openai = process.env.OPENAI_API_KEY ? new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   dangerouslyAllowBrowser: true
-});
+}) : null;
 
 export default async function handler(
   req: NextApiRequest,
@@ -23,6 +20,19 @@ export default async function handler(
 
     if (!message) {
       return res.status(400).json({ error: 'Message is required' });
+    }
+
+    // If OpenAI is not configured, provide demo responses
+    if (!openai) {
+      const demoResponses = [
+        "Hi! I'm Winston, your AI sales assistant. I can help you with lead generation, email automation, and campaign management. What would you like to know?",
+        "Great question! In demo mode, I can show you how Winston AI helps automate your sales process. Try exploring the Dashboard, Campaigns, or Contacts sections!",
+        "I'd love to help you with that! Winston AI specializes in automating cold outreach, lead qualification, and follow-up sequences. Check out the Campaigns page to see how it works!",
+        "Thanks for trying Winston AI! I can assist with questions about lead management, email templates, and sales automation. The demo includes sample data to explore our features."
+      ];
+      
+      const randomResponse = demoResponses[Math.floor(Math.random() * demoResponses.length)];
+      return res.status(200).json({ response: randomResponse });
     }
 
     // Create a system message based on context
