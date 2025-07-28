@@ -57,7 +57,7 @@ export default function Navigation() {
             </Link>
             </div>
             {user && (
-              <div className="hidden sm:ml-6 sm:flex sm:space-x-8 overflow-x-auto scrollbar-hide">
+              <div className="hidden md:ml-6 md:flex md:space-x-8 overflow-x-auto scrollbar-hide">
                 {navLinks.map((link) => (
                   <Link
                     key={link.href}
@@ -76,7 +76,7 @@ export default function Navigation() {
           </div>
 
           {/* Mobile menu button */}
-          <div className="flex items-center sm:hidden">
+          <div className="flex items-center md:hidden">
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#32CD32]"
@@ -90,7 +90,7 @@ export default function Navigation() {
             </button>
           </div>
 
-          <div className="hidden sm:ml-6 sm:flex sm:items-center">
+          <div className="hidden md:ml-6 md:flex md:items-center">
             {user ? (
               <div className="ml-3 relative">
                 <div>
@@ -140,7 +140,7 @@ export default function Navigation() {
 
       {/* Mobile menu */}
       {isMobileMenuOpen && (
-        <div className="sm:hidden">
+        <div className="md:hidden">
           <div className="pt-2 pb-3 space-y-1">
             {navLinks.map((link) => (
               <Link

@@ -28,11 +28,23 @@ ChartJS.register(
 type Campaign = {
   id: string;
   name: string;
-  status: 'active' | 'draft' | 'paused';
-  start_date: string;
-  end_date: string;
-  budget: number;
+  description?: string;
+  status: 'active' | 'draft' | 'paused' | 'completed';
+  start_date?: string;
+  end_date?: string;
+  budget?: number;
   user_id: string;
+  createdAt?: string;
+  updatedAt?: string;
+  metrics?: {
+    sent: number;
+    delivered: number;
+    opened: number;
+    clicked: number;
+    bounced: number;
+    replied: number;
+    meetings: number;
+  };
 };
 
 type Analytics = {
@@ -62,27 +74,40 @@ function CampaignsContent() {
     // Demo mode - skip auth check
     const fetchData = async () => {
       try {
-        // Fetch campaigns
-        const { data: campaignsData, error: campaignsError } = await supabase
-          .from('campaigns')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
+        // Fetch campaigns from API
+        const campaignsResponse = await fetch('/api/campaigns');
+        if (!campaignsResponse.ok) throw new Error('Failed to fetch campaigns');
+        const campaignsData = await campaignsResponse.json();
+        setCampaigns(campaignsData.campaigns || []);
 
-        if (campaignsError) throw campaignsError;
-        setCampaigns(campaignsData || []);
-
-        // Fetch analytics for all campaigns
-        const { data: analyticsData, error: analyticsError } = await supabase
-          .from('campaign_analytics')
-          .select('*')
-          .in('campaign_id', campaignsData?.map(c => c.id) || [])
-          .order('date', { ascending: true });
-
-        if (analyticsError) throw analyticsError;
-        setAnalytics(analyticsData || []);
+        // For demo purposes, create mock analytics data
+        const mockAnalytics = [
+          { date: '2024-01-01', impressions: 1200, clicks: 45, conversions: 8, spend: 150, campaign_id: '1' },
+          { date: '2024-01-02', impressions: 1350, clicks: 52, conversions: 12, spend: 180, campaign_id: '1' },
+          { date: '2024-01-03', impressions: 1100, clicks: 38, conversions: 6, spend: 120, campaign_id: '1' },
+          { date: '2024-01-04', impressions: 1600, clicks: 67, conversions: 15, spend: 220, campaign_id: '1' },
+          { date: '2024-01-05', impressions: 1400, clicks: 58, conversions: 11, spend: 190, campaign_id: '1' },
+        ];
+        setAnalytics(mockAnalytics);
       } catch (error) {
         console.error('Error fetching data:', error);
+        // Fallback to demo data
+        setCampaigns([
+          {
+            id: '1',
+            name: 'Q1 Outreach Campaign',
+            description: 'Tech company outreach for Q1 2024',
+            status: 'active',
+            user_id: user.id,
+            metrics: { sent: 150, delivered: 145, opened: 98, clicked: 24, bounced: 5, replied: 18, meetings: 6 },
+            createdAt: '2024-01-10T10:00:00Z',
+            updatedAt: '2024-01-15T14:30:00Z'
+          }
+        ]);
+        setAnalytics([
+          { date: '2024-01-01', impressions: 1200, clicks: 45, conversions: 8, spend: 150, campaign_id: '1' },
+          { date: '2024-01-02', impressions: 1350, clicks: 52, conversions: 12, spend: 180, campaign_id: '1' },
+        ]);
       } finally {
         setLoading(false);
       }
@@ -182,6 +207,12 @@ function CampaignsContent() {
       <div className="bg-white p-4 rounded-lg shadow">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">Campaigns</h2>
+          <button
+            onClick={() => router.push('/campaigns/new')}
+            className="bg-[#32CD32] text-black px-4 py-2 rounded-md font-mono tracking-wider hover:bg-[#32CD32]/90 transition-colors"
+          >
+            CREATE CAMPAIGN
+          </button>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
@@ -211,13 +242,13 @@ function CampaignsContent() {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(campaign.start_date).toLocaleDateString()}
+                    {campaign.start_date ? new Date(campaign.start_date).toLocaleDateString() : 'Not set'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(campaign.end_date).toLocaleDateString()}
+                    {campaign.end_date ? new Date(campaign.end_date).toLocaleDateString() : 'Not set'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    ${campaign.budget.toLocaleString()}
+                    {campaign.budget ? `$${campaign.budget.toLocaleString()}` : 'Not set'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <button
