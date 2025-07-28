@@ -3,6 +3,11 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export async function middleware(req: NextRequest) {
+  // DEMO MODE: Bypass all authentication checks for single-user demo
+  // This allows unrestricted access to all routes without login
+  return NextResponse.next()
+  
+  /* ORIGINAL AUTH CODE - DISABLED FOR DEMO:
   const res = NextResponse.next()
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -62,6 +67,7 @@ export async function middleware(req: NextRequest) {
   }
 
   return res
+  */
 }
 
 export const config = {
