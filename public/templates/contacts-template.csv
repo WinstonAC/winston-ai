@@ -1,0 +1,6 @@
+full_name,email,company,tags,status
+John Doe,john.doe@example.com,Acme Corp,"lead,prospect",new
+Jane Smith,jane.smith@techstart.io,TechStart,"qualified,hot",qualified
+Mike Johnson,mike@innovateco.com,InnovateCo,"demo,enterprise",contacted
+Sarah Wilson,sarah.wilson@startup.io,StartupIO,"cold,small",new
+David Brown,david@enterprise.com,Enterprise Corp,"enterprise,decision-maker",qualified 
