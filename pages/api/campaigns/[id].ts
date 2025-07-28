@@ -3,18 +3,8 @@ import { supabase } from '@/lib/supabase'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    // Check authentication
-    const authHeader = req.headers.authorization
-    if (!authHeader) {
-      return res.status(401).json({ error: 'Unauthorized' })
-    }
-
-    const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-    
-    if (authError || !user) {
-      return res.status(401).json({ error: 'Unauthorized' })
-    }
+    // DEMO MODE: Mock user instead of checking auth
+    const user = { id: 'demo-user-123' }
 
     const { id } = req.query
 
@@ -24,60 +14,44 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     switch (req.method) {
       case 'GET':
-        // Get specific campaign
-        const { data: campaign, error: fetchError } = await supabase
-          .from('campaigns')
-          .select('*')
-          .eq('id', id)
-          .eq('user_id', user.id)
-          .single()
-
-        if (fetchError) {
-          if (fetchError.code === 'PGRST116') {
-            return res.status(404).json({ error: 'Campaign not found' })
-          }
-          throw fetchError
+        // DEMO MODE: Return mock campaign data
+        const mockCampaign = {
+          id: id,
+          name: `Demo Campaign ${id}`,
+          status: 'active',
+          description: 'This is a demo campaign for testing purposes',
+          created_at: '2024-01-15T10:00:00Z',
+          user_id: user.id,
+          leads_count: 150,
+          sent_count: 120,
+          open_rate: 0.65,
+          reply_rate: 0.18
         }
 
-        return res.status(200).json(campaign)
+        return res.status(200).json(mockCampaign)
 
       case 'PUT':
-        // Update campaign
+        // DEMO MODE: Mock campaign update
         const { name, status } = req.body
         
-        const updateData: any = {}
-        if (name) updateData.name = name
-        if (status) updateData.status = status
-
-        const { data: updatedCampaign, error: updateError } = await supabase
-          .from('campaigns')
-          .update(updateData)
-          .eq('id', id)
-          .eq('user_id', user.id)
-          .select()
-          .single()
-
-        if (updateError) {
-          if (updateError.code === 'PGRST116') {
-            return res.status(404).json({ error: 'Campaign not found' })
-          }
-          throw updateError
+        const updatedCampaign = {
+          id: id,
+          name: name || `Demo Campaign ${id}`,
+          status: status || 'active',
+          description: 'This is a demo campaign for testing purposes',
+          created_at: '2024-01-15T10:00:00Z',
+          updated_at: new Date().toISOString(),
+          user_id: user.id,
+          leads_count: 150,
+          sent_count: 120,
+          open_rate: 0.65,
+          reply_rate: 0.18
         }
 
         return res.status(200).json(updatedCampaign)
 
       case 'DELETE':
-        // Delete campaign
-        const { error: deleteError } = await supabase
-          .from('campaigns')
-          .delete()
-          .eq('id', id)
-          .eq('user_id', user.id)
-
-        if (deleteError) {
-          throw deleteError
-        }
-
+        // DEMO MODE: Mock campaign deletion
         return res.status(204).end()
 
       default:

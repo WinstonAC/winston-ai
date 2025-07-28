@@ -10,7 +10,7 @@ import {
   ArrowPathIcon,
   RocketLaunchIcon
 } from '@heroicons/react/24/outline';
-import SandboxSettings from './SandboxSettings';
+// import SandboxSettings from './SandboxSettings'; // DEMO MODE: Removed sandbox functionality
 import { useRouter } from 'next/router';
 import Papa from 'papaparse';
 import LeadTable from './LeadTable';
@@ -30,7 +30,7 @@ interface DashboardProps {
   }[];
   isSandbox?: boolean;
   onSandboxReset?: () => void;
-  onSandboxSettingsUpdate?: (settings: any) => void;
+  // onSandboxSettingsUpdate?: (settings: any) => void; // DEMO MODE: Removed sandbox functionality
 }
 
 interface StatCardProps {
@@ -395,7 +395,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   recentActivity, 
   isSandbox = false,
   onSandboxReset,
-  onSandboxSettingsUpdate
+  // onSandboxSettingsUpdate // DEMO MODE: Removed sandbox functionality
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -559,11 +559,13 @@ const Dashboard: React.FC<DashboardProps> = ({
           <div className="bg-gray-900/50 backdrop-blur rounded-lg border border-gray-800/50 overflow-hidden">
             <QuickActions isSandbox={isSandbox} />
           </div>
+          {/* DEMO MODE: Removed sandbox settings functionality
           {isSandbox && onSandboxSettingsUpdate && (
             <div className="bg-gray-900/50 backdrop-blur rounded-lg border border-gray-800/50 overflow-hidden">
               <SandboxSettings onUpdate={onSandboxSettingsUpdate} />
             </div>
           )}
+          */}
         </div>
       </div>
     </div>

@@ -10,16 +10,8 @@ export default async function handler(
   }
 
   try {
-    // Get session from Authorization header
-    const token = req.headers.authorization?.replace('Bearer ', '');
-    if (!token) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
+    // DEMO MODE: Mock user instead of checking auth
+    const user = { id: 'demo-user-123' }
 
     const { type, description, teamId, leadId } = req.body;
 

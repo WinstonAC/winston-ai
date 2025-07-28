@@ -3,17 +3,11 @@ import { supabase } from '@/lib/supabase'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    // Check authentication
-    const authHeader = req.headers.authorization
-    if (!authHeader) {
-      return res.status(401).json({ error: 'Unauthorized' })
-    }
-
-    const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
-    
-    if (authError || !user) {
-      return res.status(401).json({ error: 'Unauthorized' })
+    // DEMO MODE: Mock user instead of checking auth
+    const user = { 
+      id: 'demo-user-123', 
+      email: 'demo@winston-ai.com',
+      user_metadata: { full_name: 'Demo User' }
     }
 
     switch (req.method) {

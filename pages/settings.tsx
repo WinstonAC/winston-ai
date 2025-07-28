@@ -32,12 +32,13 @@ export default function Settings() {
     }
   }, [user]);
 
-  useEffect(() => {
-    // Wait for client-side, router readiness, and auth state resolution
-    if (isClient && router.isReady && !authLoading && !user) {
-      router.push('/login');
-    }
-  }, [isClient, router, authLoading, user]); // router.isReady is implicitly handled by router object dependency
+  // DEMO MODE: Remove auth redirect
+  // useEffect(() => {
+  //   // Wait for client-side, router readiness, and auth state resolution
+  //   if (isClient && router.isReady && !authLoading && !user) {
+  //     router.push('/login');
+  //   }
+  // }, [isClient, router, authLoading, user]); // router.isReady is implicitly handled by router object dependency
 
   // Show loader while auth is loading
   if (authLoading) {
