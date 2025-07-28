@@ -100,70 +100,70 @@ const Chatbot: React.FC<ChatbotProps> = ({ initialContext = 'general', onClose }
   if (!isClient) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50">
+    <div className="fixed bottom-4 right-4 z-40">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="bg-[#32CD32] hover:bg-[#32CD32]/90 text-black font-mono font-bold py-2 px-4 rounded-full shadow-lg transition-colors"
+        className="bg-[#32CD32] hover:bg-[#32CD32]/90 text-black font-mono font-bold py-3 px-4 rounded-full shadow-lg transition-colors text-sm"
       >
         Chat with Winston
       </button>
       {isOpen && (
-        <div className="fixed bottom-20 right-4 w-80 bg-black border-2 border-[#32CD32] rounded-lg shadow-xl p-4">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-mono font-bold text-[#32CD32]">Winston AI Assistant</h3>
+        <div className="fixed bottom-20 right-4 w-80 max-w-[calc(100vw-2rem)] bg-black border-2 border-[#32CD32] rounded-lg shadow-xl">
+          <div className="flex justify-between items-center p-4 border-b border-[#32CD32]">
+            <h3 className="font-mono font-bold text-[#32CD32] text-sm">Winston AI Assistant</h3>
             <button
               onClick={handleClose}
-              className="text-gray-400 hover:text-white transition-colors"
+              className="text-gray-400 hover:text-white transition-colors text-lg leading-none"
             >
               ×
             </button>
           </div>
-          <div className="h-64 overflow-y-auto mb-4 space-y-4">
+          <div className="h-60 overflow-y-auto p-4 space-y-3">
             {messages.map((message, index) => (
               <div
                 key={index}
                 className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[80%] p-3 rounded-lg ${
+                  className={`max-w-[85%] p-2 rounded-lg ${
                     message.sender === 'user'
                       ? 'bg-[#32CD32] text-black'
                       : 'bg-gray-800 text-white'
                   }`}
                 >
-                  {message.text}
+                  <p className="text-xs font-mono leading-relaxed">{message.text}</p>
                 </div>
               </div>
             ))}
             {isLoading && (
               <div className="flex justify-start">
-                <div className="bg-gray-800 text-white p-3 rounded-lg">
-                  <div className="flex space-x-2">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100" />
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200" />
+                <div className="bg-gray-800 text-white p-2 rounded-lg">
+                  <div className="flex space-x-1">
+                    <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" />
+                    <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce delay-100" />
+                    <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce delay-200" />
                   </div>
                 </div>
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
-          <div className="flex space-x-2">
+          <div className="flex gap-2 p-4 border-t border-gray-800">
             <input
               type="text"
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Type your message..."
-              className="flex-1 bg-gray-800 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#32CD32]"
+              className="flex-1 p-2 bg-gray-900 border border-gray-600 rounded text-white text-sm font-mono focus:outline-none focus:border-[#32CD32]"
               disabled={isLoading}
             />
             <button
               onClick={handleSendMessage}
               disabled={isLoading || !inputMessage.trim()}
-              className="bg-[#32CD32] hover:bg-[#32CD32]/90 text-black font-mono font-bold px-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-[#32CD32] text-black px-3 py-2 rounded font-mono font-bold text-xs hover:bg-[#32CD32]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              Send
+              {isLoading ? '...' : 'Send'}
             </button>
           </div>
         </div>
