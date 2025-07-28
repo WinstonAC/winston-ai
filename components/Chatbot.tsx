@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/router';
 
 interface Message {
   text: string;
@@ -18,7 +19,12 @@ const Chatbot: React.FC<ChatbotProps> = ({ initialContext = 'general', onClose }
   ]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -74,7 +80,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ initialContext = 'general', onClose }
     } catch (error) {
       console.error('Error sending message:', error);
       const errorMessage: Message = {
-        text: 'Sorry, I encountered an error. Please try again.',
+        text: 'Sorry, I encountered an error. Please try again. (Note: OpenAI API key may not be configured)',
         sender: 'bot',
         timestamp: new Date()
       };
@@ -90,6 +96,8 @@ const Chatbot: React.FC<ChatbotProps> = ({ initialContext = 'general', onClose }
       handleSendMessage();
     }
   };
+
+  if (!isMounted) return null;
 
   return (
     <div className="fixed bottom-4 right-4 z-50">

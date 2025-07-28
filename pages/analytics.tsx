@@ -24,25 +24,45 @@ const Analytics = () => {
             <p className="text-gray-400 font-mono">Real-time performance metrics and insights</p>
           </div>
 
-          {/* Quick Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <button className="bg-black border-2 border-[#32CD32] p-6 text-[#32CD32] hover:bg-[#32CD32] hover:text-black transition-colors flex flex-col items-center">
-              <ChartBarIcon className="h-8 w-8 mb-2" />
-              <span className="font-mono font-bold">View Charts</span>
-            </button>
-            <button className="bg-black border-2 border-[#32CD32] p-6 text-[#32CD32] hover:bg-[#32CD32] hover:text-black transition-colors flex flex-col items-center">
-              <ArrowsRightLeftIcon className="h-8 w-8 mb-2" />
-              <span className="font-mono font-bold">Compare Campaign</span>
-            </button>
-            <button className="bg-black border-2 border-[#32CD32] p-6 text-[#32CD32] hover:bg-[#32CD32] hover:text-black transition-colors flex flex-col items-center">
-              <DocumentArrowDownIcon className="h-8 w-8 mb-2" />
-              <span className="font-mono font-bold">Export Data</span>
-            </button>
-            <button className="bg-black border-2 border-[#32CD32] p-6 text-[#32CD32] hover:bg-[#32CD32] hover:text-black transition-colors flex flex-col items-center">
-              <ArrowPathIcon className="h-8 w-8 mb-2" />
-              <span className="font-mono font-bold">Refresh</span>
-            </button>
-          </div>
+                     {/* Quick Actions */}
+           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+             <button 
+               onClick={() => alert('Chart visualization would open here')}
+               className="bg-black border-2 border-[#32CD32] p-6 text-[#32CD32] hover:bg-[#32CD32] hover:text-black transition-colors flex flex-col items-center"
+             >
+               <ChartBarIcon className="h-8 w-8 mb-2" />
+               <span className="font-mono font-bold">View Charts</span>
+             </button>
+             <button 
+               onClick={() => alert('Campaign comparison tool would open here')}
+               className="bg-black border-2 border-[#32CD32] p-6 text-[#32CD32] hover:bg-[#32CD32] hover:text-black transition-colors flex flex-col items-center"
+             >
+               <ArrowsRightLeftIcon className="h-8 w-8 mb-2" />
+               <span className="font-mono font-bold">Compare Campaign</span>
+             </button>
+             <button 
+               onClick={() => {
+                 const csvData = "Campaign,Sent,Opened,Clicked,Replied\nDemo Campaign,1234,856,432,89";
+                 const blob = new Blob([csvData], { type: 'text/csv' });
+                 const url = window.URL.createObjectURL(blob);
+                 const a = document.createElement('a');
+                 a.href = url;
+                 a.download = 'analytics-data.csv';
+                 a.click();
+               }}
+               className="bg-black border-2 border-[#32CD32] p-6 text-[#32CD32] hover:bg-[#32CD32] hover:text-black transition-colors flex flex-col items-center"
+             >
+               <DocumentArrowDownIcon className="h-8 w-8 mb-2" />
+               <span className="font-mono font-bold">Export Data</span>
+             </button>
+             <button 
+               onClick={() => window.location.reload()}
+               className="bg-black border-2 border-[#32CD32] p-6 text-[#32CD32] hover:bg-[#32CD32] hover:text-black transition-colors flex flex-col items-center"
+             >
+               <ArrowPathIcon className="h-8 w-8 mb-2" />
+               <span className="font-mono font-bold">Refresh</span>
+             </button>
+           </div>
 
           {/* Metrics Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">

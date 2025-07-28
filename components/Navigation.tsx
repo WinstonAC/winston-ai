@@ -37,6 +37,7 @@ export default function Navigation() {
     { href: '/contacts', label: 'Contacts' },
     { href: '/analytics', label: 'Analytics' },
     { href: '/settings', label: 'Settings' },
+    { href: '/admin', label: 'Admin' },
   ];
 
   return (
@@ -45,9 +46,14 @@ export default function Navigation() {
         <div className="flex justify-between h-16">
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
-              <Link href="/" className="text-xl font-mono tracking-wider text-[#32CD32]">
+                          <Link href="/" className="flex items-center">
+              <span className="text-xl font-mono tracking-wider text-[#32CD32]">
                 WINSTON AI
-              </Link>
+              </span>
+              <span className="text-xs font-mono text-[#32CD32] ml-2 px-1 border border-[#32CD32] rounded">
+                BETA
+              </span>
+            </Link>
             </div>
             {user && (
               <div className="hidden sm:ml-6 sm:flex sm:space-x-8">

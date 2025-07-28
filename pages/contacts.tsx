@@ -6,11 +6,11 @@ import { supabase } from '@/lib/supabase';
 
 interface Contact {
   id: string;
-  name: string;
+  full_name: string;
   email: string;
   company?: string;
-  tags?: string;
-  source?: string;
+  tags?: string[];
+  status?: string;
   created_at: string;
 }
 
@@ -20,11 +20,11 @@ export default function Contacts() {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newContact, setNewContact] = useState({
-    name: '',
+    full_name: '',
     email: '',
     company: '',
     tags: '',
-    source: ''
+    status: 'new'
   });
 
   useEffect(() => {
@@ -35,7 +35,7 @@ export default function Contacts() {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('contacts')
+        .from('leads')
         .select('*')
         .order('created_at', { ascending: false });
 
@@ -56,9 +56,16 @@ export default function Contacts() {
     e.preventDefault();
     
     try {
+      // Convert tags string to array
+      const contactData = {
+        ...newContact,
+        tags: newContact.tags ? [newContact.tags] : [],
+        user_id: 'demo-user-123' // Demo user ID for bypassed auth
+      };
+
       const { data, error } = await supabase
-        .from('contacts')
-        .insert([newContact])
+        .from('leads')
+        .insert([contactData])
         .select();
 
       if (error) {
@@ -68,7 +75,7 @@ export default function Contacts() {
       }
 
       setContacts([data[0], ...contacts]);
-      setNewContact({ name: '', email: '', company: '', tags: '', source: '' });
+      setNewContact({ full_name: '', email: '', company: '', tags: '', status: 'new' });
       setShowAddModal(false);
     } catch (error) {
       console.error('Error:', error);
@@ -118,17 +125,17 @@ export default function Contacts() {
                       <th className="px-6 py-4 text-left font-mono text-[#32CD32]">EMAIL</th>
                       <th className="px-6 py-4 text-left font-mono text-[#32CD32]">COMPANY</th>
                       <th className="px-6 py-4 text-left font-mono text-[#32CD32]">TAGS</th>
-                      <th className="px-6 py-4 text-left font-mono text-[#32CD32]">SOURCE</th>
+                      <th className="px-6 py-4 text-left font-mono text-[#32CD32]">STATUS</th>
                     </tr>
                   </thead>
                   <tbody>
                     {contacts.map((contact) => (
                       <tr key={contact.id} className="border-b border-gray-800 hover:bg-gray-900">
-                        <td className="px-6 py-4 font-mono text-white">{contact.name}</td>
+                        <td className="px-6 py-4 font-mono text-white">{contact.full_name}</td>
                         <td className="px-6 py-4 font-mono text-gray-300">{contact.email}</td>
                         <td className="px-6 py-4 font-mono text-gray-300">{contact.company || '-'}</td>
-                        <td className="px-6 py-4 font-mono text-gray-300">{contact.tags || '-'}</td>
-                        <td className="px-6 py-4 font-mono text-gray-300">{contact.source || '-'}</td>
+                        <td className="px-6 py-4 font-mono text-gray-300">{contact.tags ? contact.tags.join(', ') : '-'}</td>
+                        <td className="px-6 py-4 font-mono text-gray-300">{contact.status || '-'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -148,9 +155,9 @@ export default function Contacts() {
                 <div>
                   <input
                     type="text"
-                    placeholder="NAME"
-                    value={newContact.name}
-                    onChange={(e) => setNewContact({ ...newContact, name: e.target.value })}
+                    placeholder="FULL NAME"
+                    value={newContact.full_name}
+                    onChange={(e) => setNewContact({ ...newContact, full_name: e.target.value })}
                     className="w-full p-3 bg-black border border-gray-600 text-white font-mono focus:border-[#32CD32] focus:outline-none"
                     required
                   />
@@ -188,13 +195,17 @@ export default function Contacts() {
                 </div>
                 
                 <div>
-                  <input
-                    type="text"
-                    placeholder="SOURCE"
-                    value={newContact.source}
-                    onChange={(e) => setNewContact({ ...newContact, source: e.target.value })}
+                  <select
+                    value={newContact.status}
+                    onChange={(e) => setNewContact({ ...newContact, status: e.target.value })}
                     className="w-full p-3 bg-black border border-gray-600 text-white font-mono focus:border-[#32CD32] focus:outline-none"
-                  />
+                  >
+                    <option value="new">NEW</option>
+                    <option value="contacted">CONTACTED</option>
+                    <option value="qualified">QUALIFIED</option>
+                    <option value="unqualified">UNQUALIFIED</option>
+                    <option value="converted">CONVERTED</option>
+                  </select>
                 </div>
 
                 <div className="flex space-x-4 mt-6">

@@ -36,35 +36,45 @@ export default function Admin() {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (usersData && usersData.length > 0) {
-        setUsers(usersData);
-      } else {
-        // If no users in users table, try to get from auth.users (requires service role)
-        // For demo purposes, we'll create some mock admin data
-        const mockUsers = [
-          {
-            id: 'demo-user-123',
-            email: 'demo@winston-ai.com',
-            role: 'admin',
-            created_at: new Date().toISOString(),
-            user_metadata: {
-              full_name: 'Demo User',
-              role: 'admin'
-            }
-          },
-          {
-            id: 'admin-user-456',
-            email: 'admin@winston-ai.com',
-            role: 'admin',
-            created_at: new Date(Date.now() - 86400000).toISOString(),
-            user_metadata: {
-              full_name: 'Winston AI Admin',
-              role: 'admin'
-            }
-          }
-        ];
-        setUsers(mockUsers);
-      }
+             if (usersData && usersData.length > 0) {
+         setUsers(usersData);
+       } else {
+         // If no users in users table, show fallback demo data
+         const mockUsers = [
+           {
+             id: 'demo-user-123',
+             email: 'demo@winston-ai.com',
+             role: 'admin',
+             created_at: new Date().toISOString(),
+             user_metadata: {
+               full_name: 'Demo User',
+               role: 'admin'
+             }
+           },
+           {
+             id: 'admin-user-456', 
+             email: 'admin@winston-ai.com',
+             role: 'admin',
+             created_at: new Date(Date.now() - 86400000).toISOString(),
+             user_metadata: {
+               full_name: 'Winston AI Admin',
+               role: 'admin'
+             }
+           },
+           {
+             id: 'user-789',
+             email: 'user@example.com',
+             role: 'member',
+             created_at: new Date(Date.now() - 172800000).toISOString(),
+             user_metadata: {
+               full_name: 'Sample User',
+               role: 'member'
+             }
+           }
+         ];
+         setUsers(mockUsers);
+         setError('Note: Showing demo data. Connect to live Supabase for real users.');
+       }
 
       if (usersError && !usersData) {
         console.error('Error fetching users:', usersError);
@@ -190,11 +200,20 @@ export default function Admin() {
                         <td className="px-6 py-4 font-mono text-gray-300">
                           {formatDate(userData.created_at)}
                         </td>
-                        <td className="px-6 py-4">
-                          <button className="text-[#32CD32] hover:text-green-400 font-mono text-sm">
-                            Edit
-                          </button>
-                        </td>
+                                                 <td className="px-6 py-4">
+                           <button 
+                             onClick={() => alert(`Edit user: ${userData.email}`)}
+                             className="text-[#32CD32] hover:text-green-400 font-mono text-sm mr-2"
+                           >
+                             Edit
+                           </button>
+                           <button 
+                             onClick={() => alert(`Delete user: ${userData.email}`)}
+                             className="text-red-400 hover:text-red-300 font-mono text-sm"
+                           >
+                             Delete
+                           </button>
+                         </td>
                       </tr>
                     ))}
                   </tbody>
@@ -225,17 +244,26 @@ export default function Admin() {
 
             <div className="bg-black border-2 border-[#32CD32] p-6">
               <h3 className="font-mono text-lg text-[#32CD32] mb-4">Quick Actions</h3>
-              <div className="space-y-3">
-                <button className="w-full bg-black border border-[#32CD32] text-[#32CD32] py-2 px-4 font-mono hover:bg-[#32CD32] hover:text-black transition-colors">
-                  View System Logs
-                </button>
-                <button className="w-full bg-black border border-[#32CD32] text-[#32CD32] py-2 px-4 font-mono hover:bg-[#32CD32] hover:text-black transition-colors">
-                  Export User Data
-                </button>
-                <button className="w-full bg-black border border-[#32CD32] text-[#32CD32] py-2 px-4 font-mono hover:bg-[#32CD32] hover:text-black transition-colors">
-                  System Settings
-                </button>
-              </div>
+                             <div className="space-y-3">
+                 <button 
+                   onClick={() => alert('System logs would appear here in a real admin panel')}
+                   className="w-full bg-black border border-[#32CD32] text-[#32CD32] py-2 px-4 font-mono hover:bg-[#32CD32] hover:text-black transition-colors"
+                 >
+                   View System Logs
+                 </button>
+                 <button 
+                   onClick={() => alert('User data export functionality would be implemented here')}
+                   className="w-full bg-black border border-[#32CD32] text-[#32CD32] py-2 px-4 font-mono hover:bg-[#32CD32] hover:text-black transition-colors"
+                 >
+                   Export User Data
+                 </button>
+                 <button 
+                   onClick={() => alert('System settings panel would open here')}
+                   className="w-full bg-black border border-[#32CD32] text-[#32CD32] py-2 px-4 font-mono hover:bg-[#32CD32] hover:text-black transition-colors"
+                 >
+                   System Settings
+                 </button>
+               </div>
             </div>
           </div>
         </div>
