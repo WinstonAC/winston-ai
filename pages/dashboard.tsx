@@ -89,35 +89,36 @@ export default function DashboardPage() {
         fetch('/api/dashboard/stats'),
         fetch('/api/dashboard/activity'),
         fetch('/api/leads'),
-        supabase.from('campaigns').select('*').eq('user_id', 'demo-user-123'),
+        fetch('/api/campaigns'),
         supabase.from('analytics_events').select('*').eq('user_id', 'demo-user-123').order('created_at', { ascending: false }).limit(10)
       ]);
 
       // Handle API responses
-      if (!statsRes.ok || !activityRes.ok || !leadsRes.ok) {
+      if (!statsRes.ok || !activityRes.ok || !leadsRes.ok || !campaignsRes.ok) {
         const errorData = await Promise.all([
           statsRes.ok ? null : statsRes.json(),
           activityRes.ok ? null : activityRes.json(),
-          leadsRes.ok ? null : leadsRes.json()
+          leadsRes.ok ? null : leadsRes.json(),
+          campaignsRes.ok ? null : campaignsRes.json()
         ]);
         
         const errors = errorData.filter(Boolean).map(err => err?.message || 'Unknown error');
         throw new Error(`Failed to fetch dashboard data: ${errors.join(', ')}`);
       }
 
-      const [stats, activity, leadsData] = await Promise.all([
+      const [stats, activity, leadsData, campaignsData] = await Promise.all([
         statsRes.json(),
         activityRes.json(),
-        leadsRes.json()
+        leadsRes.json(),
+        campaignsRes.json()
       ]);
 
       // Handle Supabase responses
-      const campaignsData = campaignsRes.data || [];
       const analyticsData = activitiesRes.data || [];
 
       setDashboardData({ stats, recentActivity: activity });
       setLeads(leadsData);
-      setCampaigns(campaignsData);
+      setCampaigns(campaignsData.campaigns || []);
       setActivities(analyticsData);
 
     } catch (err) {
@@ -149,7 +150,7 @@ export default function DashboardPage() {
       setCampaigns([
         {
           id: '1',
-          name: 'Q1 Outreach',
+          name: 'Q3 2025 Outreach Campaign',
           status: 'active',
           leads: 150,
           responses: 23
