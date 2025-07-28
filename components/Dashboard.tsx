@@ -46,7 +46,7 @@ interface Lead {
   email: string;
   company: string;
   title: string;
-  status: 'new' | 'contacted' | 'qualified' | 'unqualified';
+  status: 'new' | 'contacted' | 'qualified' | 'converted' | 'unqualified';
   lastContacted?: string;
   notes?: string;
 }
